@@ -1,0 +1,721 @@
+---
+title: "Modelling of the Leverhulme grant on NDL"
+author: "Eva Viviani"
+date: "February 2020"
+output:
+  html_document:
+    df_print: paged
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
+---
+
+This Notebook recreates the simulations reported in the grant (strand 1 experiment 2 and 3). Simulations were originally made by *Masa Vujovic*.
+
+```{r, echo=FALSE}
+rm(list = ls());
+
+```
+
+```{r load packages, include=FALSE}
+library(ndl);
+library(ggplot2);
+library(knitr);
+library(ggpubr);
+library(ggsci);
+library(grid);
+library(gridExtra);
+library(cowplot);
+library(plyr);
+library(wesanderson);
+library(data.table);
+library(tinytex);
+library(RColorBrewer);
+opts_chunk$set(fig.width=7, fig.height=4,   
+               echo=TRUE, warning=FALSE, message=FALSE, cache=TRUE);
+```
+
+Set your local working directory. This should be (and is assumed to be in the rest of the code) the highest point in your local folder:
+```{r}
+localGitDir <- 'C:/Users/eva_v/OneDrive/Documenti/UCL/For_sharing_EVA/Modelling/'
+setwd(localGitDir);
+```
+
+# Distributions of interest
+In order to model our learning, we need to approximate the cues' frequency distribution. In this notebook I consider three main distributions: a flat distribution--where all cues are equally distributed, an exponential distribution--where cues follow a costant average rate, and a zipfian distribution--that is a variant of a power law distribution where gamma is -1. I provide codes and formulas of all the three, but I focus on the exponential distribution since it's the one considered in the grant. 
+
++ Importantly, Masa's thesis was done on a flat distribution.
+
+## Exponential distribution
++ The analytical formula is: f(k) = a*exp(-bk), where 'k' is the ranking position (literally how many steps we want in the distribution),'a' is the frequency of occurrence of the most frequent item and 'b' is the exponential decay, that is, the costant average rate at which the distribution unfolds.
+
++ Hypothetically, one needs an hypothesis to define the value of b. By trials and errors, I found that Masa used a value of .69 for the grant, therefore I will stick to it. 
+
++ UPDATE: Michael rightly pointed out that a better solution is to use a real distribution and to derive the beta. This has been done in the point 3.
+
++ When b is 0 every item is equiprobable, therefore in order to obtain a flat distribution simply assign b = 0.
+
+```{r function for creating the exponential distribution}
+exponentialFun <- function(k, a, b) {return(round(a*exp(-b*k)))}
+
+```
+
+## Zipfian and power law distributions
++ The analytical formula for a zipfian distribution is f(k) = c/k, where 'k' is the ranking position and 'c' has the same function of 'a' in the exponential distribution--frequency of occurrence of the most frequent item.
+
++ Note that the zipfian distribution is a type of power law distribution where gamma is -1. Therefore the analytical formula in full of a power law is f(k) = c*k^gamma.
+
+```{r function for creating the zipfian & power law distributions}
+zipfianFun <- function(k, c) { return(round(c/k))}
+powerFun <- function(k, c, g) { return(c*(k^g))}
+
+```
+
+
+```{r Load relavant functions made by Masa - Suffix, include=FALSE}
+#my_rescorlawagner_suffix/prefix adjust the output of the rescorlaWagner() function of NDL so that it's in a format more convenient for plotting.
+
+my_rescorlawagner_suffix <- function(mystims, saliency, type_plot){
+  
+  Time <- c()
+  Weight <- c()
+  CueOutcome <- c()
+  Equilibriums <- c()
+  SingleCues <- c() 
+      
+  for (i in 1:length(traceCues)){
+      traceCue <- traceCues[i]
+      SingleCues <- append(SingleCues, traceCue, after=length(SingleCues))
+      traceOutcome <- traceOutcomes[1]
+      
+      # RESCORLA-WAGNER MODEL HAPPENS HERE
+      my_rw = RescorlaWagner(mystims, nruns=1,
+                                  traceCue = traceCues[i],
+                                  traceOutcome = traceOutcomes[1], 
+                                  beta1 = saliency[i])
+    
+      # For each cue, get equilibrium weight (to be plotted)
+      e <- my_rw$equilibriumWeight
+      Equilibriums <- append(Equilibriums, e)
+      
+      # For each cue, get the associative weight at each trial (to be plotted)
+      weights <- my_rw$weightvector
+      Weight <- append(Weight, weights)
+      print(tail(weights, 1))
+      
+      # For each trial, write a string saying which cue it was (for plotting)
+      cue_outcome <- c()
+      for (x in 1:length(weights)){
+        cue_outcome <- append(cue_outcome, paste(traceCue))
+      }
+      CueOutcome <- append(CueOutcome, cue_outcome)
+      
+      # Create a vector with x values (trial number, for plotting)
+      xvals <- c()
+      for (x in 1:length(weights)) {
+        xvals <- append(xvals, x, after=length(xvals))
+        }
+      Time <- append(Time, xvals, after=length(Time))
+  }
+  
+    myline <- data.frame(CueOutcome, Time, Weight)
+    mybar <- data.frame(SingleCues, Equilibriums)
+    
+    if (type_plot == "line")
+      
+    {
+      return(myline)
+      
+    } else {
+      
+      return(mybar)
+    }
+}
+```
+
+```{r Load relavant functions made by Masa - Prefix, include=FALSE}
+my_rescorlawagner_prefix <- function(mystims, saliency, type_plot){
+  
+  Time <- c()
+  Weight <- c()
+  CueOutcome <- c()
+  Equilibriums <- c()
+  SingleCues <- c() 
+      
+  for (i in 1:length(traceOutcomes)){
+      traceCue <- traceCues[1]
+      SingleCues <- append(SingleCues, traceCue, after=length(SingleCues))
+      traceOutcome <- traceOutcomes[i]
+      
+      # RESCORLA-WAGNER MODEL HAPPENS HERE
+      my_rw = RescorlaWagner(mystims, nruns=1,
+                                  traceCue = traceCues[1],
+                                  traceOutcome = traceOutcomes[i], 
+                                  beta1 = saliency[i])
+    
+      # For each cue, get equilibrium weight (to be plotted)
+      e <- my_rw$equilibriumWeight
+      Equilibriums <- append(Equilibriums, e)
+      
+      # For each cue, get the associative weight at each trial (to be plotted)
+      weights <- my_rw$weightvector
+      Weight <- append(Weight, weights)
+      print(tail(weights, 1))
+      
+      # For each trial, write a string saying which cue it was (for plotting)
+      cue_outcome <- c()
+      for (x in 1:length(weights)){
+        cue_outcome <- append(cue_outcome, paste(traceOutcome))
+      }
+      CueOutcome <- append(CueOutcome, cue_outcome)
+      
+      # Create a vector with x values (trial number, for plotting)
+      xvals <- c()
+      for (x in 1:length(weights)) {
+        xvals <- append(xvals, x, after=length(xvals))
+        }
+      Time <- append(Time, xvals, after=length(Time))
+  }
+  
+    myline <- data.frame(CueOutcome, Time, Weight)
+    mybar <- data.frame(SingleCues, Equilibriums, unique(CueOutcome))
+    
+    if (type_plot == "line")
+      
+    {
+      return(myline)
+      
+    } else {
+      
+      return(mybar)
+    }
+}
+```
+
+
+```{r preprocessing function, include=FALSE}
+#Returns a dataframe containing Cues, Outcomes, and Frequency.
+
+#  1. It takes as an input 'myexp'--csv file containing labels, affixes, and frequencies. 
+#  2. Condition: "suffix" or else ("prefix")
+
+#If condition is "suffix": object labels will serve as cues and affixes will serve as outcomes.
+#If condition is "prefix": object labels will serve as outcomes and affixes will serve as cues (prefix condition).
+
+
+prepare_data <- function(myexp, condition){
+  
+    if (condition == "suffix"){
+      Cues <- myexp$Cues
+      Outcomes <- myexp$Outcomes
+      Frequency <- myexp$Frequency
+    } else {
+      Cues <- myexp$Outcomes
+      Outcomes <- myexp$Cues
+      Frequency <- myexp$Frequency
+    }
+    
+    mystims = data.frame(Cues, Outcomes, Frequency)
+    i <- sapply(mystims, is.factor)
+    mystims[i] <- lapply(mystims[i], as.character)
+    kable(mystims)
+    
+    return(mystims)
+  
+  }
+```
+
+
+
+```{r Plotting barcharts, include=FALSE}
+#This function plots the equilibrium association weight between a cue/outcome pair as barchart. It calls my_rescorlawagner. 
+
+plot.bar <- function(mystims, saliency, condition){
+  if(condition == "suffix"){
+    print('suffix condition')
+    mybar <- my_rescorlawagner_suffix(mystims, saliency, type_plot = "bar")
+    
+    round(mybar$Equilibriums,2)->mybar$Equilibriums
+  ggbarplot(mybar, "SingleCues", "Equilibriums",
+          fill = "SingleCues",
+          label = TRUE) +
+      scale_fill_manual(values = c("red" = "#e41a1c", "blue" = "#377eb8",
+                                    "d1" = "#4daf4a", "d2" = "#999999", 
+                                    "d3" = "#ef8a62", "d4" = "#998ec3")) +
+      ylim((min(mybar$Equilibriums)-.1),1) +
+      labs(x="", y="Associative strength")+
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "none"); 
+    
+  } else {
+    print('prefix condition') 
+    mybar <- my_rescorlawagner_prefix(mystims, saliency, type_plot = "bar")
+    round(mybar$Equilibriums,2)->mybar$Equilibriums
+  ggbarplot(mybar, "unique.CueOutcome.", "Equilibriums",
+          fill = "unique.CueOutcome.",
+          label = TRUE) +
+      scale_fill_manual(values = c("red" = "#e41a1c", "blue" = "#377eb8",
+                                    "d1" = "#4daf4a", "d2" = "#999999", 
+                                    "d3" = "#ef8a62", "d4" = "#998ec3")) +
+      ylim((min(mybar$Equilibriums)-.1),1) +
+      labs(x="", y="Associative strength")+
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "none"); 
+    
+  }
+  
+  
+}
+
+
+
+```
+
+
+
+```{r Plotting lineplots, include=FALSE}
+#This function plots association weights between a cue/outcome pair over time (trials). It calls my_rescorlawagner_suffix/prefix. 
+
+col_pal = c("red3", "orange1", "forestgreen", "purple3", "blue", "gold", "sienna4", "darkgrey", "cyan4")
+
+plot_line <- function(mystims, saliency, condition){
+  if(condition == "suffix"){
+    print('suffix condition')
+    myline = my_rescorlawagner_suffix(mystims, saliency, type_plot = "line")
+    }else{
+      print('prefix condition');
+      myline = my_rescorlawagner_prefix(mystims, saliency, type_plot = "line")
+    }
+
+    p <- ggplot(data=myline, aes(x = Time, y = Weight, colour = CueOutcome)) + 
+      geom_line() + 
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) + 
+      #ylim(-0.4,1) +
+      labs(x="Trial", y="Associative strength", colour="Feature") +
+      scale_color_manual(values = c("red" = "#e41a1c", "blue" = "#377eb8",
+                                    "d1" = "#4daf4a", "d2" = "#999999", 
+                                    "d3" = "#ef8a62", "d4" = "#998ec3"));
+    return(p)
+}
+```
+
+# 1) Strand 1 - experiment 2
+Masa created a dataframe containing 8 set of stimuli for the affix 'ge' and 'ma' with the following frequencies of occurrence.
+```{r load dataset}
+myexp = read.csv(paste(localGitDir,"inputs/exponential_s1_1.csv", sep = ''));
+summary(myexp);
+```
+
+Crucially, in this experiment we have type by token manipulation. LF-type items are presented high-frequently (2049 and 1025) compared to HF-type of items (17, 33, 65, 129, 257, 513). The distribution follows a costant exponential decay of .693. I am going to recreate the same distribution with our formula.
+
+```{r create distribution, align = "center", fig.height = 5, fig.width = 16}
+k <- c(0:7)
+a = 2049
+b = .693
+
+expDistribution <- NULL
+for (i in 1:length(k)){
+  expDistribution[i]<- exponentialFun(k[i], a, b)
+}
+expDistribution;
+
+ma<-data.frame(Cues = myexp$Cues[9:16], 
+               Frequency = sort(expDistribution, decreasing =  F),
+               Outcomes = 'ma')
+
+ge<-data.frame(Cues = myexp$Cues[1:8], 
+               Frequency = sort(expDistribution, decreasing =  F),
+               Outcomes = 'ge')
+
+rbind(ma, ge)-> strand1expe2; rm(ge, ma, k, a, b, expDistribution); summary(strand1expe2);
+
+area.color <- c("blue", "blue", "red", "red", "red", "red", "red", "red");
+mp<-ggbarplot(strand1expe2[strand1expe2$Outcomes=='ma',], 
+          x = "Cues", y = "Frequency", 
+          fill = area.color,
+          order = c("blue_d4_l2", "blue_d4_l1", 
+                    "red_d3_k6", "red_d3_k5", 
+                    "red_d3_k4", "red_d3_k3", 
+                    "red_d3_k2", "red_d3_k1"));
+
+area.color <- c("red", "red", "blue", "blue", "blue", "blue", "blue", "blue");
+gp<-ggbarplot(strand1expe2[strand1expe2$Outcomes=='ge',], 
+          x = "Cues", y = "Frequency",  
+          fill = area.color,
+          order = c("red_d2_j2", "red_d2_j1", 
+                    "blue_d1_i6", "blue_d1_i5", 
+                    "blue_d1_i4", "blue_d1_i3", 
+                    "blue_d1_i2", "blue_d1_i1"));
+
+ggarrange(mp, gp, 
+          labels = c("category ma", "category ge"), 
+          ncol=2, nrow=1,
+          hjust = -1,
+          legend="right");
+rm(mp,gp);
+
+```
+
+
+We have different distributions of cues within the stimuli that make them more or less predictive of the affix outcome.
+Specifically, for Category 1 ("ma"):
+
+  +	6 items are red and have discriminating feature 3 (d3) [75%] 
+  +	2 items are blue and have discriminating feature 4 (d4) [25%]
+
+While for Category 2 ("ge"):
+  
+  + 6 items are blue and have discriminating feature 1 (d1) [75%]
+  + 2 items are red and have discriminating feature 2 (d2) [25%]
+  
+So within the same category ("ma" versus "ge") we can group other two subcategories:
+
+category "ma":
+
+  + items blue + d4 
+  + items red + d3
+  
+category "ge":
+
+  + items blue + d1
+  + items red + d2
+
+Certainly, in order to discriminate the objects a learner needs to discard the ambigous information, that is, the one that is not 100% associated to the right outcome. We can see that color indeed is not predictive of the categories ma and ge. We don't have a strong prediction instead on the role of type by token frequency manipulation.
+
+
+## Simulation of the Suffix condition - learning over time of the category 1 ("ma"):
+Now we can simulate how each cues is predictive of the category affix 'ma' in the case of the suffix.
+In other words, we want to see whether the model is able to predict the right affix/outcome, when provided the cues before the labels. Therefore, object labels will serve as cues and affixes will serve as outcomes:
+```{r }
+traceOutcomes=c("ma"); 
+traceCues=c("red", "blue", "d1", "d2", "d3", "d4");
+
+mystims_suffix <- prepare_data(strand1expe2, condition = "suffix");
+
+sal <- rep(0.1, length(traceCues));
+exp_grant_suffix <- plot_line(mystims_suffix, saliency = sal, condition = "suffix");
+exp_grant_suffix;
+```
+```{r, include=FALSE}
+exp_grant_suffixbar <- plot.bar(mystims_suffix, saliency = sal, condition = "suffix") ;
+
+```
+
+
+
+In the suffix condition, that is, when the cues are presented before the affix, the model is able to discriminate correctly the category "ma" for the two distinctive features, d4 and d3, while ignoring the colors which are not as predictive as the features.
+
+Note that: 
+
+  + d3 has higher associative strength than d4 and that is expected due to the difference in frequency of occurrence (75% vs 25%).
+  + d1 and d2 are negatively weighted, that is also expected because representative of the other category ("ge"), this means that the model has learned to negatively associate these two features to the category "ma".
+
+
+## Simulation of the Prefix condition - learning over time of the category 1 ("ma")
+In the prefix condition, the affix/outcome/label comes before its cues. We will therefore consider object labels as outcomes and affixes as cues.
+```{r }
+traceCues=c("ma");
+traceOutcomes=c("red", "blue", "d1", "d2", "d3", "d4");
+
+mystims_prefix <- prepare_data(strand1expe2, condition = "prefix");
+
+sal <- rep(0.1, length(traceOutcomes));
+exp_grant_prefix <- plot_line(mystims_prefix, saliency = sal, condition = "prefix") ;
+exp_grant_prefix;
+```
+
+```{r, include=FALSE}
+exp_grant_prefixbar <- plot.bar(mystims_prefix, saliency = sal, condition = "prefix") ;
+
+```
+
+
+In the prefix condition, that is, when the affix/outcome "ma" is presented before its discriminative cues, the type of learning is completely different. The model learns single instances (blue + d4, subcategory 1, and red + d3, subcategory 2).
+
+However, note that:
+
+  + blue + d4 are presented only 25% of the trials, instead here they show 75% of associative weight - that is because LF-type are presented very frequently compared to HF-type
+
+  + the model never learns that there are cues predictive of the other category "ge" (d1 and d2) that is evident because the associative strength never becomes negative for these two cues (they show a stationary value of 0). That is possible because in this learning there are never instances in which the label "ma" is wrongly associated with one of these cues, this is due to the type of learning: Seeing always first the label doesn't allow the model to evaluate all the cues and weight each one of the based on the outcome.
+
+Let's compare the two different type of learnings:
+```{r , align = "center", fig.height = 7, fig.width = 10}
+ggarrange(exp_grant_suffix, exp_grant_suffixbar,
+          exp_grant_prefix, exp_grant_prefixbar,
+          labels = c("Suffix", " ", "Prefix", " "), ncol=2, nrow=2,
+          legend="right",
+          hjust = -1,
+          common.legend = TRUE); 
+```
+
+# 2) Strand 1 - Experiment 3
+In this third experiment the HF-type of LF-type of manipulation is reversed. That is, the two HF items now have the highest frequency (2049, 1025, 513, 257, 129 and 65 trials), and the LF items are less frequent (33 and 17 trials).
+
+```{r, align = "center", fig.height = 5, fig.width = 16}
+k <- c(0:7)
+a = 2049
+b = .693
+
+expDistribution <- NULL
+for (i in 1:length(k)){
+  expDistribution[i]<- exponentialFun(k[i], a, b)
+}
+expDistribution;
+
+ma<-data.frame(Cues = myexp$Cues[9:16], 
+               Frequency = sort(expDistribution, decreasing =  T),
+               Outcomes = 'ma')
+
+ge<-data.frame(Cues = myexp$Cues[1:8], 
+               Frequency = sort(expDistribution, decreasing =  T),
+               Outcomes = 'ge')
+
+rbind(ma, ge)-> strand1expe3; rm(ge, ma, k, a, b, expDistribution); summary(strand1expe3);
+
+area.color <- c("blue", "blue", "red", "red", "red", "red", "red", "red");
+mp<-ggbarplot(strand1expe3[strand1expe3$Outcomes=='ma',], 
+          x = "Cues", y = "Frequency", 
+          fill = area.color,
+          order = c("blue_d4_l2", "blue_d4_l1", 
+                    "red_d3_k6", "red_d3_k5", 
+                    "red_d3_k4", "red_d3_k3", 
+                    "red_d3_k2", "red_d3_k1"));
+
+area.color <- c("red", "red", "blue", "blue", "blue", "blue", "blue", "blue");
+gp<-ggbarplot(strand1expe3[strand1expe3$Outcomes=='ge',], 
+          x = "Cues", y = "Frequency",  
+          fill = area.color,
+          order = c("red_d2_j2", "red_d2_j1", 
+                    "blue_d1_i6", "blue_d1_i5", 
+                    "blue_d1_i4", "blue_d1_i3", 
+                    "blue_d1_i2", "blue_d1_i1"));
+
+ggarrange(mp, gp, 
+          labels = c("category ma", "category ge"), 
+          ncol=2, nrow=1,
+          hjust = -1,
+          legend="right");
+rm(mp,gp);
+
+```
+
+
+
+We have again different distributions of cues within the stimuli that make them more or less predictive of the affix outcome.
+Specifically, for Category 1 ("ma"):
+
+  +	6 items are red and have discriminating feature 3 (d3) [75%] 
+  +	2 items are blue and have discriminating feature 4 (d4) [25%]
+  
+While for category 2 ("ge"):
+
+  + 6 items are blue and have discriminating feature 1 (d1) [75%]
+  + 2 items are red and have discriminating feature 2 (d2) [25%]
+  
+
+
+## Simulation of the Suffix condition - learning over time of the category 1 ("ma"):
+```{r }
+traceOutcomes=c("ma"); 
+traceCues=c("red", "blue", "d1", "d2", "d3", "d4");
+
+mystims_suffix <- prepare_data(strand1expe3, condition = "suffix");
+
+sal <- rep(0.1, length(traceCues));
+exp_grant_suffix <- plot_line(mystims_suffix, saliency = sal, condition = "suffix");
+exp_grant_suffix;
+
+
+```
+
+```{r, include=FALSE}
+exp_grant_suffixbar <- plot.bar(mystims_suffix, saliency = sal, condition = "suffix") ;
+
+```
+
+
+In the suffix condition, that is, when the cues preceed the label/affix, when the LF-type of cues is displayed very few times, the models is able again to predict that d3 (high frequent predictive cue) is correct, however is unable to weight down the color red, that is not as predictive as the other critical feature, d4. That is because d4 is displayed very few times. 
+
+Note that:
+
+  + the model is able anyway to weight negatively the features that are predictive of the other affix.
+  
+## Simulation of the Prefix condition - learning over time of the category 1 ("ma"):
+
+```{r }
+traceCues=c("ma");
+traceOutcomes=c("red", "blue", "d1", "d2", "d3", "d4");
+
+mystims_prefix <- prepare_data(strand1expe3, condition = "prefix");
+
+sal <- rep(0.1, length(traceOutcomes));
+exp_grant_prefix <- plot_line(mystims_prefix, saliency = sal, condition = "prefix") ;
+exp_grant_prefix;
+
+```
+
+
+```{r, include=FALSE}
+exp_grant_prefixbar <- plot.bar(mystims_prefix, saliency = sal, condition = "prefix") ;
+
+```
+
+In the prefix type of learning, that is, label comes before cues, the model is able to learn only one set of subgroup, while the other apparently is never learned because is presented very few times.
+
+```{r, align = "center", fig.height = 7, fig.width = 10}
+ggarrange(exp_grant_suffix, exp_grant_suffixbar,
+          exp_grant_prefix, exp_grant_prefixbar,
+          labels = c("Suffix", " ",
+                     "Prefix", " "), ncol=2, nrow=2,
+          legend="right",
+          hjust = -1,
+          common.legend = TRUE); 
+```
+
+# 3) Modeling with beta estimated from a real exponential distribution
+
+Load an existing dataset - I have downloaded the COCA English dataset used by Michael *(https://www.wordfrequency.info/free.asp?s=y)* and I have focused on kinship terms.
+
+```{r}
+coca<-read.csv("C:/Users/eva_v/OneDrive/Documenti/UCL/For_sharing_EVA/Modelling/cocaKinshipFrequency.csv", header=T);
+coca$Word <- gsub("[[:space:]]", "", coca$Word); #remove white spaces
+```
+
+I select only 8 of them in order to have the same k as proposed in the grant:
+```{r}
+kinship <- c('mother', 'father', 'son', 
+             'brother', 'daughter', 'cousin', 
+             'grandfather', 'uncle');
+
+target<- subset(coca, coca$Word %in% kinship);
+target <- droplevels(target);
+```
+
+Let's plot their raw frequency distribution:
+```{r}
+p<-barplot(sort(target$Frequency, decreasing = TRUE),
+           ylab = 'Coca frequency',
+           xlba = 'kinship terms')
+text(p, sort(target$Frequency, decreasing = TRUE), 
+     labels=kinship, 
+     xpd=NA, 
+     pos = 3) #
+rm(p)
+```
+
+Let's find our exponential decay for this distribution. 
+I'm following Michael advice and using a fit.
+```{r}
+k <- c(0:7) #our steps
+exponential.model <- lm(log(target$Frequency)~ k);
+
+```
+
+Then I exctract alpha and beta from the model:
+```{r}
+alpha <- exp(coef(exponential.model)[1]);
+beta <- coef(exponential.model)[2];
+```
+
+Plot of the distribution with the beta obtained.
+```{r}
+k <- c(0:7);
+a = 2049;
+b = -beta; #beta is negative, just switching sign for simplicity
+
+expDistribution <- NULL
+for (i in 1:length(k)){
+  expDistribution[i]<- exponentialFun(k[i], a, b)
+}
+expDistribution;
+
+barplot(sort(expDistribution, decreasing = TRUE));
+```
+
+```{r, align = "center", fig.height = 5, fig.width = 16}
+ma<-data.frame(Cues = myexp$Cues[9:16], 
+               Frequency = sort(expDistribution, decreasing =  T),
+               Outcomes = 'ma')
+
+ge<-data.frame(Cues = myexp$Cues[1:8], 
+               Frequency = sort(expDistribution, decreasing =  T),
+               Outcomes = 'ge')
+
+rbind(ma, ge)-> strand1expereal; rm(ge, ma, k, a, b, expDistribution); summary(strand1expereal);
+
+area.color <- c("blue", "blue", "red", "red", "red", "red", "red", "red");
+mp<-ggbarplot(strand1expereal[strand1expereal$Outcomes=='ma',], 
+          x = "Cues", y = "Frequency", 
+          fill = area.color,
+          order = c("blue_d4_l2", "blue_d4_l1", 
+                    "red_d3_k6", "red_d3_k5", 
+                    "red_d3_k4", "red_d3_k3", 
+                    "red_d3_k2", "red_d3_k1"));
+
+area.color <- c("red", "red", "blue", "blue", "blue", "blue", "blue", "blue");
+gp<-ggbarplot(strand1expereal[strand1expereal$Outcomes=='ge',], 
+          x = "Cues", y = "Frequency",  
+          fill = area.color,
+          order = c("red_d2_j2", "red_d2_j1", 
+                    "blue_d1_i6", "blue_d1_i5", 
+                    "blue_d1_i4", "blue_d1_i3", 
+                    "blue_d1_i2", "blue_d1_i1"));
+
+ggarrange(mp, gp, 
+          labels = c("category ma", "category ge"), 
+          ncol=2, nrow=1,
+          hjust = -1,
+          legend="right");
+rm(mp,gp);
+```
+
+
+
+```{r}
+traceOutcomes=c("ma"); 
+traceCues=c("red", "blue", "d1", "d2", "d3", "d4");
+
+mystims_suffix <- prepare_data(strand1expereal, condition = "suffix");
+
+sal <- rep(0.1, length(traceCues));
+exp_grant_suffix <- plot_line(mystims_suffix, saliency = sal, condition = "suffix");
+```
+
+```{r, include=FALSE}
+exp_grant_suffixbar <- plot.bar(mystims_suffix, saliency = sal, condition = "suffix") ;
+
+```
+
+```{r }
+traceCues=c("ma");
+traceOutcomes=c("red", "blue", "d1", "d2", "d3", "d4");
+
+mystims_prefix <- prepare_data(strand1expereal, condition = "prefix");
+
+sal <- rep(0.1, length(traceOutcomes));
+exp_grant_prefix <- plot_line(mystims_prefix, saliency = sal, condition = "prefix") ;
+exp_grant_prefixbar <- plot.bar(mystims_prefix, saliency = sal, condition = "prefix") ;
+
+```
+
+```{r, align = "center", fig.height = 7, fig.width = 10}
+ggarrange(exp_grant_suffix, exp_grant_suffixbar,
+          exp_grant_prefix, exp_grant_prefixbar,
+          labels = c("Suffix", " ",
+                     "Prefix", " "), ncol=2, nrow=2,
+          legend="right",
+          hjust = -1,
+          common.legend = TRUE); 
+```
