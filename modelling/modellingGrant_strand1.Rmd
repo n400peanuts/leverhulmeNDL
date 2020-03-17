@@ -7,7 +7,7 @@ output:
     df_print: paged
   pdf_document:
     toc: yes
-    toc_depth: '4'
+    toc_depth: '4' 
 ---
 
 This Notebook recreates the simulations reported in the grant (strand 1 experiment 2 and 3). Simulations were originally made by *Masa Vujovic*.
@@ -314,7 +314,7 @@ plot_line <- function(mystims, saliency, condition){
 # 1) Strand 1 - experiment 2
 Masa created a dataframe containing 8 set of stimuli for the affix 'ge' and 'ma' with the following frequencies of occurrence.
 ```{r load dataset}
-myexp = read.csv(paste(localGitDir,"inputs/exponential_s1_1.csv", sep = ''));
+myexp = read.csv(paste(localGitDir,"input/exponential_s1_1.csv", sep = ''));
 summary(myexp);
 ```
 
@@ -589,7 +589,7 @@ ggarrange(exp_grant_suffix, exp_grant_suffixbar,
 Load an existing dataset - I have downloaded the COCA English dataset used by Michael *(https://www.wordfrequency.info/free.asp?s=y)* and I have focused on kinship terms.
 
 ```{r}
-coca<-read.csv("C:/Users/eva_v/OneDrive/Documenti/UCL/For_sharing_EVA/Modelling/cocaKinshipFrequency.csv", header=T);
+coca<-read.csv(paste(localGitDir,"input/cocaKinshipFrequency.csv", sep = ''), header=T);
 coca$Word <- gsub("[[:space:]]", "", coca$Word); #remove white spaces
 ```
 
