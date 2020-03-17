@@ -1,6 +1,5 @@
 # Overview
-This repo contains data, analysis and modelling scripts of the Leverhulme project: 
-####Language learning as expectation: a discriminative perspective ####
+This repo contains data, analysis and modelling scripts of the Leverhulme project: #### Language learning as expectation: a discriminative perspective ####
 
 # Projects description
 This repo contains: 
