@@ -1,4 +1,4 @@
-#Replication study
+# Replication study
 
 #### 1)	Main question addressed in this study: does the order by which cues are presented affect learning? ####
 
@@ -28,7 +28,7 @@ Predictions are guided by modelling and previous experiments described in Ramsca
 
 We are going to introduce a task independent to our main hypothesis test. This task is going to be a nonverbal counting task where participants will be presented with a random number of white dots on a black background for around 150ms, and asked to estimate and report the number of dots in a given time (around 3s). This task is going to be presented to participants on a pseudo-random basis for a maximum of 4 times while performing the core experiment. We will record reaction times and their magnitude estimation from this task however we will exclude participants on the basis of how many timeouts they had during the whole experiment, fixing a max to 2. This will guarantee us that participants payed attention to the experiment at least half of the time.
 
-#### 5)	Method and materials ####
+#### 5)	Method and materials #### 
 
 Stimuli
 
@@ -36,3 +36,5 @@ Three experimental ‘‘fribble’’ categories are constructed in a way that 
 categories used in the simulations (see simulation on github https://github.com/n400peanuts/leverhulmeNDL). Each category is comprised of two subcategories (highFreq and lowFreq) both clustered around a high-saliency nondiscriminating feature, that is the central body shape, and a set of low-saliency discriminating features attached to it. The main idea is that learners in order to discriminate unambiguously across categories have to rely on the discriminating features more than the central body shape. 
 
 For example, in figure 1, category 1 has the subcategory 1.1 clustered around the red barrel-like shape, while subcategory 1.2 is clustered around the blue jar-like shape. Each discriminating feature circled in red attached to the central body is uniquely assigned to the specific subcategory, so that no discriminating feature was shared within and across categories and subcategories. On the other hand, the non-discriminating feature, i.e., the central body, is shared across categories in the following way: body shapes belonging to the lowFreq subcategory exemplars in one category are used to build highFreq subcategory exemplars in another category. 
+
+![Stimuli expe1](https://github.com/n400peanuts/leverhulmeNDL/tree/master/exp1/stimuli/stimuliReplication.png)
