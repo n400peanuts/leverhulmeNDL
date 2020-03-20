@@ -37,4 +37,4 @@ categories used in the simulations (see simulation on github https://github.com/
 
 For example, in figure 1, category 1 has the subcategory 1.1 clustered around the red barrel-like shape, while subcategory 1.2 is clustered around the blue jar-like shape. Each discriminating feature circled in red attached to the central body is uniquely assigned to the specific subcategory, so that no discriminating feature was shared within and across categories and subcategories. On the other hand, the non-discriminating feature, i.e., the central body, is shared across categories in the following way: body shapes belonging to the lowFreq subcategory exemplars in one category are used to build highFreq subcategory exemplars in another category. 
 
-![Stimuli expe1](https://github.com/n400peanuts/leverhulmeNDL/tree/master/exp1/stimuli/stimuliReplication.png)
+![Stimuli expe1](stimuli/stimuliReplication.png)
