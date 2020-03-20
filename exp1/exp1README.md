@@ -8,6 +8,7 @@ Learning is all about discrimination via cues competition, and the order by whic
 This is a 2x2 between design where learning (LF,FL) and frequency (highFreq, lowFreq) are manipulated in the following way.
 
 Independent variables: 
+
 Learning:
 -	Label-to-Feature (LF) learning, i.e., learning to predict the objects from the labels
 -	Feature-to-Label (FL) learning, i.e., learning to predict the labels from the objects
@@ -17,6 +18,7 @@ Frequency:
 -	Low frequency exemplars (lowFreq): 25% of exemplars are drawn from another subcategory, therefore will have a different high salient feature
 
 Dependent variable: 
+
 Accuracy on a speeded two-alternative forced choice test (2AFC) on:
 -	Previous learned stimuli/labels (explicit memory) and 
 -	Novel unseen stimuli (generalization).
@@ -37,6 +39,21 @@ Stimuli
 Three experimental ‘‘fribble’’ categories are constructed in a way that match the
 categories used in the simulations (see simulation on github https://github.com/n400peanuts/leverhulmeNDL). Each category is comprised of two subcategories (highFreq and lowFreq) both clustered around a high-saliency nondiscriminating feature, that is the central body shape, and a set of low-saliency discriminating features attached to it. The main idea is that learners in order to discriminate unambiguously across categories have to rely on the discriminating features more than the central body shape. 
 
-For example, in figure 1, category 1 has the subcategory 1.1 clustered around the red barrel-like shape, while subcategory 1.2 is clustered around the blue jar-like shape. Each discriminating feature circled in red attached to the central body is uniquely assigned to the specific subcategory, so that no discriminating feature was shared within and across categories and subcategories. On the other hand, the non-discriminating feature, i.e., the central body, is shared across categories in the following way: body shapes belonging to the lowFreq subcategory exemplars in one category are used to build highFreq subcategory exemplars in another category. 
+For example, in figure 1, category 1 has the subcategory 1.1 clustered around the red barrel-like shape, while subcategory 1.2 is clustered around the blue jar-like shape. 
+Each discriminating feature circled in red attached to the central body is uniquely assigned to the specific subcategory, so that no discriminating feature was shared within and across categories and subcategories. On the other hand, the non-discriminating feature, i.e., the central body, is shared across categories in the following way: body shapes belonging to the lowFreq subcategory exemplars in one category are used to build highFreq subcategory exemplars in another category. 
+
+A set of 48 fribbles are selected in total and divided in two lists. 
+One list is trained and the other is untrained. 
+The assignment of these lists to training condition is going to be counterbalanced across participants. 
+There are 8 fribble exemplars per category (6 highFreq, 2 lowFreq) for a total of 24 fribbles per set.
+The core set of stimuli is provided in X (to come).
 
 ![Stimuli expe1](stimuli/stimuliReplication.png)
+
+Learning routines
+
+The fribbles are going to be learned with their paired labels in two different paradigms. 
+One is the Label-to-Feature (LF) learning where participants hear the label first and then see the object, and the other is Feature-to-Label (FL) learning where object is displayed before the label is pronounced. 
+The exact timeline for the presentation of each novel fribble for the two learning routines is illustrated in Figure 2 below.
+
+![Timeline expe1](stimuli/timelineLearning.png)
