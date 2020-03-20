@@ -6,6 +6,7 @@ Learning is all about discrimination via cues competition, and the order by whic
 
 #### 2)	Description of the key independent and dependent variable(s), specifying how they will be measured. ####
 This is a 2x2 between design where learning (LF,FL) and frequency (highFreq, lowFreq) are manipulated in the following way.
+
 Independent variables: 
 Learning:
 -	Label-to-Feature (LF) learning, i.e., learning to predict the objects from the labels
@@ -14,6 +15,7 @@ Learning:
 Frequency:
 -	High frequency exemplars (highFreq): 75% of exemplars are made of a high salient feature specific of that subcategory
 -	Low frequency exemplars (lowFreq): 25% of exemplars are drawn from another subcategory, therefore will have a different high salient feature
+
 Dependent variable: 
 Accuracy on a speeded two-alternative forced choice test (2AFC) on:
 -	Previous learned stimuli/labels (explicit memory) and 
