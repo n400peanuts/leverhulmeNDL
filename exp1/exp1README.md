@@ -48,7 +48,7 @@ The assignment of these lists to training condition is going to be counterbalanc
 There are 8 fribble exemplars per category (6 highFreq, 2 lowFreq) for a total of 24 fribbles per set.
 The core set of stimuli is provided in X (to come).
 
-![Stimuli expe1](stimuli/stimuliReplication.png)
+![Stimuli expe1](stimuli/learning/stimuliReplication.png)
 
 Learning routines
 
@@ -59,11 +59,13 @@ Stimuli presentation at 175ms is chosen to minimize the participants possibility
 Exemplars will be interspersed in a semi-randomized order so that the categories were presented in a nonpredictable sequence.
 Training will consist in two identical blocks, with a short rest between the blocks.
 
-![Timeline expe1](stimuli/timelineLearning.png)
+![Timeline expe1](stimuli/learning/timelineLearning.png)
 
 
 Testing 
 
 Learning and generalization will be assessed through three tasks, each tapping a different aspect of item-learning and the learning of discriminating features.
 
-*Item knowledge*. We will test participants’ knowledge of the association between learned items and labels using a two-alternative forced choice test (2AFC) in which participants see two previously trained items and hear one label. Their task is to assign the label to the correct fribble. The foil item was a different trained item from the same category.
+*Item knowledge*. We will test participants’ knowledge of the association between learned items and labels using a two-alternative forced choice test (2AFC) in which participants see two previously trained items and hear one label. 
+Their task is to assign the label to the correct fribble. 
+The foil item is a different trained item from the same category.
