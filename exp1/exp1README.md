@@ -15,7 +15,7 @@ Learning:
 
 Frequency:
 -	High frequency exemplars (highFreq): 75% of exemplars are made of a high salient feature specific of that subcategory
--	Low frequency exemplars (lowFreq): 25% of exemplars are drawn from another subcategory, therefore will have a different high salient feature
+-	Low frequency exemplars (lowFreq): 25% of exemplars are drawn from another subcategory and have a different salient feature
 
 Dependent variable: 
 
@@ -55,5 +55,15 @@ Learning routines
 The fribbles are going to be learned with their paired labels in two different paradigms. 
 One is the Label-to-Feature (LF) learning where participants hear the label first and then see the object, and the other is Feature-to-Label (FL) learning where object is displayed before the label is pronounced. 
 The exact timeline for the presentation of each novel fribble for the two learning routines is illustrated in Figure 2 below.
+Stimuli presentation at 175ms is chosen to minimize the participants possibility to strategize. 
+Exemplars will be interspersed in a semi-randomized order so that the categories were presented in a nonpredictable sequence.
+Training will consist in two identical blocks, with a short rest between the blocks.
 
 ![Timeline expe1](stimuli/timelineLearning.png)
+
+
+Testing 
+
+Learning and generalization will be assessed through three tasks, each tapping a different aspect of item-learning and the learning of discriminating features.
+
+*Item knowledge*. We will test participants’ knowledge of the association between learned items and labels using a two-alternative forced choice test (2AFC) in which participants see two previously trained items and hear one label. Their task is to assign the label to the correct fribble. The foil item was a different trained item from the same category.
