@@ -17,6 +17,9 @@ Frequency:
 -	High frequency exemplars (highFreq): 75% of exemplars are made of a high salient feature specific of that subcategory
 -	Low frequency exemplars (lowFreq): 25% of exemplars are drawn from another subcategory and have a different salient feature
 
+[comment]
+
+
 Dependent variable: 
 
 Accuracy on a speeded two-alternative forced choice test (2AFC) on:
