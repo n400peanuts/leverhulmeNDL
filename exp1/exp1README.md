@@ -59,7 +59,7 @@ Stimuli presentation at 175ms is chosen to minimize the participants possibility
 Exemplars will be interspersed in a semi-randomized order so that the categories were presented in a nonpredictable sequence.
 Training will consist in two identical blocks, with a short rest between the blocks.
 
-![Timeline expe1](stimuli/learning/timelineLearning.png)
+![Timeline expe1](script/learningRoutines/timelineLearning.png)
 
 
 Testing 
