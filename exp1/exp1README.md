@@ -17,7 +17,6 @@ Frequency:
 -	High frequency exemplars (highFreq): 75% of exemplars are made of a high salient feature specific of that subcategory
 -	Low frequency exemplars (lowFreq): 25% of exemplars are drawn from another subcategory and have a different salient feature
 
-
 Dependent variable: 
 
 Accuracy on a speeded two-alternative forced choice test (2AFC) on:
@@ -78,7 +77,7 @@ Control exemplars are unrelated and unseen objects. Participants are instructed 
 Each high frequency subcategory has 6 exemplars per category (6 x 4, three experimental and one control), while low frequency subcategory has 2 exemplars per category (2 x 4, three experimental and one control). 
 Each subcategory (high/low frequency) will be tested X times each (I’m debugging Masa’s experiment as I can't find this info in her thesis, my fault probably).
 
-![Stimuli expe1](stimuli/testing/generalization.png)
+![Stimuli expe1](script/testing/generalization.png)
 
 The final task is a *Contingency judgement task* (5 min). 
 The aim of this test is to probe participants explicit knowledge of the cue-outcome association. 
@@ -92,4 +91,4 @@ In addition, 8 visual foils will be displayed only once. These are novel objects
 A random label will be matched to the foils. In total, there will be  54 experimental trials and 4 practice trials.
 Practice trials will be made of 2 known words (e.g., house, cat) and 2 uknown words (e.g., puly, fret) associated to two images of a house and a cat.
 
-![Stimuli expe1](stimuli/testing/contingencyJudgement.png)
+![Stimuli expe1](script/testing/contingencyJudgement.png)
