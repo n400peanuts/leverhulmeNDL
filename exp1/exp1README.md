@@ -85,7 +85,8 @@ Each subcategory (high/low frequency) will be tested X times each (I’m debuggi
 
 ![Stimuli expe1](script/testing/generalization.png)
 
-The final task is a *Contingency judgement task* (5 min). 
+The final task is a *Contingency judgement task* (5 min). This task is inspired by Kopp and Wolff, 2000 *Biological Psychology* where authors demonstrated that event-related potentials in a human contingency task
+indicate that learning is error-driven, i.e., resulting from cue competition.
 The aim of this test is to probe participants explicit knowledge of the cue-outcome association. 
 Subjects are presented with all trained fribbles presented one by one along with a label and are asked to estimate the likeliness that the fribble presented is associated to the name they hear. 
 Instructions: “Please express your judgement of the likeliness of the association between the fribble and the name you hear. 
