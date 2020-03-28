@@ -19,9 +19,11 @@ Frequency:
 
 Dependent variable: 
 
-Accuracy on a speeded two-alternative forced choice test (2AFC) on:
--	Previous learned stimuli/labels (explicit memory) and 
+Accuracy on a speeded four-alternative forced choice test (2AFC) on:
 -	Novel unseen stimuli (generalization).
+
+Contingency judgement ratings (cue-outcome association estimation) on:
+-	Trained stimuli and labels
 
 #### 3)	Hypothesis: ####
 Predictions are guided by modelling and previous experiments described in Ramscar 2010 study and Masa’s 4a experiments. We predict a main effect of training and exemplars’ frequency respectively, and a training by frequency interaction.
