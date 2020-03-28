@@ -25,8 +25,8 @@ Accuracy on a speeded two-alternative forced choice test (2AFC) on:
 
 #### 3)	Hypothesis: ####
 Predictions are guided by modelling and previous experiments described in Ramscar 2010 study and Masa’s 4a experiments. We predict a main effect of training and exemplars’ frequency respectively, and a training by frequency interaction.
--	H1: learners assigned to the LF training will display higher accuracy for highFreq compared to lowFreq items, while learners of the FL training will display no differences in accuracy between highFreq and lowFreq items.
--	H0: no difference between trainings, and no difference between high and low frequency exemplars
+-	H1: difference between trainings in the low frequency condition, with LF learners showing poorer generalization than FL. 
+-	H0: no difference between high and low frequency condition
 
 #### 4)	Positive controls or quality checks  that will confirm that the obtained results are able to provide a fair test of the stated hypothesis. ####
 
