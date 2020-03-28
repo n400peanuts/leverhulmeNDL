@@ -80,7 +80,7 @@ The first task is a *Generalization task* (around 10 min).
 This task is the same as described in Ramscar (2010) paper and it aims at probing the ability of the participants to generalise the cue-outcome association to novel exemplars. 
 This is a speeded four alternative forced-choice task. 
 Half the participants matched an unseen exemplar to the three category labels, and half matched a label to four previously unseen exemplars drawn from each category, plus control exemplars. 
-To limit participants’ ability to learn by contrasting between similar exemplars during testing, testing trials were composed either of all low-frequency or of all high-frequency exemplars plus control exemplars. 
+To limit participants’ ability to learn by contrasting between similar exemplars during testing, testing trials are composed either of all low-frequency or of all high-frequency exemplars plus control exemplars. 
 Control exemplars are unrelated and unseen objects. Participants are instructed to respond as quickly as they could (3500ms timeout). 
 Each high frequency subcategory has 6 exemplars per category (6 x 4, three experimental and one control), while low frequency subcategory has 2 exemplars per category (2 x 4, three experimental and one control). 
 Each subcategory (high/low frequency) will be tested X times each (I’m debugging Masa’s experiment as I can't find this info in her thesis, my fault probably).
