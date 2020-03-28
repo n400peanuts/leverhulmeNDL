@@ -30,7 +30,13 @@ Predictions are guided by modelling and previous experiments described in Ramsca
 
 #### 4)	Positive controls or quality checks  that will confirm that the obtained results are able to provide a fair test of the stated hypothesis. ####
 
-We are going to introduce a task independent to our main hypothesis test. This task is going to be a nonverbal counting task where participants will be presented with a random number of white dots on a black background for around 150ms, and asked to estimate and report the number of dots in a given time (around 3s). This task is going to be presented to participants on a pseudo-random basis for a maximum of 4 times while performing the core experiment. We will record reaction times and their magnitude estimation from this task however we will exclude participants on the basis of how many timeouts they had during the whole experiment, fixing a max to 2. This will guarantee us that participants payed attention to the experiment at least half of the time.
+We are going to introduce a task independent to our main hypothesis test. 
+This task is going to be a nonverbal counting task where participants will be presented with a random number of white dots on a black background for around 150ms, and asked to estimate and report the number of dots in a given time (around 2s). 
+This task is going to be presented to participants on a pseudo-random basis for a maximum of 4 times while performing the core experiment. 
+We will record their magnitude estimation from this task however we will exclude participants on the basis of how many timeouts they had during the whole experiment, fixing a max to 2. 
+This will guarantee us that participants payed attention to the experiment at least half of the time.
+
+![Stimuli expe1](script/testing/magnitudeEstimation.png)
 
 #### 5)	Method and materials #### 
 
