@@ -50,7 +50,7 @@ The core set of stimuli is provided in X (to come).
 
 ![Stimuli expe1](stimuli/learning/stimuliReplication.png)
 
-Learning routines
+Learning routines (10 min)
 
 The fribbles are going to be learned with their paired labels in two different paradigms. 
 One is the Label-to-Feature (LF) learning where participants hear the label first and then see the object, and the other is Feature-to-Label (FL) learning where object is displayed before the label is pronounced. 
@@ -58,14 +58,37 @@ The exact timeline for the presentation of each novel fribble for the two learni
 Stimuli presentation at 175ms is chosen to minimize the participants possibility to strategize. 
 Exemplars will be interspersed in a semi-randomized order so that the categories were presented in a nonpredictable sequence.
 Training will consist in two identical blocks, with a short rest between the blocks.
+Each fribble will be trained 8 times (8 exemplars x 8 times = 64) per category (x3), for a total of 192 training trials (7.5 min).
+Practice trials will be 5 or 10 trials (it depends by participant's confidence) with objects and labels not present during learning.
 
 ![Timeline expe1](script/learningRoutines/timelineLearning.png)
 
 
 Testing 
 
-Learning and generalization will be assessed through three tasks, each tapping a different aspect of item-learning and the learning of discriminating features.
+Learning and generalization will be assessed through two tasks, each tapping a different aspect of item-learning and the learning of discriminating features.
 
-*Item knowledge*. We will test participants’ knowledge of the association between learned items and labels using a two-alternative forced choice test (2AFC) in which participants see two previously trained items and hear one label. 
-Their task is to assign the label to the correct fribble. 
-The foil item is a different trained item from the same category.
+The first task is a *Generalization task* (around 10 min). 
+This task is the same as described in Ramscar (2010) paper and it aims at probing the ability of the participants to generalise the cue-outcome association to novel exemplars. 
+This is a speeded four alternative forced-choice task. 
+Half the participants matched an unseen exemplar to the three category labels, and half matched a label to four previously unseen exemplars drawn from each category, plus control exemplars. 
+To limit participants’ ability to learn by contrasting between similar exemplars during testing, testing trials were composed either of all low-frequency or of all high-frequency exemplars plus control exemplars. 
+Control exemplars are unrelated and unseen objects. Participants are instructed to respond as quickly as they could (3500ms timeout). 
+Each high frequency subcategory has 6 exemplars per category (6 x 4, three experimental and one control), while low frequency subcategory has 2 exemplars per category (2 x 4, three experimental and one control). 
+Each subcategory (high/low frequency) will be tested X times each (I’m debugging Masa’s experiment as I can't find this info in her thesis, my fault probably).
+
+![Stimuli expe1](stimuli/testing/generalization.png)
+
+The final task is a *Contingency judgement task* (5 min). 
+The aim of this test is to probe participants explicit knowledge of the cue-outcome association. 
+Subjects are presented with all trained fribbles presented one by one along with a label and are asked to estimate the likeliness that the fribble presented is associated to the name they hear. 
+Instructions: “Please express your judgement of the likeliness of the association between the fribble and the name you hear. 
+Use a scale from -10 to +10, where +10 is “it’s very likely that this is the fribble’s name” and -10 is “it’s not very likely that this is the fribble’s name”. 
+Zero indicates that the association is not existent therefore you can’t make an estimate. 
+Press next to familiarise with the task.” 
+Stimuli will be all the trained fribbles belonging to the two categories (16) repeated twice for both labels and once with a foil novel label (e.g., gup), for a total of 48 trials.
+In addition, 8 visual foils will be displayed only once. These are novel objects for which participants should always report Zero, i.e., a judgement can't be make.
+A random label will be matched to the foils. In total, there will be  54 experimental trials and 4 practice trials.
+Practice trials will be made of 2 known words (e.g., house, cat) and 2 uknown words (e.g., puly, fret) associated to two images of a house and a cat.
+
+![Stimuli expe1](stimuli/testing/contingencyJudgement.png)
