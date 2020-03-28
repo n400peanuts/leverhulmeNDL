@@ -92,8 +92,10 @@ Instructions: “Please express your judgement of the likeliness of the associat
 Use a scale from -10 to +10, where +10 is “it’s very likely that this is the fribble’s name” and -10 is “it’s not very likely that this is the fribble’s name”. 
 Zero indicates that the association is not existent therefore you can’t make an estimate. 
 Press next to familiarise with the task.” 
-Stimuli will be all the trained fribbles belonging to the three categories (24) repeated once per label (x3), for a total of 72 trials. In addition, 8 unseen object foils will be displayed only onceIn addition, 8 visual foils will be displayed only once. These are novel objects for which participants should always report Zero, i.e., a judgement can't be make.
-A random label will be matched to the foils. . In total, there will be 72 experimental trials and 4 practice trials. Practice trials will be made of 2 known words (e.g., house, cat) and 2 unknown words (e.g., puly, fret) associated to two images of a house and a cat. 
-Practice trials will be made of 2 known words (e.g., house, cat) and 2 uknown words (e.g., puly, fret) associated to two images of a house and a cat.
+Stimuli will be all the trained fribbles belonging to the three categories (24) repeated once per label (x3), for a total of 72 trials. In addition, 8 unseen object foils will be displayed only once. 
+These are novel objects for which participants should always report Zero, i.e., a judgement can't be make.
+A random label will be matched to the foils. 
+In total, there will be 72 experimental trials and 4 practice trials. Practice trials will be made of 2 known words (e.g., house, cat) and 2 unknown words (e.g., puly, fret) associated to two images of a house and a cat. 
+
 
 ![Stimuli expe1](script/testing/contingencyJudgement.png)
