@@ -1,11 +1,12 @@
 # Replication study
 
-#### 1)	Main question addressed in this study: does the order by which cues are presented affect learning? ####
+#### 1)	Main goal of this study: semi-replication + quality check task ####
 
-Learning is all about discrimination via cues competition, and the order by which the information is available to a learner affects learning. Discrimination learning is facilitated when objects predicts labels, but not when labels predict objects. When objects predict labels all possible features are evaluated and compete for relevance, this results in a process of “narrowing down” the most predictive feature that unambiguously predicts a label. On the other hand, when labels predict objects, because of the sparse nature of the features of the labels, the competition process is inhibited.
-
-# LIZ: In terms of this particular study though, I think it is a semi-replication of Ramscar 2010 and Vujovic et al (under reivew) with the goal of finding a control catgegory that we can use to that we can use effectively to filter our poor learners/ those not playing attnetion. In Vujovic, we tried having an "easy" category, but unfortunately it wasn't useful (many who did badly with this still showed good learning on the experimental items and vice versa). We are also making some changes to the number and types of test etc. So the idea of this first experiment is to establish that the paradigm works - i.e. we replicate the key interaction effect found in previous work despite these changes as well as establishing control category.
-
+In this study we aim to replicate Ramscar's 2010 and Jujovic et al., 2019 (under review) with the goal of finding a task
+that we can use to effectively filter those participants that do not play attention. Moreover, we are "polishing" the materials & methods
+by changing some details of the tests, and selecting only the most powerful ones.
+The idea is to establish that the paradigm works - i.e., we replicate the key interaction effect found in previous work
+despite these changes, as well as adding a positive control that confirms that our data are solid.
 
 #### 2)	Description of the key independent and dependent variable(s), specifying how they will be measured. ####
 This is a 2x2 between design where learning (LF,FL) and frequency (highFreq, lowFreq) are manipulated in the following way.
@@ -22,38 +23,37 @@ Frequency:
 
 Dependent variable: 
 
-Accuracy on a speeded four-alternative forced choice test (2AFC) on:
+Accuracy on a speeded four-alternative forced choice test (3AFC) on:
 -	Novel unseen stimuli (generalization).
 
 Contingency judgement ratings (cue-outcome association estimation) on:
 -	Trained stimuli and labels
 
-# LIZ: Add something about the control variable and how we will measure that and look at the realtionship with the experimental measures
-
 #### 3)	Hypothesis: ####
-Predictions are guided by modelling and previous experiments described in Ramscar 2010 study and Masa’s 4a experiments. We predict a main effect of training and exemplars’ frequency respectively, and a training by frequency interaction.
--	H1: difference between trainings in the low frequency condition, with LF learners showing poorer generalization than FL. 
--	H0: no difference between high and low frequency condition
+Predictions are guided by modelling and previous experiments described in Ramscar 2010 study and Masa’s 4a experiments. 
+We predict a training by frequency interaction.
 
-# LIZ: Masa previously framed H1 in terms of a frequency difference for the LF but not the FL group. Is your change here deliberate? 
+-	H1: difference between high and low frequency condition for LF learners but not for FL learners.
+-	H0: no difference between high and low frequency condition
 
 #### 4)	Positive controls or quality checks  that will confirm that the obtained results are able to provide a fair test of the stated hypothesis. ####
 
 We are going to introduce a task independent to our main hypothesis test. 
 
-This task is going to be a nonverbal counting task where participants will be presented with a random number of black dots on a white background for around 150ms, and asked to estimate and report the number of dots in a given time (around 2s). 
+This task is going to be a nonverbal counting task where participants will be presented with a random number of black dots on a white background for 200ms, and asked to estimate and report the number of dots in a given time (around 2s). 
+The choice of the presentation time (200ms) is based on Halberda et al., 2008 paper where authors report this value as sufficient to avoid participants to serially count and perform at ceiling. 
 This task is going to be presented to participants on a pseudo-random basis for a maximum of 4 times while performing the core experiment. 
 We will record their magnitude estimation from this task however we will exclude participants on the basis of how many timeouts they had during the whole experiment, fixing a max to 2. 
 This will guarantee us that participants payed attention to the experiment at least half of the time.
 
 ![Stimuli expe1](script/testing/magnitudeEstimation.png)
 
-# LIZ: I think the goal in this experiment is to find the right threshold for excluding participants, rather than stating ahead of tiem. So we could have this as a possible threshold to test but be flexible. The idea is that then in future we can have a pre-set threhold that we don't change. 
 
 #### 5)	Method and materials #### 
 
 Stimuli
 
+Stimuli are based on Ramscar 2010 paper, but we avoid having the control category because it shown to be non very effective in Vujovic et al., 2019.
 Three experimental ‘‘fribble’’ categories are constructed in a way that match the
 categories used in the simulations (see simulation on github https://github.com/n400peanuts/leverhulmeNDL). Each category is comprised of two subcategories (highFreq and lowFreq) both clustered around a high-saliency nondiscriminating feature, that is the central body shape, and a set of low-saliency discriminating features attached to it. The main idea is that learners in order to discriminate unambiguously across categories have to rely on the discriminating features more than the central body shape. 
 
@@ -68,66 +68,58 @@ The core set of stimuli is provided in X (to come).
 
 ![Stimuli expe1](stimuli/learning/stimuliReplication.png)
 
-# LIZ: How does this compare to the category set up in Ramscar 2010?
 Learning routines (10 min)
 
-The fribbles are going to be learned with their paired labels in two different paradigms. 
+Learning routines are based on Ramscar 2010. The fribbles are going to be learned with their paired labels in two different paradigms. 
 One is the Label-to-Feature (LF) learning where participants hear the label first and then see the object, and the other is Feature-to-Label (FL) learning where object is displayed before the label is pronounced. 
 The exact timeline for the presentation of each novel fribble for the two learning routines is illustrated in Figure 2 below.
 Stimuli presentation at 175ms is chosen to minimize the participants possibility to strategize. 
-
-LIZ: Are these matched to Ramscar 2010?
 
 Exemplars will be interspersed in a semi-randomized order so that the categories were presented in a nonpredictable sequence.
 Training will consist in two identical blocks, with a short rest between the blocks.
 Each fribble will be trained 8 times (8 exemplars x 8 times = 64) per category (x3), for a total of 192 training trials (7.5 min).
 Practice trials will be 5 or 10 trials (it depends by participant's confidence) with objects and labels not present during learning.
 
-# LIZ: Are these matched to Ramscar 2010? If not how does it differ
-
 ![Timeline expe1](script/learningRoutines/timelineLearning.png)
 
 
 Testing 
 
-Learning and generalization will be assessed through two tasks, each tapping a different aspect of item-learning and the learning of discriminating features.
+Learning and generalization will be assessed through two tasks.
 
-The first task is a *Generalization task* (around 10 min). 
+The first task is a *Generalization task* (around 5 min). 
 
-# LIZ: this seems like a very long time for a test- is this matched to previous experiments?
+This task is the same as described in Ramscar (2010) and Vujovic et al., 2019 and it aims at probing the ability of the participants to generalise the cue-outcome association to novel exemplars. 
 
-This task is the same as described in Ramscar (2010) paper and it aims at probing the ability of the participants to generalise the cue-outcome association to novel exemplars. 
-
-This is a speeded four alternative forced-choice task. 
+This is a speeded three alternative forced-choice task. 
 
 Half the participants matched an unseen exemplar to the three category labels, and half matched a label to four previously unseen 
-exemplars drawn from each category, plus control exemplars. 
+exemplars drawn from each category. 
 
 To limit participants’ ability to learn by contrasting between similar exemplars during testing, testing trials are composed either of all low-frequency or of all high-frequency exemplars plus control exemplars. 
 Control exemplars are unrelated and unseen objects. Participants are instructed to respond as quickly as they could (3500ms timeout). 
 Each high frequency subcategory has 6 exemplars per category (6 x 4, three experimental and one control), while low frequency subcategory has 2 exemplars per category (2 x 4, three experimental and one control). 
 Each subcategory (high/low frequency) will be tested X times each (I’m debugging Masa’s experiment as I can't find this info in her thesis, my fault probably).
 
-![Stimuli expe1](script/testing/generalization.png)
-
-# LIZ: (i) Again, how does this compare to Ramscar (2010) and Vujovic tests? (ii) I don't understand why some some participants get 4AFC and some 3AFC. (iii) What is the function of the control category here? (iv) the example you give in the diagram isn't all low frequency (or high frequency) items.
+![Stimuli expe1](script/testing/generalization_HF.png)
+![Stimuli expe1](script/testing/generalization_LF.png)
 
 The final task is a *Contingency judgement task* (5 min). This task is inspired by Kopp and Wolff, 2000 *Biological Psychology* where authors demonstrated that event-related potentials in a human contingency task
 indicate that learning is error-driven, i.e., resulting from cue competition.
-The aim of this test is to probe participants explicit knowledge of the cue-outcome association. 
+The aim of this test is to probe 1. generalization of the cue-outcome association and 2. obtain a measure directly linked to the computational model. 
 Subjects are presented with all trained fribbles presented one by one along with a label and are asked to estimate the likeliness that the fribble presented is associated to the name they hear. 
-Instructions: “Please express your judgement of the likeliness of the association between the fribble and the name you hear. 
+Instructions: Please express your judgement on how *well* do you think this label goes with the fribble presented to you. 
 Use a scale from -10 to +10, where +10 is “it’s very likely that this is the fribble’s name” and -10 is “it’s not very likely that this is the fribble’s name”. 
-Zero indicates that the association is not existent therefore you can’t make an estimate. 
-Press next to familiarise with the task.” 
-Stimuli will be all the trained fribbles belonging to the three categories (24) repeated once per label (x3), for a total of 72 trials. In addition, 8 unseen object foils will be displayed only once. 
-These are novel objects for which participants should always report Zero, i.e., a judgement can't be make.
+Zero indicates “Not sure”. 
+
+Stimuli will be novel fribbles belonging to the three categories (24) repeated once per label (x3), for a total of 72 trials. 
+In addition, 8 unseen object foils will be displayed only once. 
+These are novel objects for which participants should always report Zero, i.e., not sure.
 A random label will be matched to the foils. 
-In total, there will be 72 experimental trials and 4 practice trials. Practice trials will be made of 2 known words (e.g., house, cat) and 2 unknown words (e.g., puly, fret) associated to two images of a house and a cat. 
+In total, there will be 72 experimental trials and 4 practice trials. 
+Practice trials will be made of 2 known words (e.g., house, cat) and 2 unknown words (e.g., puly, fret) associated to two images of a house and a cat. 
+
 
 ![Stimuli expe1](script/testing/contingencyJudgement.png)
 
-# Liz: Need more about the structure- will it be each of the trained pictures with each of the three labels? 
-# I am also a little unclear about the purpose of this test. Previously, in Masa's work we actually found odd results with trained
-# items so its not clear what we actually predict here. Perhaps this test could again be done with untrained items, if there is something it picks up that is different from the previous test.
 
