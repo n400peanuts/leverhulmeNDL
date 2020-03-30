@@ -3,8 +3,7 @@
 #### 1)	Main goal of this study: semi-replication + quality check task ####
 
 In this study we aim to replicate Ramscar's 2010 and Jujovic et al., 2019 (under review) with the goal of finding a task
-that we can use to effectively filter those participants that do not play attention. Moreover, we are "polishing" the materials & methods
-by changing some details of the tests, and selecting only the most powerful ones.
+that we can use to effectively filter those participants that do not pay attention. 
 The idea is to establish that the paradigm works - i.e., we replicate the key interaction effect found in previous work
 despite these changes, as well as adding a positive control that confirms that our data are solid.
 
@@ -24,10 +23,10 @@ Frequency:
 Dependent variable: 
 
 Accuracy on a speeded four-alternative forced choice test (3AFC) on:
--	Novel unseen stimuli (generalization).
+-	Novel unseen stimuli (generalization task I).
 
 Contingency judgement ratings (cue-outcome association estimation) on:
--	Trained stimuli and labels
+-	novel unseen stimuli (generalization task II)
 
 #### 3)	Hypothesis: ####
 Predictions are guided by modelling and previous experiments described in Ramscar 2010 study and Masa’s 4a experiments. 
@@ -53,7 +52,7 @@ This will guarantee us that participants payed attention to the experiment at le
 
 Stimuli
 
-Stimuli are based on Ramscar 2010 paper, but we avoid having the control category because it shown to be non very effective in Vujovic et al., 2019.
+Stimuli are based on Ramscar 2010 paper, but we avoid having the control category because in Vujovic et al., 2019 wasn't effective/informative.
 Three experimental ‘‘fribble’’ categories are constructed in a way that match the
 categories used in the simulations (see simulation on github https://github.com/n400peanuts/leverhulmeNDL). Each category is comprised of two subcategories (highFreq and lowFreq) both clustered around a high-saliency nondiscriminating feature, that is the central body shape, and a set of low-saliency discriminating features attached to it. The main idea is that learners in order to discriminate unambiguously across categories have to rely on the discriminating features more than the central body shape. 
 
