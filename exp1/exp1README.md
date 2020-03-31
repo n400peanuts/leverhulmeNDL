@@ -65,7 +65,7 @@ The assignment of these lists to training condition is going to be counterbalanc
 There are 8 fribble exemplars per category (6 highFreq, 2 lowFreq) for a total of 24 fribbles per set.
 The core set of stimuli is provided in X (to come).
 
-![Stimuli expe1](stimuli/learning/stimuliReplication.png)
+![Stimuli expe1](stimuli/stimuliReplication.png)
 
 Learning routines (10 min)
 
