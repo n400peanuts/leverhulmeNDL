@@ -52,31 +52,32 @@ This will guarantee us that participants payed attention to the experiment at le
 
 Stimuli
 
-Stimuli are based on Ramscar 2010 paper, but we avoid having the control category because in Vujovic et al., 2019 wasn't effective/informative.
+The choice of the fribbles is based on Ramscar 2010 and Vujovic et al., 2019 paper, but we avoid having the control category because in Vujovic et al., 2019 wasn't effective/informative.
 Three experimental ‘‘fribble’’ categories are constructed in a way that match the
 categories used in the simulations (see simulation on github https://github.com/n400peanuts/leverhulmeNDL). Each category is comprised of two subcategories (highFreq and lowFreq) both clustered around a high-saliency nondiscriminating feature, that is the central body shape, and a set of low-saliency discriminating features attached to it. The main idea is that learners in order to discriminate unambiguously across categories have to rely on the discriminating features more than the central body shape. 
 
 For example, in figure 1, category 1 has the subcategory 1.1 clustered around the red barrel-like shape, while subcategory 1.2 is clustered around the blue jar-like shape. 
 Each discriminating feature circled in red attached to the central body is uniquely assigned to the specific subcategory, so that no discriminating feature was shared within and across categories and subcategories. On the other hand, the non-discriminating feature, i.e., the central body, is shared across categories in the following way: body shapes belonging to the lowFreq subcategory exemplars in one category are used to build highFreq subcategory exemplars in another category. 
 
-A set of 48 fribbles are selected in total and divided in two lists. 
-One list is trained and the other is untrained. 
+The number of fribbles is based on Vujovic et al., 2019 paper only, as in Ramscar 2010 there were more exemplars per category. 
+A set of 48 fribbles are selected in total and divided in two lists (A & B).
+One list is trained and the other is untrained.
 The assignment of these lists to training condition is going to be counterbalanced across participants. 
 There are 8 fribble exemplars per category (6 highFreq, 2 lowFreq) for a total of 24 fribbles per set.
 The core set of stimuli is provided in X (to come).
 
 ![Stimuli expe1](stimuli/stimuliReplication.png)
 
-Learning routines (10 min)
+Learning routines (15 min)
 
-Learning routines are based on Ramscar 2010. The fribbles are going to be learned with their paired labels in two different paradigms. 
+The timeline of the Learning routines are based on Ramscar 2010, the number of expositions (16 repetitions) instead on Vujovic et al., 2019. The fribbles are going to be learned with their paired labels in two different paradigms. 
 One is the Label-to-Feature (LF) learning where participants hear the label first and then see the object, and the other is Feature-to-Label (FL) learning where object is displayed before the label is pronounced. 
 The exact timeline for the presentation of each novel fribble for the two learning routines is illustrated in Figure 2 below.
 Stimuli presentation at 175ms is chosen to minimize the participants possibility to strategize. 
 
 Exemplars will be interspersed in a semi-randomized order so that the categories were presented in a nonpredictable sequence.
 Training will consist in two identical blocks, with a short rest between the blocks.
-Each fribble will be trained 8 times (8 exemplars x 8 times = 64) per category (x3), for a total of 192 training trials (7.5 min).
+Each fribble will be trained 8 times (8 exemplars x 16 times = 128) per category (x3), for a total of 384 training trials (15 min).
 Practice trials will be 5 or 10 trials (it depends by participant's confidence) with objects and labels not present during learning.
 
 ![Timeline expe1](script/learningRoutines/timelineLearning.png)
