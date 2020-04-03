@@ -83,26 +83,36 @@ Practice trials will be 5 or 10 trials (it depends by participant's confidence) 
 ![Timeline expe1](script/learningRoutines/timelineLearning.png)
 
 
-Testing 
+Testing (15 min in total)
 
-Learning and generalization will be assessed through two tasks.
+Learning and generalization will be assessed through three tasks.
+These tasks are the same as described in Ramscar (2010) and Vujovic et al., 2019 and it aims at probing the ability of the participants to generalise the cue-outcome association to novel exemplars. 
+However, the number of trials is x6 times higher than reported in Vujovic et al., 2019. 
+Unfortunately I couldn't find the same info for Ramscar 2010.
 
-The first task is a *Generalization task* (around 5 min). 
 
-This task is the same as described in Ramscar (2010) and Vujovic et al., 2019 and it aims at probing the ability of the participants to generalise the cue-outcome association to novel exemplars. 
+- The first task is a *Generalization task I* (around 5 min), from label to pictures matching task.
 
-This is a speeded three alternative forced-choice task. 
+- The second task is a *Generalization task II* (around 5 min), from picture to labels matching task.
 
-Half the participants matched an unseen exemplar to the three category labels, and half matched a label to four previously unseen 
-exemplars drawn from each category. 
+Participants match a label to four previously unseen exemplars drawn from each category in task I, or an match unseen exemplar to the three category labels in task II, in a speeded 3-AFC.
+Order of these two tasks is counterbalanced across participants.
 
-To limit participants’ ability to learn by contrasting between similar exemplars during testing, testing trials are composed either of all low-frequency or of all high-frequency exemplars plus control exemplars. 
-Control exemplars are unrelated and unseen objects. Participants are instructed to respond as quickly as they could (3500ms timeout). 
-Each high frequency subcategory has 6 exemplars per category (6 x 4, three experimental and one control), while low frequency subcategory has 2 exemplars per category (2 x 4, three experimental and one control). 
-Each subcategory (high/low frequency) will be tested X times each (I’m debugging Masa’s experiment as I can't find this info in her thesis, my fault probably).
+To limit participants’ ability to learn by contrasting between similar exemplars during testing, testing trials are composed either of all low-frequency or of all high-frequency exemplars separately. 
+Participants are instructed to respond as quickly as they could (3500ms timeout). 
+Each high frequency subcategory has 6 exemplars per category (6 x 3), while low frequency subcategory has 2 exemplars per category (2 x 3). 
+For each generalization task, each subcategory (high/low frequency) will be tested 3 times each, therefore we will have 48 trials per task. 
+If there will be no differences between the two generalization tasks, we can merge them together and have 96 trials per participant.
+
+Timelines of the tasks:
 
 ![Stimuli expe1](script/testing/generalization_HF.png)
 ![Stimuli expe1](script/testing/generalization_LF.png)
+
+Stimuli of the generalization tasks I and II:
+
+Participants are presented with all trained labels, while pictures are novel/unseen fribbles with features matching one of the label only.
+This makes up to a novel dataset of 48 unseen fribbles, i.e., with matching features but placed in a different order.
 
 The final task is a *Contingency judgement task* (5 min). This task is inspired by Kopp and Wolff, 2000 *Biological Psychology* where authors demonstrated that event-related potentials in a human contingency task
 indicate that learning is error-driven, i.e., resulting from cue competition.
