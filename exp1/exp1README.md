@@ -64,7 +64,7 @@ A set of 48 fribbles are selected in total and divided in two lists (A & B).
 One list is trained and the other is untrained.
 The assignment of these lists to training condition is going to be counterbalanced across participants. 
 There are 8 fribble exemplars per category (6 highFreq, 2 lowFreq) for a total of 24 fribbles per set.
-The core set of stimuli is provided in X (to come).
+The core set of stimuli is provided in the **[stimuli](https://github.com/n400peanuts/leverhulmeNDL/tree/master/exp1/stimuli)**.
 
 ![Stimuli expe1](stimuli/stimuliReplication.png)
 
