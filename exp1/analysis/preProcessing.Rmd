@@ -1,0 +1,29 @@
+---
+title: "preProcessing"
+author: "Eva"
+date: "4/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list = ls());
+```
+
+Set your local working directory. This should be (and is assumed to be in the rest of the code) the highest point in your local folder:
+```{r}
+localGitDir <- 'C:/Users/eva_v/Documents/GitHub/leverhulmeNDL/exp1'
+setwd(localGitDir);
+```
+```{r load stimuli set}
+fribbleSet <- read.csv(paste(localGitDir, "/stimuli/stimuli.csv", sep = ""), header = T);
+```
+
+## Check stimuli set
+It's important to check that every fribble is unique in the way its features are assembled within each category.
+Feature position and identity are coded into cueID.
+
+```{r check for duplicates}
+kableExtra::kable(table(fribbleSet$cueID, fribbleSet$category))
+```
+
+Great, each fribble is a unique.
