@@ -1,10 +1,10 @@
 # Replication study
 
-#### 1)	Main goal of this study: Replication with the addition of (1) a quality check task and (2) an additional test ####
+#### 1)	Main goal of this study: Replication with the addition of (1) a quality check task and (2) the addition of the contigency judgement test ####
 
 In this study we aim to replicate Ramscar's 2010 FLO paper with the goal of finding a task that we can use to effectively filter those participants that do not pay attention. 
 The idea is to establish that the paradigm works - i.e., we replicate the key interaction effect found in previous work 
-despite these changes, as well as adding a task control that confirms that our data are solid.
+despite these changes, as well as adding a task control that confirms that our data are solid. Finally, we aim to try a contingency judgement task in addition to the generalization tests used in the FLO paper.
 
 #### 2)	Description of the key independent and dependent variable(s), specifying how they will be measured. ####
 This is a 2x2 between design where learning (LF,FL) and frequency (highFreq, lowFreq) are manipulated in the following way.
