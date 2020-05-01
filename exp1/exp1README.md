@@ -87,8 +87,9 @@ Order of these two tasks is counterbalanced across participants.
 
 Timelines of the tasks:
 
-![Stimuli expe1]<img src="script/testing/generalization_HF.png" width=300 align=right>
-![Stimuli expe1](script/testing/generalization_LF.png | width=100)
+![Stimuli expe1]<img src="script/testing/generalization_HF.png" width=500 align=left>
+![Stimuli expe1]<img src="script/testing/generalization_LF.png" width=500 align=right>
+
 
 To limit participants’ ability to learn by contrasting between similar exemplars during testing, testing trials are composed either of all low-frequency or of all high-frequency exemplars separately. 
 Participants are instructed to respond as quickly as they could (3500ms timeout). 
