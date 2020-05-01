@@ -38,13 +38,13 @@ We predict a training by frequency interaction.
 
 We are going to introduce a task independent to our main hypothesis in order to have a tool to filter out bad participants.
 
-This task is a random dot motion mini experiment where participants will be presented with a random number of black dots on a white background moving in one direction (left or right). 
+This task is a random dot motion mini experiment (20 trials) where participants will be presented with a random number of black dots on a white background moving in one direction (left or right). 
 They are asked to estimate and report dots' direction in a given time (2s). 100% of the dots move coherently in one direction, so the task is extremely easy no matter the age and visual acuity of the participants (See Hutchinson, C. V., Arena, A., Allen, H. A., & Ledgeway, T. (2012). Psychophysical correlates of global motion processing in the aging visual system: a critical review. Neuroscience & Biobehavioral Reviews).
 This task is going to be presented to participants on a pseudo-random basis for a maximum of 4 times during the learning phase. 
 We will exclude participants on the basis of how many timeouts they had during the whole experiment, fixing a max to 2, but not on the performance of the task. 
 This will guarantee us that participants payed attention at least for half of the learning.
 
-![Stimuli expe1](script/testing/randomDot.png)
+<img src="script/testing/randomDot.png" width=600 align=center>
 
 
 #### 5)	Method and materials #### 
@@ -80,46 +80,35 @@ Practice trials are 4 trials with fribbles and labels not present during learnin
 
 Testing (8 min in total)
 
-Learning and generalization will be assessed through three tasks.
+Generalization is assessed through two tasks.
 These tasks are the same as described in Ramscar (2010) and aim at probing the ability of the participants to generalise the cue-outcome association to novel exemplars. 
 Participants match a label to four unseen exemplars drawn from each category in the first task, subsequently they match unseen exemplar to the three category labels in the second task.
-Order of these two tasks is counterbalanced across participants.
-
-Timelines of the tasks:
-
-<img src="script/testing/generalization_HF.png" width=500 align=center>
-<img src="script/testing/generalization_LF.png" width=500 align=center>
-
-
+The order of presentation is counterbalanced across participants.
 To limit participants’ ability to learn by contrasting between similar exemplars during testing, testing trials are composed either of all low-frequency or of all high-frequency exemplars separately. 
-Participants are instructed to respond as quickly as they could (3500ms timeout). 
+Participants are instructed to respond as quickly as possible (3500ms timeout). 
 
-Each high frequency subcategory has 6 exemplars per category (6 x 3), while low frequency subcategory has 2 exemplars per category (2 x 3). 
-For each generalization task, each subcategory (high/low frequency) will be tested 3 times each, therefore we will have 48 trials per task. 
-If there will be no differences between the two generalization tasks, we can merge them together and have 96 trials per participant.
+Timelines of the tasks for high and low frequency exemplars:
 
-
-Stimuli of the generalization tasks I and II:
-
-Participants are presented with all trained labels, while pictures are novel/unseen fribbles with features matching one of the label only.
-This makes up to a novel dataset of 48 unseen fribbles, i.e., with matching features but placed in a different order.
-
-The final task is a *Contingency judgement task* (5 min). This task is inspired by Kopp and Wolff, 2000 *Biological Psychology* where authors demonstrated that event-related potentials in a human contingency task
-indicate that learning is error-driven, i.e., resulting from cue competition.
-The aim of this test is to probe 1. generalization of the cue-outcome association and 2. obtain a measure directly linked to the computational model. 
-Subjects are presented with all trained fribbles presented one by one along with a label and are asked to estimate the likeliness that the fribble presented is associated to the name they hear. 
-Instructions: Please express your judgement on how *well* do you think this label goes with the fribble presented to you. 
-Use a scale from -10 to +10, where +10 is “it’s very likely that this is the fribble’s name” and -10 is “it’s not very likely that this is the fribble’s name”. 
-Zero indicates “Not sure”. 
-
-Stimuli will be novel fribbles belonging to the three categories (24) repeated once per label (x3), for a total of 72 trials. 
-In addition, 8 unseen object foils will be displayed only once. 
-These are novel objects for which participants should always report Zero, i.e., not sure.
-A random label will be matched to the foils. 
-In total, there will be 72 experimental trials and 4 practice trials. 
-Practice trials will be made of 2 known words (e.g., house, cat) and 2 unknown words (e.g., puly, fret) associated to two images of a house and a cat. 
+<img src="script/testing/generalization_HF.png" width=600 align=center>
+<img src="script/testing/generalization_LF.png" width=600 align=center>
 
 
-![Stimuli expe1](script/testing/contingencyJudgement.png)
+- Stimuli of the label to pictures matching: 12 high and 12 low frequency unseen exemplars are randomly presented with one of the three labels. HF and LF categories are tested 12 times each, 24 trials in total. 
+Labels are repeated 8 times each. Pictures are never repeated. 
+
+- Stimuli of the picture to labels matching: 4 high and 4 low frequency unseen exemplars are presented with the three labels. Order of the labels playes is randomised. HF and LF categories are tested 12 times each, 24 trials in total.
+
+If there is no difference between the two generalization tasks, we can merge them together and have 48 trials per participant.
+
+The final task is a contingency judgement task (Kopp and Wolff, 2000 *Biological Psychology*). 
+The aim of this test is to probe 1. generalization of the cue-outcome association and 2. obtain a measure that might be compared with the positive/negative weights of the computational model. 
+Subjects are presented with unseen fribbles + label and are asked to estimate the strength of their association. 
+
+Instructions: You are going to see one novel alien on the screen and hear a name. Your job is to use the sliding scale to say whether you think the word 
+is the correct label for the picture. Use a scale from -100 to +100, where +100 means you are really sure it’s the correct label, -100 means you are really sure it ISN’T the correct label and 0 means you don’t know.
+
+Stimuli: 4 high and 4 low frequency unseen exemplars are presented with one label. HF and LF categories are tested 12 times each, 24 trials in total. Labels are repeated 8 times each.
+
+<img src="script/testing/contingencyJudgement.png" width=600 align=center>
 
 
