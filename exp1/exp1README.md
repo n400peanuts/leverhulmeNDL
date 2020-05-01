@@ -87,7 +87,7 @@ Order of these two tasks is counterbalanced across participants.
 
 Timelines of the tasks:
 
-![Stimuli expe1]<img src="https://github.com/n400peanuts/leverhulmeNDL/tree/master/exp1/script/testing/generalization_HF.png" width=300 align=right>
+![Stimuli expe1]<img src="script/testing/generalization_HF.png" width=300 align=right>
 ![Stimuli expe1](script/testing/generalization_LF.png | width=100)
 
 To limit participants’ ability to learn by contrasting between similar exemplars during testing, testing trials are composed either of all low-frequency or of all high-frequency exemplars separately. 
