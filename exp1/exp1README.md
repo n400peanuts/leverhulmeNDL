@@ -87,8 +87,8 @@ Order of these two tasks is counterbalanced across participants.
 
 Timelines of the tasks:
 
-<img src="script/testing/generalization_HF.png" width=800 align=center>
-<img src="script/testing/generalization_LF.png" width=800 align=center>
+<img src="script/testing/generalization_HF.png" width=500 align=center>
+<img src="script/testing/generalization_LF.png" width=500 align=center>
 
 
 To limit participants’ ability to learn by contrasting between similar exemplars during testing, testing trials are composed either of all low-frequency or of all high-frequency exemplars separately. 
