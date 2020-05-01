@@ -1,0 +1,87 @@
+/* INSTRUCTIONS */
+import gorilla = require("gorilla/gorilla");
+var soundOn = gorilla.stimuliURL('source.gif');
+
+export var instructions1 = {
+    type: 'instructions',
+    data: {test_part: 'instructions',
+           rt: 'NA'
+    },
+    pages: [
+        'Welcome! <br> Click next to begin.',
+        'In this experiment, you are going to <strong>see</strong> a drawing of an alien character <br>and <strong>hear</strong> how it is referred to in the alien language. Your task is to watch and listen carefully. <br> You do not need to try and work out how the alien language works. <br> Pretend that you are a child and just listen and watch and see what you pick up. <br><br><br><br> Press next to continue.',
+        'We are going to start with some practice trials. <br> Make sure that you are wearing headphones and your device has the: <br> <img src="' + soundOn + '" style="width: 300px"></img> <br><br><br><br> Click NEXT when you are ready to begin.'
+    ],
+    show_clickable_nav: true
+};
+
+
+export var instructions2 = {
+    type: 'instructions',
+    data: {test_part: 'instructions',
+           rt: 'NA'
+    },
+    pages: [
+        'Well done! <br>Click next to continue.',
+        'During the experiment there will be breaks during which you will be asked to determine the direction of some dots. <br> On each trial, you will see a cloud of dots moving in one direction (left or right). <br> If the dots are moving left, press the <strong>left arrow</strong> key. If the dots are moving right, press the <strong>right arrow</strong> key.<br><br><br><br> Press NEXT to try some examples.'
+    ],
+    show_clickable_nav: true
+};
+
+
+export var instructions3 = {
+    type: 'instructions',
+    data: {test_part: 'instructions',
+           rt: 'NA'
+    },
+    pages: [
+        'Excellent! <br>We are now ready to start the experiment.<br>Click next to continue.',
+        'You will start with the learning of the alien language.<br> <strong>REMEMBER:</strong> your task is <strong>to pay attention</strong> to the aliens and the words used to refer to them in the language. <br>From time to time you will be asked to determine the direction of dots while they are moving.<br><br><br><br> Press next to begin the learning.'
+    ],
+    show_clickable_nav: true
+};
+
+export var instructions4 = {
+    type: 'instructions',
+    data: {test_part: 'instructions',
+           rt: 'NA'
+    },
+    pages: [
+        'Great! <br>You have completed the learning, now you can proceed to the three final tasks.<br>Click next to continue.',
+        'You are going to hear a sound and see three aliens. <br> Your taks is to choose the alien that best matches the sound by clicking on the alien image with your mouse. <br> You will not be able to replay the sound, so please listen carefully. <br> Try and do this as quickly as you can - you will have 2 seconds to click! <br><br><br><br> <strong>Press next to begin the experiment.</strong>'
+    ],
+    show_clickable_nav: true
+};
+
+export var instructions5 = {
+    type: 'instructions',
+    data: {test_part: 'instructions',
+           rt: 'NA'
+    },
+    pages: [
+        'Well done! Only two tasks left. <br> In the next task, you are going to see one alien on the screen, and hear three sounds in sequence. <br> Choose the sound that matches the alien by clicking on the respective speech bubble. <br> You will not be able to replay the sound, so please listen carefully. <br>Try and do this as quickly as you can - you will have 2 seconds to click! <br><br><br><br> Click NEXT when you\'r ready to begin.'
+    ],
+    show_clickable_nav: true
+};
+
+export var instructions6 = {
+    type: 'instructions',
+    data: {test_part: 'instructions',
+           rt: 'NA'
+    },
+    pages: [
+        'Great! This is the last task. <br> You are going to see one novel alien on the screen and hear a name. <br> Your job is to use the sliding scale to say whether you think the word is the correct label for the picture. <br> Use a scale from -100 to +100, where +100 means you are really sure it’s the correct label, <br> -100 means you are really sure it ISN’T the correct label and 0 means you don’t know <br> Use the slider to express your judgement and then press continue. <br> Please be quick - You will have four seconds to answer. <br><br><br><br> Press next to begin the task.'
+    ],
+    show_clickable_nav: true
+};
+
+export var goodbye = {
+    type: 'instructions',
+    data: {test_part: 'instructions',
+           rt: 'NA'
+    },
+    pages: [
+        'Thank you for your participation. <br> Click NEXT to end the experiment'
+    ],
+    show_clickable_nav: true
+};

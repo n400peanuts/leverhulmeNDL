@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="{{resource 'jspsych.js'}}"></script>
+<script src="{{resource 'jspsych-html-keyboard-response.js'}}"></script>
+<script src="{{resource 'jspsych-instructions.js'}}"></script>
+<script src="{{resource 'jspsych-fullscreen.js'}}"></script>
+<script src="{{resource 'jspsych-image-keyboard-response.js'}}"></script>
+<script src="{{resource 'jspsych-image-button-response.js'}}"></script>
+<script src="{{resource 'jspsych-audio-keyboard-response.js'}}"></script>
+<script src="{{resource 'jspsych-audio-button-response.js'}}"></script>
+<script src="{{resource 'jspsych-audio-slider-response.js'}}"></script>
+<script src="{{resource 'jspsych-rdk.js'}}"></script>
+<link href="{{resource 'jspsych.css'}}" rel="stylesheet" type="text/css"></link>
+</head>
+<body></body>
+
+
+
+
+
+<script>
+
+
+import gorilla = require("gorilla/gorilla");
+import fun = require('functions');
+import instr = require('instructions');
+import stim = require('stimuliSelection');
+import rand = require('randomization');
+
+                    /* #########################################################################
+                                Replication of the FLO paper (Ramscar, 2010)
+                    #########################################################################*/
+// Notes:
+// This script is using jsPsych (https://github.com/jspsych/jsPsych).
+// If you want to skip trials, simply press 'e'.
+
+var jsPsych = window['jsPsych'];
+
+gorilla.ready(function(){
+
+ 	        /* #########################################################################
+                                      INITIALIZE VARIABLES
+              ######################################################################### */
+var timeline = [];
+var trialCount_block1 = 0;
+var trialCount_block2 = 0;
+var trialCount_block3 = 0;
+var trialCount_block4 = 0;
+var speechbubble = gorilla.stimuliURL('speech.png');
+var learningType = gorilla.manipulation('learning');
+
+	        /* #########################################################################
+                                      PRELOAD STIMULI
+              ######################################################################### */
+             /* learning stimuli */
+            //we want an object with two columns, images and audio file
+            //each row will be a trial
+  var images = [];
+  for (var i = 0; i < 6; i++) { //append the path for each stimulus: image in .jpg and label in .mp3
+    for (var z = 0; z < 1; z++ ){
+      for (var y = 0; y <rand.learningStimuli[i][z].length; y++){
+        images.push([gorilla.stimuliURL(rand.learningStimuli[i][z][y]+ '.jpg'), gorilla.stimuliURL(rand.learningStimuli[i][1]+ '.mp3')]);
+      }
+    }
+  }
+
+  var random_image = jsPsych.randomization.sampleWithoutReplacement(images, images.length); // shuffle again, just to be sure
+  var img = []
+  for (var i = 0; i < random_image.length; i++){
+    img.push(random_image[i][0])
+  };
+
+        /* practice trials stimuli */
+var b1 = gorilla.stimuliURL('b1.jpg');
+var b2 = gorilla.stimuliURL('b2.jpg');
+var b3 = gorilla.stimuliURL('b3.jpg');
+var b4 = gorilla.stimuliURL('b4.jpg');
+
+img.push(b1);
+img.push(b2);
+img.push(b3);
+img.push(b4);
+
+           /* generalization test stimuli
+                 from label to pictures */
+            // here we have three images to load per trial
+ for (var i = 0; i < rand.imagesTesting.length; i++){
+    img.push(rand.imagesTesting[i][0][0]);
+    img.push(rand.imagesTesting[i][1][0]);
+    img.push(rand.imagesTesting[i][2][0]);
+  }
+
+
+            /* generalization test stimuli
+                 from picture to labels */
+            // one image per trial
+  for (var i = 0; i < rand.imagesTesting2.length; i++){
+        img.push(rand.imagesTesting2[i][0][0]);
+  }
+
+
+           /* contingency judgement task */
+           // one image per trial
+  for (var i = 0; i < rand.imagesTesting3.length; i++){
+    img.push(rand.imagesTesting3[i][0][0]);
+  }
+
+   /* Then we do the same with our audio stimuli.
+     In this case we have only three audio files*/
+     var tob = gorilla.stimuliURL('tob.mp3');
+     var wug = gorilla.stimuliURL('wug.mp3');
+     var dep = gorilla.stimuliURL('dep.mp3');
+
+     var audio = [];
+     audio.push(tob);
+     audio.push(wug);
+     audio.push(dep);
+
+     // we have also our practice trials audio
+     var beb = gorilla.stimuliURL('beb.mp3');
+     var zab = gorilla.stimuliURL('zab.mp3');
+     var rad = gorilla.stimuliURL('rad.mp3');
+     var pog = gorilla.stimuliURL('pog.mp3');
+
+     audio.push(beb);
+     audio.push(zab);
+     audio.push(rad);
+     audio.push(pog);
+                /* #########################################################################
+                                          CREATING ITEM BLOCKS
+                   ######################################################################### */
+  /* practice trials */
+var practice = [];
+var practiceTrials = [];
+
+practice.push([[b1], [beb]]);
+practice.push([[b2], [pog]]);
+practice.push([[b3], [zab]]);
+practice.push([[b4], [rad]]);
+
+for (var i =0; i< practice.length; i++){
+ practiceTrials.push(
+     {
+         fribble: practice[i][0],
+         name: practice[i][1]
+     }
+
+ )
+};
+
+  /*learning trials*/
+var trainingTrials = [];
+for (var i =0; i<random_image.length; i++){
+  trainingTrials.push(
+      {
+          fribble: random_image[i][0], //the important bit here is to refer to the names we call in the timeline variables, i.e., fribble and name.
+          name: random_image[i][1]
+      }
+    )
+};
+
+trainingTrials = jsPsych.randomization.repeat(trainingTrials, 2); //here we set how many trials do we want (2 repetitions x 60 stimuli = 120)
+
+/* I divide the learning in blocks in order to run the attention task during the breaks*/
+            /* In order to present the attention task in an unpredictable way,
+                        we define the length of the block pseudo-randomly */
+// (1) We decide a minimum number of trials that will constitute each block, and we remove it from the total.
+var fixedAmount = [20];
+
+// (2) We define a numerical array with max desidered length equal to our total trials (120) minus (fixedAmount * 4 blocks), and extract three random numbers.
+var randomPicks = fun.getRandom([...fun.range(0, 40)], 3);
+
+
+// (3) First block: fixed amount + the difference between the first random number (sorted in ascending order) and 0.
+var firstBlockTrials = (randomPicks.sort()[0] - 0);
+var block1_trainingTrials = jsPsych.randomization.sampleWithoutReplacement(trainingTrials, (fixedAmount[0] + firstBlockTrials));
+var trainingTrials_leftforBlock2 = fun.removeSubset(trainingTrials, block1_trainingTrials);
+console.log(block1_trainingTrials.length);
+
+// (4) Second block: fixed amount + the difference between the second random number and the first one
+var secondBlockTrials = (randomPicks.sort()[1] - randomPicks.sort()[0]);
+var block2_trainingTrials = jsPsych.randomization.sampleWithoutReplacement(trainingTrials_leftforBlock2, fixedAmount[0] + secondBlockTrials); //block 2
+var trainingTrials_leftforBlock3 = fun.removeSubset(trainingTrials_leftforBlock2, block2_trainingTrials);
+console.log(block2_trainingTrials.length);
+
+// (5) Third block: fixed amount + the difference between the third random number and the second
+var thirdBlockTrials = (randomPicks.sort()[2] - randomPicks.sort()[1]);
+var block3_trainingTrials = jsPsych.randomization.sampleWithoutReplacement(trainingTrials_leftforBlock3, fixedAmount[0] + thirdBlockTrials); //block 3
+var trainingTrials_leftforBlock4 = fun.removeSubset(trainingTrials_leftforBlock3, block3_trainingTrials);
+console.log(block3_trainingTrials.length);
+
+
+// (6) Fourth block: fixed amount + the difference between (trainingTrials.length)/2) and the third number
+var fourthBlockTrials = (40 - randomPicks.sort()[2])
+var block4_trainingTrials = jsPsych.randomization.sampleWithoutReplacement(trainingTrials_leftforBlock4, fixedAmount[0] + fourthBlockTrials); //block 4
+console.log(block4_trainingTrials.length);
+
+
+ /*random dot trials*/
+var randomDot_practiceTrials = jsPsych.randomization.repeat(rand.RDK_trial,3);
+var randomDot_experimentalTrials = jsPsych.randomization.repeat(rand.RDK_trial,20);
+
+            /* testing trials
+  generalization from label to pictures*/
+var generalization_fromLabeltoPicture_Trials = [];
+for (var i =0; i<rand.imagesTesting.length; i++){
+  generalization_fromLabeltoPicture_Trials.push(
+    {
+      fribble: [rand.imagesTesting[i][0][0],
+                rand.imagesTesting[i][1][0],
+                rand.imagesTesting[i][2][0]],
+      name: rand.imagesTesting[i][3][0]
+    }
+  )
+};
+
+generalization_fromLabeltoPicture_Trials = jsPsych.randomization.repeat(generalization_fromLabeltoPicture_Trials, 1); // 24 trials
+
+            /* testing trials
+  generalization from picture to labels*/
+var generalization_fromPicturetoLabels_Trials = [];
+  for (var i =0; i<rand.imagesTesting2.length; i++){
+    generalization_fromPicturetoLabels_Trials.push(
+      {
+        fribble: rand.imagesTesting2[i][0][0],
+        name: {label1: rand.imagesTesting2[i][1][0],
+               label2: rand.imagesTesting2[i][2][0],
+               label3: rand.imagesTesting2[i][3][0]}
+      }
+    )
+  }; // 24 trials
+
+             /* testing trials
+        contingency judgement task*/
+var contingencyJudgement_Trials = [];
+  for (var i =0; i<rand.imagesTesting3.length; i++){
+    contingencyJudgement_Trials.push(
+      {
+        fribble: rand.imagesTesting3[i][0][0],
+        name: rand.imagesTesting3[i][1][0]
+      }
+    )
+  };
+
+                    /* #########################################################################
+                                                  PRACTICE TRIALS
+                     ######################################################################### */
+
+ var LF_procedure_practiceTrials = {
+    timeline: [
+    {
+      type: 'html-keyboard-response', //fixation cross
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: jsPsych.NO_KEYS,
+      trial_duration: 1000 + (fun.randn_bm()*200), // random variation
+      data: {test_part: 'practiceTrials'} // this helps to mark the event in the output
+    },
+
+    {
+      type: 'audio-keyboard-response', //here we set the audio we call before the picture
+      stimulus: jsPsych.timelineVariable('name'), //and how it is referred into the timeline_variables
+      choices: jsPsych.NO_KEYS,
+      trial_ends_after_audio: true,
+      post_trial_gap: 185
+     },
+
+    {
+      type: 'image-keyboard-response',
+      stimulus: jsPsych.timelineVariable('fribble'),
+      choices: [69],
+      data: {test_part: 'practiceTrials'},
+      stimulus_duration: 175,
+      response_ends_trial: false,
+      trial_duration: 250,
+      on_finish: function(data) {
+         jsPsych.data.addDataToLastTrial({
+            presentedImage: data.stimulus,
+            presentedLabel: jsPsych.timelineVariable('name', true)
+         })
+         if(data.key_press == 69) { //press letter 'e' to skip this part
+           jsPsych.endCurrentTimeline();
+         }
+      }
+    }
+],
+
+    timeline_variables: practiceTrials
+
+    /*timeline_variables:[
+    { fribble: random_image[1][0], name: random_image[1][1] }, //we only need four trials, so I'm going to add it manually
+    { fribble: random_image[2][0], name: random_image[2][1] },
+    { fribble: random_image[3][0], name: random_image[3][1] },
+    { fribble: random_image[4][0], name: random_image[4][1] }
+  ]*/,
+    randomize_order: true, // TO REVISE: we randomize already plenty of times, that's redundant, but might be useful later on during the code
+    repetitions: 1 //like above
+}
+
+
+ var FL_procedure_practiceTrials = {
+    timeline: [
+    {
+      type: 'html-keyboard-response', //fixation cross
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: jsPsych.NO_KEYS,
+      trial_duration: 1000 + (fun.randn_bm()*200), // random variation
+      data: {test_part: 'practiceTrials'} // this helps to mark the event in the output
+    },
+
+    {
+      type: 'image-keyboard-response',
+      stimulus: jsPsych.timelineVariable('fribble'),
+      choices: [69],
+      data: {test_part: 'practiceTrials'},
+      stimulus_duration: 175,
+      response_ends_trial: false,
+      trial_duration: 250,
+      post_trial_gap: 150,
+      on_finish: function(data) {
+         if(data.key_press == 69) { //press letter 'e' to skip this part
+           jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+      {
+      type: 'audio-keyboard-response', //here we set the audio we call before the picture
+      stimulus: jsPsych.timelineVariable('name'), //and how it is referred into the timeline_variables
+      choices: jsPsych.NO_KEYS,
+      trial_ends_after_audio: true,
+      on_finish: function(data){
+          jsPsych.data.addDataToLastTrial({
+            presentedImage: data.stimulus,
+            presentedLabel: jsPsych.timelineVariable('name', true)
+         })
+      }
+      }
+],
+
+    timeline_variables: practiceTrials /*[
+    { fribble: random_image[1][0], name: random_image[1][1] }, //we only need four trials, so I'm going to add it manually
+    { fribble: random_image[2][0], name: random_image[2][1] },
+    { fribble: random_image[3][0], name: random_image[3][1] },
+    { fribble: random_image[4][0], name: random_image[4][1] }
+  ]*/,
+    randomize_order: true, // TO REVISE: we randomize already plenty of times, that's redundant, but might be useful later on during the code
+    repetitions: 1 //like above
+}
+
+
+
+            /* #########################################################################
+                              EXPERIMENTAL TRIALS - RANDOM DOT TASK PROCEDURE
+               ######################################################################### */
+
+var randomDot_practiceTask = {
+    type: "rdk",
+	post_trial_gap: 500, //The Inter Trial Interval. You can either have no ITI, or change the display element to be the same color as the stimuli background to prevent flashing between trials
+	number_of_dots: 200, //Total number of dots in the aperture
+	RDK_type: 3,
+	choices: [37, 39], //Choices available to be keyed in by participant, left or right arrows
+	trial_duration: 2000, //Duration of each trial in ms
+	timeline: randomDot_practiceTrials, //The timeline of all the trials
+	randomize_order: true,
+	background_color: "white",
+	dot_color: "black",
+	data: {test_part: 'randomDot'},
+	prompt: "<p>If the dots are moving left, press the <strong>left arrow</strong> key. <br> If the dots are moving right, press the <strong>right arrow</strong> key.</p>"
+}
+
+var randomDot_experimentalTask = {
+    type: "rdk",
+	post_trial_gap: 500, //The Inter Trial Interval. You can either have no ITI, or change the display element to be the same color as the stimuli background to prevent flashing between trials
+	number_of_dots: 200, //Total number of dots in the aperture
+	RDK_type: 3, //The type of RDK used
+	choices: [37, 39], //Choices available to be keyed in by participant
+	trial_duration: 2000, //Duration of each trial in ms
+	data: {test_part: 'randomDot'},
+	background_color: "white",
+	dot_color: "black",
+	prompt: "<p>If the dots are moving left, press the <strong>left arrow</strong> key. <br> If the dots are moving right, press the <strong>right arrow</strong> key.</p>",
+	timeline: jsPsych.randomization.sampleWithoutReplacement(randomDot_experimentalTrials, 5), //The timeline of all the trials
+	randomize_order: true
+}
+
+    /*  feedback */
+var debrief_block = {
+  type: "html-keyboard-response",
+  stimulus: function() {
+
+    var trials = jsPsych.data.get().filter({test_part: 'randomDot'});
+    var correct_trials = trials.filter({correct: true});
+    var accuracy = Math.round(correct_trials.count() / trials.count() * 100);
+    var rt = Math.round(correct_trials.select('rt').mean());
+
+    return "<p>You responded correctly on "+accuracy+"% of the trials.</p>"+
+   // "<p>Your average response time was "+rt+"ms.</p>"+
+    "<p>Press any key to continue the experiment!</p>";
+
+  }
+};
+
+                /* #########################################################################
+                              EXPERIMENTAL TRIALS - LEARNING PROCEDURE
+                   ######################################################################### */
+                    /*BLOCK 1*/
+var LF_procedure_experimentalTrials_block1 = {
+    timeline: [
+    {
+      type: 'html-keyboard-response',
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: [69],
+      trial_duration: 1000 + (fun.randn_bm()*200),
+      data: {test_part: 'learningBlock1'},
+      on_finish: function(data) {
+         if(data.key_press == 69) { //press letter 'e' to skip this part
+           jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'audio-keyboard-response',
+      stimulus: jsPsych.timelineVariable('name'),
+      data: {test_part: 'learningBlock1'},
+      choices: jsPsych.NO_KEYS,
+      post_trial_gap: 185,
+      trial_ends_after_audio: true
+     },
+
+    {
+      type: 'image-keyboard-response',
+      stimulus: jsPsych.timelineVariable('fribble'),
+      choices: [69],
+      data: {test_part: 'learningBlock1'},
+      stimulus_duration: 175,
+      response_ends_trial: false,
+      trial_duration: 250,
+      on_finish: function(){
+         jsPsych.data.addDataToLastTrial({
+            presentedImage: jsPsych.timelineVariable('fribble', true),
+            presentedLabel: jsPsych.timelineVariable('name', true)
+         })
+         trialCount_block1++;
+         if(trialCount_block1 == block1_trainingTrials.length){
+             jsPsych.endCurrentTimeline();
+         }
+      }
+    }
+],
+    timeline_variables: block1_trainingTrials, //here we have the training trials for the  block
+    randomize_order: true,
+    repetitions: 1
+}
+
+var FL_procedure_experimentalTrials_block1 = {
+    timeline: [
+    {
+      type: 'html-keyboard-response',
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: [69],
+      trial_duration: 1000 + (fun.randn_bm()*200),
+      data: {test_part: 'learningBlock1'},
+      on_finish: function(data) {
+         if(data.key_press == 69) { //press letter 'e' to skip this part
+           jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'image-keyboard-response',
+      stimulus: jsPsych.timelineVariable('fribble'),
+      stimulus_duration: 175,
+      trial_duration: 250,
+      post_trial_gap: 150,
+      data: {test_part: 'learningBlock1'},
+      on_finish: function(){
+         trialCount_block1++;
+         if(trialCount_block1 == block1_trainingTrials.length){
+             jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'audio-keyboard-response',
+      stimulus: jsPsych.timelineVariable('name'),
+      choices: jsPsych.NO_KEYS,
+      data: {test_part: 'learningBlock1'},
+      trial_ends_after_audio: true,
+      on_finish: function(data){
+          jsPsych.data.addDataToLastTrial({
+            presentedImage: jsPsych.timelineVariable('fribble', true),
+            presentedLabel: jsPsych.timelineVariable('name', true)
+         })
+      }
+     }
+],
+    timeline_variables: block1_trainingTrials, //here we have the training trials for the  block
+    randomize_order: true,
+    repetitions: 1
+}
+
+
+                    /*BLOCK 2*/
+
+
+var LF_procedure_experimentalTrials_block2 = {
+    timeline: [
+    {
+      type: 'html-keyboard-response',
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: [69],
+      trial_duration: 1000 + (fun.randn_bm()*200),
+      data: {test_part: 'learningBlock2'},
+      on_finish: function(data) {
+         if(data.key_press == 69) { //press letter 'e' to skip this part
+           jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'audio-keyboard-response',
+      stimulus: jsPsych.timelineVariable('name'),
+      choices: jsPsych.NO_KEYS,
+      data: {test_part: 'learningBlock2'},
+      trial_ends_after_audio: true,
+      post_trial_gap: 185
+     },
+
+    {
+      type: 'image-keyboard-response',
+      stimulus: jsPsych.timelineVariable('fribble'),
+      stimulus_duration: 175,
+      trial_duration: 250,
+      data: {test_part: 'learningBlock2'},
+      on_finish: function(){
+         jsPsych.data.addDataToLastTrial({
+            presentedImage: jsPsych.timelineVariable('fribble', true),
+            presentedLabel: jsPsych.timelineVariable('name', true)
+         })
+         trialCount_block2++;
+         if(trialCount_block2 == block2_trainingTrials.length){
+             jsPsych.endCurrentTimeline();
+         }
+      }
+    }
+],
+    timeline_variables: block2_trainingTrials, //here we have the training trials for the  block
+    randomize_order: true,
+    repetitions: 1
+}
+
+
+var FL_procedure_experimentalTrials_block2 = {
+    timeline: [
+    {
+      type: 'html-keyboard-response',
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: [69],
+      trial_duration: 1000 + (fun.randn_bm()*200),
+      data: {test_part: 'learningBlock2'},
+      on_finish: function(data) {
+         if(data.key_press == 69) { //press letter 'e' to skip this part
+           jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'image-keyboard-response',
+      stimulus: jsPsych.timelineVariable('fribble'),
+      stimulus_duration: 175,
+      trial_duration: 250,
+      post_trial_gap: 150,
+      data: {test_part: 'learningBlock2'},
+      on_finish: function(){
+         trialCount_block2++;
+         if(trialCount_block2 == block2_trainingTrials.length){
+             jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'audio-keyboard-response',
+      stimulus: jsPsych.timelineVariable('name'),
+      choices: jsPsych.NO_KEYS,
+      data: {test_part: 'learningBlock2'},
+      trial_ends_after_audio: true,
+      on_finish: function(data){
+          jsPsych.data.addDataToLastTrial({
+            presentedImage: jsPsych.timelineVariable('fribble', true),
+            presentedLabel: jsPsych.timelineVariable('name', true)
+         })
+      }
+     }
+],
+    timeline_variables: block2_trainingTrials, //here we have the training trials for the  block
+    randomize_order: true,
+    repetitions: 1
+}
+
+
+                    /*BLOCK 3*/
+
+
+
+var LF_procedure_experimentalTrials_block3 = {
+    timeline: [
+    {
+      type: 'html-keyboard-response',
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: [69],
+      trial_duration: 1000 + (fun.randn_bm()*200),
+      data: {test_part: 'learningBlock3'},
+      on_finish: function(data) {
+         if(data.key_press == 69) { //press letter 'e' to skip this part
+           jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'audio-keyboard-response',
+      stimulus: jsPsych.timelineVariable('name'),
+      choices: jsPsych.NO_KEYS,
+      data: {test_part: 'learningBlock3'},
+      trial_ends_after_audio: true,
+      post_trial_gap: 185
+     },
+
+    {
+      type: 'image-keyboard-response',
+      stimulus: jsPsych.timelineVariable('fribble'),
+      stimulus_duration: 175,
+      trial_duration: 250,
+      data: {test_part: 'learningBlock3'},
+      on_finish: function(){
+         jsPsych.data.addDataToLastTrial({
+            presentedImage: jsPsych.timelineVariable('fribble', true),
+            presentedLabel: jsPsych.timelineVariable('name', true)
+         })
+         trialCount_block3++;
+         if(trialCount_block3 == block3_trainingTrials.length){
+             jsPsych.endCurrentTimeline();
+         }
+      }
+    }
+],
+    timeline_variables: block3_trainingTrials, //here we have the training trials for the  block
+    randomize_order: true,
+    repetitions: 1
+}
+
+var FL_procedure_experimentalTrials_block3 = {
+    timeline: [
+    {
+      type: 'html-keyboard-response',
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: [69],
+      trial_duration: 1000 + (fun.randn_bm()*200),
+      data: {test_part: 'learningBlock3'},
+      on_finish: function(data) {
+         if(data.key_press == 69) { //press letter 'e' to skip this part
+           jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'image-keyboard-response',
+      stimulus: jsPsych.timelineVariable('fribble'),
+      stimulus_duration: 175,
+      trial_duration: 250,
+      post_trial_gap: 150,
+      data: {test_part: 'learningBlock3'},
+      on_finish: function(){
+         trialCount_block3++;
+         if(trialCount_block3 == block3_trainingTrials.length){
+             jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'audio-keyboard-response',
+      stimulus: jsPsych.timelineVariable('name'),
+      choices: jsPsych.NO_KEYS,
+      data: {test_part: 'learningBlock3'},
+      trial_ends_after_audio: true,
+      on_finish: function(data){
+          jsPsych.data.addDataToLastTrial({
+            presentedImage: jsPsych.timelineVariable('fribble', true),
+            presentedLabel: jsPsych.timelineVariable('name', true)
+         })
+      }
+     }
+],
+    timeline_variables: block3_trainingTrials, //here we have the training trials for the  block
+    randomize_order: true,
+    repetitions: 1
+}
+
+
+
+                    /*BLOCK 4*/
+
+
+
+var LF_procedure_experimentalTrials_block4 = {
+    timeline: [
+    {
+      type: 'html-keyboard-response',
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: [69],
+      trial_duration: 1000 + (fun.randn_bm()*200),
+      data: {test_part: 'learningBlock4'},
+      on_finish: function(data) {
+         if(data.key_press == 69) { //press letter 'e' to skip this part
+           jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'audio-keyboard-response',
+      stimulus: jsPsych.timelineVariable('name'),
+      choices: jsPsych.NO_KEYS,
+      data: {test_part: 'learningBlock4'},
+      trial_ends_after_audio: true,
+      post_trial_gap: 185
+     },
+
+    {
+      type: 'image-keyboard-response',
+      stimulus: jsPsych.timelineVariable('fribble'),
+      stimulus_duration: 175,
+      trial_duration: 250,
+      data: {test_part: 'learningBlock4'},
+      on_finish: function(){
+         jsPsych.data.addDataToLastTrial({
+            presentedImage: jsPsych.timelineVariable('fribble', true),
+            presentedLabel: jsPsych.timelineVariable('name', true)
+         })
+         trialCount_block4++;
+         if(trialCount_block4 == block4_trainingTrials.length){
+             jsPsych.endCurrentTimeline();
+         }
+      }
+    }
+],
+    timeline_variables: block4_trainingTrials, //here we have the training trials for the  block
+    randomize_order: true,
+    repetitions: 1
+}
+
+
+var FL_procedure_experimentalTrials_block4 = {
+    timeline: [
+    {
+      type: 'html-keyboard-response',
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: [69],
+      trial_duration: 1000 + (fun.randn_bm()*200),
+      data: {test_part: 'learningBlock4'},
+      on_finish: function(data) {
+         if(data.key_press == 69) { //press letter 'e' to skip this part
+           jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'image-keyboard-response',
+      stimulus: jsPsych.timelineVariable('fribble'),
+      stimulus_duration: 175,
+      trial_duration: 250,
+      post_trial_gap: 150,
+      data: {test_part: 'learningBlock4'},
+      on_finish: function(){
+         trialCount_block4++;
+         if(trialCount_block4 == block4_trainingTrials.length){
+             jsPsych.endCurrentTimeline();
+         }
+      }
+    },
+
+    {
+      type: 'audio-keyboard-response',
+      stimulus: jsPsych.timelineVariable('name'),
+      choices: jsPsych.NO_KEYS,
+      data: {test_part: 'learningBlock4'},
+      trial_ends_after_audio: true,
+      on_finish: function(data){
+          jsPsych.data.addDataToLastTrial({
+            presentedImage: jsPsych.timelineVariable('fribble', true),
+            presentedLabel: jsPsych.timelineVariable('name', true)
+         })
+      }
+     }
+],
+    timeline_variables: block4_trainingTrials, //here we have the training trials for the  block
+    randomize_order: true,
+    repetitions: 1
+}
+
+            /* #########################################################################
+                              TESTING TRIALS - GENERALIZATION TASK
+               ######################################################################### */
+
+var generalizationTask_fromLabeltoPicture = {
+    timeline: [
+        {
+          type: 'html-keyboard-response',
+          stimulus: '<div style="font-size:60px;">+</div>',
+          choices: [69],
+          trial_duration: 1000 + (fun.randn_bm()*200), // here there is the random variation
+          data: {test_part: 'generalizationLP'}, // this helps to mark the event in the output to
+          on_finish: function(data) {
+            if(data.key_press == 69) { //press letter 'e' to skip this part
+                jsPsych.endCurrentTimeline();
+            }
+          }
+        },
+
+        {
+          type: 'audio-button-response',
+          stimulus: jsPsych.timelineVariable('name'),
+          choices: jsPsych.timelineVariable('fribble'), //simultaneous presentation of 3 images in a row
+          prompt: "<p>Click on the correct alien</p>",
+          button_html: '<img src="%choice%" style="width: 300px"/>',
+          data: {test_part: 'generalizationLP'},
+          trial_duration: 2500,
+          on_finish: function(data){
+		    jsPsych.data.addDataToLastTrial({
+		        key_press: data.choices,
+		        presentedImage: jsPsych.timelineVariable('fribble', true),
+		        presentedLabel: data.stimulus
+		    });
+	        }
+        }
+  ],
+    timeline_variables: generalization_fromLabeltoPicture_Trials
+};
+
+
+
+var generalization_fromPicturetoLabels = {
+  timeline: [
+    {
+      type: 'html-keyboard-response',
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: [69],
+      trial_duration: 1000, // here there is the random variation
+      data: {
+        test_part: 'generalizationPL'
+      },
+      on_finish: function(data) {
+        if (data.key_press == 69) { //press letter 'e' to skip this part
+          jsPsych.endCurrentTimeline();
+        }
+      }
+    },
+
+    {
+        type: 'audio-button-response',
+        stimulus: function(){
+        var label =jsPsych.timelineVariable('name', true) //label 1
+        return label.label1;
+        },
+        choices: [speechbubble, speechbubble, speechbubble],
+        button_html: '<img src="%choice%" style="width: 100px"/>',
+        data: {test_part: 'generalizationPL'
+        },
+    	trial_ends_after_audio: true,
+    	prompt: function(){
+          var fribble = jsPsych.timelineVariable('fribble', true)
+          return '<img src="'+fribble+'"></img>';
+        }
+    },
+
+    {
+        type: 'audio-button-response',
+        stimulus: function(){
+        var label2 =jsPsych.timelineVariable('name', true)  //label 2
+        return label2.label2;
+        },
+        choices: [speechbubble, speechbubble, speechbubble],
+        button_html: '<img src="%choice%" style="width: 100px"/>',
+        data: {test_part: 'generalizationPL'},
+    	trial_ends_after_audio: true,
+        prompt: function(){
+          var fribble = jsPsych.timelineVariable('fribble', true)
+          return '<img src="'+fribble+'"></img>';
+        }
+    },
+
+    {
+        type: 'audio-button-response',
+        stimulus: function(){
+        var label3 =jsPsych.timelineVariable('name', true) //label 3
+        return label3.label3;
+        },
+        choices: [speechbubble, speechbubble, speechbubble],
+        button_html: '<img src="%choice%" style="width: 100px"/>',
+        data: {test_part: 'generalizationPL'},
+    	prompt:  function(){
+          var fribble = jsPsych.timelineVariable('fribble', true)
+          return '<img src="'+fribble+'"></img>';
+        },
+    	response_ends_trial: true,
+    	trial_duration: 2500,
+    	on_finish: function(data) {
+    	var response = ['NA'];            // to store no responses
+        var n = data.button_pressed;
+        var label3 = jsPsych.data.get().last(1).values()[0].stimulus;
+        var label2 = jsPsych.data.get().last(2).values()[0].stimulus;
+        var label1 = jsPsych.data.get().last(3).values()[0].stimulus;
+        var trialArray = [label1, label2, label3];
+     	if (fun.isEmpty(n)){
+        // array does not exist, is not an array, or is empty
+              jsPsych.data.addDataToLastTrial({
+                  key_press: response[0],
+                  presentedImage: jsPsych.timelineVariable('fribble', true),
+    	          presentedLabel: trialArray
+    	});
+     	} else {
+     	    jsPsych.data.addDataToLastTrial({
+    	        key_press: trialArray[n],
+    	        presentedImage: jsPsych.timelineVariable('fribble', true),
+    	        presentedLabel: trialArray
+     	    });
+            }
+    	},
+    }
+  ],
+  timeline_variables: generalization_fromPicturetoLabels_Trials
+
+};
+
+
+var contingencyJudgement = {
+  timeline: [
+    {
+      type: 'html-keyboard-response',
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: [69],
+      trial_duration: 1000, // here there is the random variation
+      data: {
+        test_part: 'fixation cross generalizationTask_fromPicturetoLabels'
+      },
+      on_finish: function(data) {
+        if (data.key_press == 69) { //press letter 'e' to skip this part
+          jsPsych.endCurrentTimeline();
+        }
+      }
+    },
+
+    {
+      type: 'audio-slider-response',
+      stimulus: jsPsych.timelineVariable('name'),
+      labels: ['-100 <br> Not the correct label', '0 <br> Not sure','+100 <br> It\'s the correct label'],
+      slider_width: 500,
+      min: -100,
+      max: +100,
+      start: function(){
+        var startingPoint = [0, 10, 20, 30, 40, 50, 60, 80, -10, -20, -30, -40, -50, -60, -80];
+        return fun.getRandom(startingPoint, 1)
+      },
+      require_movement: true,
+      response_ends_trial: true,
+      trial_duration: 5000,
+      prompt: function(){
+        var fribble = jsPsych.timelineVariable('fribble', true)
+        return '<p>To what extent this label is correct for this alien?</p> <br> <img src="'+fribble+'" style="width: 300px"></img>'
+      },//how plausible does it seem to you that this name goes with this alien?
+      on_finish: function(data) {
+          jsPsych.data.addDataToLastTrial({
+              key_press: jsPsych.data.get().last(1).values()[0].response,
+              presentedImage: jsPsych.timelineVariable('fribble', true),
+    	      presentedLabel: data.stimulus,
+          });
+      }
+    }
+  ],
+  timeline_variables: contingencyJudgement_Trials,
+  randomize_order: true
+}
+
+
+            /* #########################################################################
+                                          RUN THE EXPERIMENT!
+               ######################################################################### */
+
+timeline.push({
+  type: 'fullscreen',
+  fullscreen_mode: true
+});
+
+timeline.push(instr.instructions1); //welcome
+
+                /* PRACTICE TRIALS */
+if (learningType == 'FL'){
+    timeline.push(FL_procedure_practiceTrials); //practice trials learning
+} else {
+    timeline.push(LF_procedure_practiceTrials); //practice trials learning
+
+}
+timeline.push(instr.instructions2); //instructions for the random dot task
+timeline.push(randomDot_practiceTask);
+timeline.push(debrief_block); //feedback
+
+                /* BLOCK 1 - LEARNING */
+ timeline.push(instr.instructions3); // warning to begin the experiment
+if (learningType == 'FL'){
+    timeline.push(FL_procedure_experimentalTrials_block1);
+
+} else {
+    timeline.push(LF_procedure_experimentalTrials_block1);
+
+}
+timeline.push(randomDot_experimentalTask);
+timeline.push(debrief_block); //feedback
+
+                /* BLOCK 2 - LEARNING */
+if (learningType == 'FL'){
+    timeline.push(FL_procedure_experimentalTrials_block2);
+} else {
+    timeline.push(LF_procedure_experimentalTrials_block2);
+}
+timeline.push(randomDot_experimentalTask);
+timeline.push(debrief_block); //feedback
+
+                /* BLOCK 3 - LEARNING */
+if (learningType == 'FL'){
+    timeline.push(FL_procedure_experimentalTrials_block3);
+} else {
+    timeline.push(LF_procedure_experimentalTrials_block3);
+}
+timeline.push(randomDot_experimentalTask);
+timeline.push(debrief_block); //feedback
+
+                /* BLOCK 4 - LEARNING */
+if (learningType == 'FL'){
+    timeline.push(FL_procedure_experimentalTrials_block4);
+} else {
+    timeline.push(LF_procedure_experimentalTrials_block4);
+}
+timeline.push(randomDot_experimentalTask);
+timeline.push(debrief_block); //feedback
+
+                /* TESTING */
+timeline.push(instr.instructions4);  // learning completed + test task
+timeline.push(generalizationTask_fromLabeltoPicture);
+timeline.push(instr.instructions5);  // learning completed + test task
+timeline.push(generalization_fromPicturetoLabels);
+timeline.push(instr.instructions6);  // learning completed + test task
+timeline.push(contingencyJudgement);
+timeline.push(instr.goodbye);
+
+timeline.push({
+  type: 'fullscreen',
+  fullscreen_mode: false
+});
+
+	jsPsych.init({
+		display_element: $('#gorilla')[0],
+		timeline: timeline, //here is our timeline
+		preload_audio: audio,
+		preload_images: img,
+		show_progress_bar: true,
+		on_data_update: function(data){
+			gorilla.metric(data);
+			gorilla.metric({
+            learningType: learningType
+            });
+		},
+		on_finish: function(){
+			gorilla.finish();
+		}
+	});
+})
+
+
+</script>
+</html>

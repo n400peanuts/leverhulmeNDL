@@ -1,0 +1,151 @@
+import gorilla = require("gorilla/gorilla");
+var jsPsych = window['jsPsych'];
+
+import stim = require('stimuliSelection');
+import fun = require('functions');
+
+
+ 	        /* #########################################################################
+                                      RANDOMIZATION
+              ######################################################################### */
+/*----------------------------- Selection of fribbles to be learned -----------------------------------------------*/
+
+  const keys = Object.keys(stim.fribble_ID); //here we access the categories
+  var subsethighFreq = new Array(3); //create our highFreq subset
+  var subsetlowFreq = new Array(3); //create our lowFreq subset
+
+  for (var i = 0; i < keys.length; i += 1){
+    subsethighFreq[i]=[jsPsych.randomization.sampleWithoutReplacement(stim.fribble_ID[keys[i]].highFreq, 15), stim.fribble_ID[keys[i]].label]; //we get 6 random highFreq fribbles
+    subsetlowFreq[i]=[jsPsych.randomization.sampleWithoutReplacement(stim.fribble_ID[keys[i]].lowFreq, 5), stim.fribble_ID[keys[i]].label]; // and 2 random lowfreq fribbles
+  };
+  export var learningStimuli = subsethighFreq.concat(subsetlowFreq);  //we store them in a unique object
+
+
+ /*----------------------------- Selection of fribbles to be tested for the generalization tasks ------------------------
+/*---------------------------------------------- from labels to picture -------------------------------------------------*/
+
+        //(1) we remove the fribbles used for learning
+  for (var i = 0; i < keys.length; i += 1){
+  stim.fribble_ID[keys[i]].highFreq = fun.removeSubset(stim.fribble_ID[keys[i]].highFreq, subsethighFreq[i][0]);
+  stim.fribble_ID[keys[i]].lowFreq = fun.removeSubset(stim.fribble_ID[keys[i]].lowFreq, subsetlowFreq[i][0]);
+  };
+        //(2) we re-select a new dataset to use for the generalization task
+  var subsethighFreq = new Array(3); //clean the arrays
+  var subsetlowFreq = new Array(3);
+        //(3) here we need 12 exemplars per category in order to have 24 trials
+  for (var i = 0; i < keys.length; i += 1){
+    subsethighFreq[i]=[jsPsych.randomization.sampleWithoutReplacement(stim.fribble_ID[keys[i]].highFreq, 12), stim.fribble_ID[keys[i]].label]; //we get 6 random highFreq fribbles
+    subsetlowFreq[i]=[jsPsych.randomization.sampleWithoutReplacement(stim.fribble_ID[keys[i]].lowFreq, 12), stim.fribble_ID[keys[i]].label]; // and 6 random lowfreq fribbles
+  };
+
+  export var generalizationStimuli_fromLabeltoPicture = subsethighFreq.concat(subsetlowFreq);  //we store them in a unique object
+
+            //we want an object with a column for each fribble presented and one for the audio file
+            //audio file drawn randomly. Each row will be a trial.
+            //we are going to do that separately for high and low freq trials to not mess up the columns
+            //and then join them together
+
+export var imagesTesting = [];
+var arrayLabel = ['dep','wug','tob'];
+var shuffledLabel = jsPsych.randomization.repeat(arrayLabel, 2);
+var index = [];
+for (var i = 0; i < 6; i++) {
+    index = shuffledLabel[i];
+    imagesTesting.push([[gorilla.stimuliURL(subsethighFreq[0][0][i]+ '.jpg')], [gorilla.stimuliURL(subsethighFreq[1][0][i]+ '.jpg')], [gorilla.stimuliURL(subsethighFreq[2][0][i]+ '.jpg')],[gorilla.stimuliURL(index+ '.mp3')]]);
+    imagesTesting.push([[gorilla.stimuliURL(subsetlowFreq[0][0][i]+ '.jpg')], [gorilla.stimuliURL(subsetlowFreq[1][0][i]+ '.jpg')], [gorilla.stimuliURL(subsetlowFreq[2][0][i]+ '.jpg')],[gorilla.stimuliURL(index+ '.mp3')]]);
+};
+
+
+ /*----------------------------- Selection of fribbles to be tested for the generalization tasks ------------------------
+/*---------------------------------------------- from picture to labels -------------------------------------------------*/
+
+   //(1) From the dataset left from the generalization task I, we remove again the fribbles already used
+   for (var i = 0; i < keys.length; i += 1){
+  stim.fribble_ID[keys[i]].highFreq = fun.removeSubset(stim.fribble_ID[keys[i]].highFreq, subsethighFreq[i][0]);
+  stim.fribble_ID[keys[i]].lowFreq = fun.removeSubset(stim.fribble_ID[keys[i]].lowFreq, subsetlowFreq[i][0]);
+  };
+   //(2) we re-select a new dataset to use for the generalization task
+  var subsethighFreqTask2 = new Array(3); //clean the arrays
+  var subsetlowFreqTask2 = new Array(3);
+  // (3) here we need four exemplars per category
+  for (var i = 0; i < keys.length; i += 1){
+    subsethighFreqTask2[i]=[jsPsych.randomization.sampleWithoutReplacement(stim.fribble_ID[keys[i]].highFreq, 4), stim.fribble_ID[keys[i]].label]; //we get 4 random highFreq fribbles
+    subsetlowFreqTask2[i]=[jsPsych.randomization.sampleWithoutReplacement(stim.fribble_ID[keys[i]].lowFreq, 4), stim.fribble_ID[keys[i]].label]; // and 4 random lowfreq fribbles
+  };
+
+  export var generalizationStimuli_fromPicturetoLabels = subsethighFreqTask2.concat(subsetlowFreqTask2);  //we store them in a unique object
+
+            //we want an object with a column for all the stimuli: one fribble, three labels
+            //audio file assigned in random order. Each trials will follow the order of the column, the fribble
+            // and the audio as they are located in the columns afterwards
+            //we are going to do that separately for high and low freq trials to not mess up the columns
+            //and then join them together
+
+
+export var imagesTesting2 = [];
+var arrayLabel = ['dep.mp3', 'wug.mp3', 'tob.mp3']
+
+for (var i = 0; i < 4; i++) {
+    for (var x = 0; x < 3; x++){
+    shuffledLabel = jsPsych.randomization.repeat(arrayLabel, 1);
+    imagesTesting2.push([[gorilla.stimuliURL(subsethighFreqTask2[x][0][i]+ '.jpg')], [gorilla.stimuliURL(shuffledLabel[0])], [gorilla.stimuliURL(shuffledLabel[1])], [gorilla.stimuliURL(shuffledLabel[2])]]);
+    imagesTesting2.push([[gorilla.stimuliURL(subsetlowFreqTask2[x][0][i]+ '.jpg')], [gorilla.stimuliURL(shuffledLabel[0])], [gorilla.stimuliURL(shuffledLabel[1])], [gorilla.stimuliURL(shuffledLabel[2])]]);
+    }
+}
+
+ /*-------------------------- Selection of fribbles to be tested for the contingency judgement task ---------------------
+/*---------------------------------------------- slider audio task -------------------------------------------------*/
+
+   //(1) From the dataset left from the generalization task II, we remove again the fribbles already used
+ for (var i = 0; i < keys.length; i += 1){
+  stim.fribble_ID[keys[i]].highFreq = fun.removeSubset(stim.fribble_ID[keys[i]].highFreq, subsethighFreqTask2[i][0]);
+  stim.fribble_ID[keys[i]].lowFreq = fun.removeSubset(stim.fribble_ID[keys[i]].lowFreq, subsetlowFreqTask2[i][0]);
+  };
+
+ //(2) we re-select a new dataset to use for the contingency judgement  task
+  var subsethighFreqTask3 = new Array(3); //clean the arrays
+  var subsetlowFreqTask3 = new Array(3);
+
+  // (3) here we need four exemplars per category
+  for (var i = 0; i < keys.length; i += 1){
+    subsethighFreqTask3[i]=[jsPsych.randomization.sampleWithoutReplacement(stim.fribble_ID[keys[i]].highFreq, 4), stim.fribble_ID[keys[i]].label]; //we get 6 random highFreq fribbles
+    subsetlowFreqTask3[i]=[jsPsych.randomization.sampleWithoutReplacement(stim.fribble_ID[keys[i]].lowFreq, 4), stim.fribble_ID[keys[i]].label]; // and 6 random lowfreq fribbles
+  };
+
+
+            //we want an object with a column for all the stimuli: one fribble, three labels
+            // the fribble will be sampled randomly from the category. No repetitions of fribbles are allowed.
+            //audio file assigned in random order. Each trials will follow the order of the column, the fribble
+            // and the audio as they are located in the columns afterwards
+            //we are going to do that separately for high and low freq trials to not mess up the columns
+            //and then join them together
+
+var shuffledLabel = jsPsych.randomization.repeat(arrayLabel, 8);
+export var imagesTesting3=[];
+
+for (var i = 0; i < 4; i++) {
+    for (var x = 0; x < 3; x++){
+        imagesTesting3.push([[gorilla.stimuliURL(subsethighFreqTask3[x][0][i]+ '.jpg')], [gorilla.stimuliURL(shuffledLabel[x])]]);
+        imagesTesting3.push([[gorilla.stimuliURL(subsetlowFreqTask3[x][0][i]+ '.jpg')], [gorilla.stimuliURL(shuffledLabel[x])]]);
+    }
+}
+
+
+
+ /*----------------------------------- random dot task definition of trials -----------------------------------*/
+
+export var RDK_trial = [
+  {//Condition 1
+    correct_choice: [37], //left arrow
+    coherent_direction: 180, //The coherent direction for Condition 1 (9 o'clock direction, i.e., dots move left)
+    coherence: 1,
+    data: {test_part: 'randomDot'}
+
+  },
+  {//Condition 2
+    correct_choice: [39], //right arrow
+    coherent_direction: 0, //The coherent direction for Condition 2 (3 o'clock direction, i.e., dots move right)
+    coherence: 1,
+    data: {test_part: 'randomDot'}
+  },
+];

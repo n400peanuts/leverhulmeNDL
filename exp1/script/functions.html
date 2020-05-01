@@ -1,0 +1,51 @@
+/* #########################################################################
+                                 USEFUL FUNCTIONS
+    ######################################################################### */
+export function randn_bm() { // function that samples randomly from a normal distribution,
+var u = 0, v = 0;  // this is useful to vary the cross presentation in an unpredictable way
+while(u === 0) u = Math.random();
+while(v === 0) v = Math.random();
+return Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+};
+
+export function getRandom(arr, n) { //function that extract a random number of items from an array
+var result = new Array(n),
+len = arr.length,
+taken = new Array(len);
+if (n > len)
+throw new RangeError("ahi ahi ahi (getRandom): more elements taken than available"); //this helps keep track of the length
+while (n--) {
+var x = Math.floor(Math.random() * len);
+result[n] = arr[x in taken ? taken[x] : x];
+taken[x] = --len in taken ? taken[len] : len;
+}
+return result;
+};
+
+export function removeSubset(arr, subset) { //remove multiple elements from an array
+const exclude = [...subset];
+return arr.filter(x => {
+const idx = exclude.indexOf(x);
+if (idx >= 0) {
+exclude.splice(idx, 1);
+return false;
+}
+return true;
+});
+}
+
+export function isEmpty(obj) {
+for(var key in obj) {
+if(obj.hasOwnProperty(key))
+ return false;
+}
+return true;
+}
+
+export function range(start, end) {
+var ans = [];
+for (let i = start; i <= end; i++) {
+ans.push(i);
+}
+return ans;
+}
