@@ -1,30 +1,670 @@
 ---
-title: "preProcessing"
+title: "Preprocessing + sanity checks"
 author: "Eva"
 date: "4/3/2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r loading libraries, echo=FALSE, message=FALSE}
+library(tidyverse);
+library(httr);
+library(RCurl);
+library(ggplot2);
+library(ggpubr);
+library(RColorBrewer)
+
+```
+
+# clean WS, set WD 
+
+```{r}
 rm(list = ls());
 ```
 
 Set your local working directory. This should be (and is assumed to be in the rest of the code) the highest point in your local folder:
 ```{r}
-localGitDir <- 'C:/Users/eva_v/Documents/GitHub/leverhulmeNDL/exp1/stimuli'
-setwd(localGitDir);
+localGitDir <- 'C:/Users/eva_v/Documents/GitHub/leverhulmeNDL'
+#setwd(localGitDir);
 ```
 ```{r load stimuli set}
-fribbleSet <- read.csv(paste(localGitDir, "/stimuli.csv", sep = ""), header = T);
+fribbleSet <- read.csv(paste(localGitDir, "/exp1/stimuli/stimuli.csv", sep = ""), 
+                       header = T,
+                       colClasses=c("cueID"="factor",
+                        "bodyShape"="factor",
+                        "label"="factor",
+                        "fribbleID"="factor"
+                        ));
 ```
 
-## Check stimuli set
+# Check stimuli set
 It's important to check that every fribble is unique in the way its features are assembled within each category.
 Feature position and identity are coded into cueID.
 
 ```{r check for duplicates}
-kableExtra::kable(table(fribbleSet$cueID, fribbleSet$category))
+
+fribbleSet %>%
+  group_by(category, cueID) %>%
+  count() %>%
+  filter(n > 1);
 ```
 
-Great, each fribble is unique.
+Great, each Fribble is unique!
+
+# Load data
+
+List the files present in the folder, and load them.
+
+```{r list files}
+df <- list.files(paste(localGitDir, "/exp1/data/", sep = "")); 
+length(df); #
+```
+
+```{r load files}
+for (i in 1:length(df)){
+  gsub(".csv$", "", df[i]) -> id
+  assign(id, data.frame())
+  read.csv(paste(localGitDir, "/exp1/data/", df[i], sep = ""),
+           na.strings=c("","NA"),
+           colClasses=c("presentedLabel"="factor",
+                        "presentedImage"="factor",
+                        "learningType"="factor",
+                        "Trial.Type"="factor",
+                        "Test.Part"="factor",
+                        "Key.Press"="factor"
+                        ))-> temp
+  assign(paste0(id), temp)
+};
+
+rm(temp, df, i, id);
+```
+
+Rename datasets:
+
+```{r rename dataset}
+dataFL<-`data_exp_15519-v13_task-2yjh`
+dataFL2<-`data_exp_15519-v14_task-2yjh`
+
+rm(`data_exp_15519-v13_task-2yjh`)
+rm(`data_exp_15519-v14_task-2yjh`)
+
+dataLF <- `data_exp_15519-v13_task-q8hp`
+dataLF2 <- `data_exp_15519-v14_task-q8hp`
+
+rm(`data_exp_15519-v13_task-q8hp`)
+rm(`data_exp_15519-v14_task-q8hp`)
+
+```
+
+```{r}
+rbind(dataFL, dataFL2)-> dataFL
+rbind(dataLF, dataLF2)-> dataLF
+
+rm(dataFL2, dataLF2)
+```
+
+
+Select columns:
+
+```{r column selection}
+raw_dataFL<- dataFL[c('Participant.Private.ID', 'learningType', 'Test.Part' , 
+         'presentedImage', 'presentedLabel', 'Reaction.Time', "Key.Press",
+          'Trial.Type', 'Trial.Index', 'Correct')]
+
+raw_dataLF<- dataLF[c('Participant.Private.ID', 'learningType', 'Test.Part' , 
+         'presentedImage', 'presentedLabel', 'Reaction.Time', "Key.Press",
+          'Trial.Type', 'Trial.Index', 'Correct')]
+
+
+```
+
+Select rows:
+
+```{r rows selection}
+rowsIwantTokeep <- c("learningBlock1", "learningBlock2", "learningBlock3",
+                        "learningBlock4", "generalizationPL", "generalizationLP",
+                        "randomDot", "contingencyJudgement")
+
+raw_dataFL <- raw_dataFL %>% 
+  filter(Test.Part %in% rowsIwantTokeep ) %>%
+  rename(subjID = Participant.Private.ID, 
+         learning = learningType,
+         task = Test.Part, 
+         fribbleID = presentedImage,
+         label = presentedLabel, 
+         rt = Reaction.Time, 
+         resp = Key.Press, 
+         trialType = Trial.Type,
+         trialIndex = Trial.Index,
+         acc = Correct)
+
+raw_dataLF <- raw_dataLF %>% 
+  filter(Test.Part %in% rowsIwantTokeep ) %>%
+  rename(subjID = Participant.Private.ID, 
+         learning = learningType,
+         task = Test.Part, 
+         fribbleID = presentedImage,
+         label = presentedLabel, 
+         rt = Reaction.Time, 
+         resp = Key.Press, 
+         trialType = Trial.Type,
+         trialIndex = Trial.Index,
+         acc = Correct)
+
+rm(rowsIwantTokeep, dataFL, dataLF);
+```
+
+Both data sets have the same learning that is FL.
+Update: I have found a bug in the randomiser. Fixed now.
+
+```{r}
+rbind(raw_dataFL, raw_dataLF)-> raw_data; 
+rm(raw_dataFL, raw_dataLF);
+
+```
+
+# Learning
+
+Let's filter and check learning trials:
+
+```{r learning filter}
+learningBlocks <- c("learningBlock1", "learningBlock2", "learningBlock3", "learningBlock4");
+
+learning <- raw_data %>% 
+  filter(task %in% learningBlocks) 
+
+learning <- droplevels(learning);
+rm(learningBlocks)
+```
+
+How many trials per participant? 
+```{r}
+learning %>%                             
+  group_by(subjID, learning) %>%    
+  count() 
+```
+
+Great, 120 trials per participant.
+
+Let's check whether the blocks' length varied across participants:
+
+```{r}
+learning %>%                             
+  group_by(subjID, task) %>%
+  count()
+```
+
+Great! Each participant had a different amount of trials distributed across blocks.
+This means that our random dot task was presented randomly.
+
+How many participants per learning?
+
+```{r}
+table(learning$subjID, learning$learning)
+```
+
+
+cleaning the rows from the Gorilla's http
+```{r}
+as.factor(gsub("/task/70033/56/asset/|/task/70033/57/asset/", "", learning$fribbleID))-> learning$fribbleID
+as.factor(gsub(".jpg$", "", learning$fribbleID))-> learning$fribbleID
+
+as.factor(gsub("/task/70033/56/asset/|/task/70033/57/asset/", "", learning$label))-> learning$label
+as.factor(gsub(".mp3$", "", learning$label))-> learning$label
+learning$resp <- as.factor('NA')
+```
+
+
+
+Let's check whether our fribbles were reapeted max 2 times during learning, by filtering for fribbles presented > 2 times:
+```{r}
+learning %>%                             
+  group_by(subjID, fribbleID) %>%    
+  count() %>%
+  filter(n >2)
+
+```
+
+
+None, perfect.
+Let's check whether there are fribbles presented only once:
+
+```{r}
+learning %>%                             
+  group_by(subjID, fribbleID) %>%    
+  count() %>%
+  filter(n < 2)
+```
+None, perfect.
+
+# Testing
+
+Okay let's check our tests:
+
+```{r tests sanity check}
+tests <- c("generalizationPL", "generalizationLP", "contingencyJudgement", "randomDot");
+
+testing <- raw_data %>% 
+  filter(task %in% tests)  
+
+
+testing <- droplevels(testing);
+rm(tests);
+
+as.factor(gsub("/task/70033/56/asset/|/task/70033/57/asset/", "", testing$fribbleID))-> testing$fribbleID
+as.factor(gsub(".jpg$", "", testing$fribbleID))-> testing$fribbleID
+
+as.factor(gsub("/task/70033/56/asset/|/task/70033/57/asset/", "", testing$label))-> testing$label
+as.factor(gsub(".mp3$", "", testing$label))-> testing$label
+
+
+```
+
+# Generalization from picture to labels
+
+We filter the rows for this task, and clean both the resp and fribble columns.
+
+```{r loading task}
+generalizationPL <- testing %>%
+  filter(task == 'generalizationPL') 
+
+as.factor(gsub("/task/70033/56/asset/|/task/70033/57/asset/", "", generalizationPL$resp))-> generalizationPL$resp
+as.factor(gsub(".mp3$", "", generalizationPL$resp))-> generalizationPL$resp
+as.factor(gsub(".jpg", "", generalizationPL$resp))-> generalizationPL$resp
+
+as.factor(gsub('[[:punct:]]|"', "", generalizationPL$label))-> generalizationPL$label 
+as.factor(gsub('mp3', "_", generalizationPL$label))-> generalizationPL$label
+
+```
+
+Check how many trials participants:
+
+```{r check num of trials}
+generalizationPL %>%                             
+  group_by(subjID) %>%  
+  count() 
+```
+
+Great, 24 trials per participant. 
+
+Check whether participants saw a unique fribble:
+```{r check fribbles num of presentation}
+generalizationPL %>%                             
+  group_by(subjID, fribbleID) %>%  
+  count() %>%
+  filter(n > 1)
+```
+
+Great! 
+
+Integrate stimuli info:
+
+```{r merge with stimuli}
+merge(generalizationPL, fribbleSet, by = 'fribbleID')-> generalizationPL;
+generalizationPL$label.y <- NULL;
+
+generalizationPL <- rename(generalizationPL, label = label.x);
+```
+
+
+Let's check the responses they made, just to see if they make sense.
+
+For example, we want the resp column to be one of the labels.
+```{r check resp column}
+generalizationPL %>%                             
+  group_by(subjID, resp) %>%  
+  count() 
+```
+
+Great, some participant missed some trials, but that's fine overall.
+
+So far, so good.
+
+
+
+Let's check the second task.
+
+# Generalization from label to pictures
+
+```{r from label to pics}
+generalizationLP <- testing %>%
+  filter(task == 'generalizationLP') 
+
+```
+
+How many trials per participant?
+
+```{r}
+generalizationLP %>%                             
+  group_by(subjID) %>%  
+  count() 
+```
+
+24 trials, great.
+Let's check whether participants saw a unique fribble by checking for duplicates:
+First let's clean the rows from Gorilla gibberish.
+
+```{r}
+as.factor(gsub('[[:punct:]]|"', "", generalizationLP$fribbleID))-> generalizationLP$fribbleID 
+as.factor(gsub('jpg', "_", generalizationLP$fribbleID))-> generalizationLP$fribbleID
+
+as.factor(gsub("/task/70033/56/asset/|/task/70033/57/asset/", "", generalizationLP$resp))-> generalizationLP$resp
+as.factor(gsub(".jpg", "", generalizationLP$resp))-> generalizationLP$resp
+
+```
+
+Then check for duplicates:
+```{r}
+
+substr(as.character(generalizationLP$fribbleID), 1, 5)-> temp
+substr(as.character(generalizationLP$fribbleID), 7, 11)-> temp2
+substr(as.character(generalizationLP$fribbleID), 13, 17)-> temp3
+
+fribblePresented <- c(temp,temp2,temp3)
+unique(generalizationLP$subjID)-> subj
+
+duplicatedFribbles <- NA;
+for (i in 1:length(subj)){
+  substr(as.character(generalizationLP[generalizationLP$subjID==subj[i],]$fribbleID), 1, 5)-> temp
+  substr(as.character(generalizationLP[generalizationLP$subjID==subj[i],]$fribbleID), 7, 11)-> temp2
+  substr(as.character(generalizationLP[generalizationLP$subjID==subj[i],]$fribbleID), 13, 17)-> temp3
+  fribblePresented <- c(temp,temp2,temp3)
+  dup <- fribblePresented[duplicated(fribblePresented)] #extract duplicated elements
+  print(subj[i])
+  
+  if (length(dup)>0){
+    print(dup)
+  } else {
+    print(length(dup))
+  }
+  
+};
+
+rm(subj, temp, temp2, temp3, i, fribblePresented, duplicatedFribbles, dup)
+```
+
+Great! participants saw always different fribble.
+
+Check whether fribbles presented were either high or low frequency :
+```{r check fribble presentation low vs high freq}
+unique(generalizationLP$subjID)-> subj;
+
+trials <- NULL;
+task <- NULL;
+
+for (i in 1:length(subj)){
+  as.integer(substr(as.character(generalizationLP[generalizationLP$subjID==subj[i],]$fribbleID), 4, 5))-> temp #first fribble
+  as.integer(substr(as.character(generalizationLP[generalizationLP$subjID==subj[i],]$fribbleID), 10, 11))-> temp2 #second fribble
+  as.integer(substr(as.character(generalizationLP[generalizationLP$subjID==subj[i],]$fribbleID), 16, 17))-> temp3 #third fribble
+trials <- cbind(temp, temp2, temp3, as.integer(subj[i])) # store it in columns along with subj info
+task <- rbind(task, trials) #store all subjs
+};
+
+for (i in 1:nrow(task)){ #check by rows whether there is a unique number, print the row if wrong
+  if ((task[i,1] == task[i,2] & task[i,3])== FALSE) {
+    print('wrong frequency fribble:')
+    print(task[i,1], task[i,2], task[i,3])
+  } 
+};
+
+rm(task, trials, i, subj, temp, temp2, temp3);
+```
+
+Great, fribbles presented were either low or high frequency.
+I'm going to merge the stimuli set:
+
+```{r merge stimuli LP}
+fribbleSet$resp <- fribbleSet$fribbleID # column's name needs to be the same in order to merge
+merge(generalizationLP, fribbleSet, by = 'resp', all.x = T)-> generalizationLP;
+fribbleSet$resp <- NULL;
+generalizationLP$fribbleID.y <- NULL;
+generalizationLP$label.y <- NULL;
+generalizationLP <- rename(generalizationLP, label = label.x);
+generalizationLP <- rename(generalizationLP, fribbleID = fribbleID.x);
+
+```
+
+Let's check whether we have responses in all the three categories:
+
+```{r}
+generalizationLP %>%                             
+  group_by(subjID, category) %>%  
+  count()
+```
+
+Cool.
+
+let's check our contingency judgement task.
+
+# Contingency Judgement task
+
+```{r}
+contingencyJudgement <- testing %>%
+  filter(task == 'contingencyJudgement') 
+
+```
+
+How many trials per participant?
+
+```{r}
+contingencyJudgement %>%                             
+  group_by(subjID) %>%  
+  count() 
+```
+
+Very good. 
+
+Are participants seeing a fribble more than once?
+
+```{r}
+droplevels(contingencyJudgement) %>%                             
+  group_by(subjID, fribbleID) %>%  
+  count() %>%
+  filter( n > 1)
+
+```
+No! that's great.
+
+Are labels repeated equally?
+```{r}
+contingencyJudgement %>%                             
+  group_by(subjID, label) %>%  
+  count() 
+```
+
+good
+
+```{r merge stimuli contingency task} 
+merge(contingencyJudgement, fribbleSet, by = 'fribbleID')-> contingencyJudgement
+contingencyJudgement$label.y <- NULL;
+contingencyJudgement <- rename(contingencyJudgement, label = label.x)
+```
+
+Check category presentation:
+
+```{r}
+contingencyJudgement %>%                             
+  group_by(subjID, category) %>%  
+  count()
+```
+
+
+
+# Random dot task
+
+Let's check our random dot task. This was inserted randomly during trials 4 times. 5 trials each time, plus 4 practice trials.
+
+
+```{r random dot filter}
+randomDot <- testing %>%
+  filter(task == 'randomDot') 
+
+```
+
+How many trials per participant?
+
+```{r}
+randomDot %>%                             
+  group_by(subjID) %>%  
+  count() 
+
+```
+
+we have 5 trials repeated during learning four times (20) plus 4 practice trials.
+How was accuracy distributed across participants?
+
+First, let's consider that when we have a timeout, the output is -1
+
+```{r}
+randomDot %>%                             
+  group_by(subjID, resp) %>% 
+  filter(rt == -1) %>%
+  count()
+
+```
+Here we can see that some participant missed some trials.
+
+
+Let's see how accuracy is coded when response is -1:
+
+```{r}
+head(randomDot[randomDot$rt == -1,]$acc)
+```
+
+So it is coded as "NA", great. However:
+
+```{r}
+nrow(randomDot[is.na(randomDot$acc),]) #total of NA
+nrow(randomDot[randomDot$resp == -1,]) # total of timeouts
+```
+
+There are more NA's in acc than can be explained by timeouts. This means that also wrong responses are coded as NA. We need to recode those.
+
+```{r}
+randomDot[is.na(randomDot$acc),]$acc <- 0 #recode everything that is wrong or timeout as 0
+```
+
+So, now we can check the overall accuracy of participants, filtering by timeouts:
+
+```{r timeout table}
+aggregate(acc ~ subjID, data = randomDot[!(randomDot$resp == -1),], FUN = mean)# without timeouts
+```
+
+So, the first subject was paying attention very poorly. When he was paying attention, he got acc > .68, so he definitely understood and was able to do the task, but simply didn't pay attention at all.
+
+
+```{r, echo=FALSE}
+rm(fribbleSet, testing)
+```
+
+# Data visualization
+
+## rt
+
+```{r}
+rbind(generalizationPL, generalizationLP, contingencyJudgement)-> alltasks
+alltasks <- droplevels(alltasks)
+```
+
+
+```{r RT hist}
+gghistogram(alltasks,
+       x = "rt",
+       y = "..count..",
+       xlab = "rt", 
+       color = "task", 
+       fill = "task",
+       palette = "jco"
+)
+```
+
+
+## accuracy.
+
+### RandomDot
+
+```{r}
+unique(randomDot$subjID)-> subj;
+randomDot-> randomTask
+
+trials <- c(rep('practice', 6), rep('1', 5), 
+              rep('2', 5), rep('3', 5), 
+              rep('4', 5))
+
+trialstot <- as.factor(rep(trials, length(subj)))
+
+randomTask$blocks <- trialstot
+```
+
+How many timeouts?
+
+```{r}
+randomTask$timeout <- ifelse(randomTask$resp== -1, 1, 0)
+
+```
+
+
+Histogram
+
+```{r}
+
+timeout<- randomTask %>%
+  count(timeout, subjID)
+
+timeout[timeout$timeout==0,]$n <- 0
+
+hist(timeout$n, xlab = 'number of timeouts', 
+     main = '', 
+     col=grey(.80), 
+     border=grey(0),
+     breaks = seq(0,max(timeout$n),1))
+```
+
+
+
+```{r}
+timeout <- randomTask %>%
+  group_by(subjID, blocks) %>%
+  filter(resp == -1) %>%
+  count() 
+
+
+ggbarplot(timeout, x = "blocks", y = "n",
+          facet.by = "subjID",
+          sort.by.groups = TRUE,     # Don't sort inside each group
+          ylab = "num of timeouts")
+```
+
+
+```{r}
+accdistr <- randomTask[!(randomTask$resp == -1),] %>%
+  group_by(subjID, blocks) %>%
+  summarise(m = mean(acc))
+```
+
+```{r}
+
+ggstripchart(accdistr, x = "blocks", y = "m",
+             xlab = "blocks",
+             ylab = "accuracy",
+             add = "mean_ci",
+             size = 2,
+             color = "darkgray",
+             shape = 21,
+             fill = "gray",
+             error.plot = "pointrange",
+             add.params = list(color = "black",
+                               size = 0.7)) +
+  scale_y_continuous(limits = c(0.1, 1), oob = scales::squish) + #to prevent jitter to move above 100%
+  geom_hline(yintercept = .50, col='red', lwd=1);
+
+```
+
+
+```{r}
+aggregate(acc ~ subjID, randomTask[!(randomTask$resp == -1),], mean)
+
+```
+
+
+
 
