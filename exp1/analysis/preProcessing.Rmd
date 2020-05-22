@@ -1,8 +1,13 @@
 ---
-title: "Preprocessing + sanity checks"
+title: "Preprocessing"
 author: "Eva"
 date: "4/3/2020"
-output: html_document
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
 ---
 
 ```{r loading libraries, echo=FALSE, message=FALSE}
@@ -12,7 +17,8 @@ library(RCurl);
 library(ggplot2);
 library(ggpubr);
 library(RColorBrewer)
-
+library(langcog)
+library(gridExtra);
 ```
 
 # clean WS, set WD 
@@ -40,6 +46,8 @@ fribbleSet <- read.csv(paste(localGitDir, "/exp1/stimuli/stimuli.csv", sep = "")
 It's important to check that every fribble is unique in the way its features are assembled within each category.
 Feature position and identity are coded into cueID.
 
+I'm going to check whether the combination of cues used to build the fribble is unique by filtering for n > 1:
+
 ```{r check for duplicates}
 
 fribbleSet %>%
@@ -56,8 +64,10 @@ List the files present in the folder, and load them.
 
 ```{r list files}
 df <- list.files(paste(localGitDir, "/exp1/data/", sep = "")); 
-length(df); #
+
 ```
+
+We have `r length(df)` files.
 
 ```{r load files}
 for (i in 1:length(df)){
@@ -78,7 +88,13 @@ for (i in 1:length(df)){
 rm(temp, df, i, id);
 ```
 
-Rename datasets:
+The dataset name is decided autonomously by Gorilla. Importantly, Gorilla produces a different file per condition, and codes the conditions by the last 4 letters.
+
+- 2yjh is the FL learning
+
+- q8hp is the LF learning
+
+I'm going to rename them for clarity.
 
 ```{r rename dataset}
 dataFL<-`data_exp_15519-v13_task-2yjh`
@@ -103,7 +119,10 @@ rm(dataFL2, dataLF2)
 ```
 
 
-Select columns:
+Gorilla's output is extremely messy. Each row is a screen event. However, we want only the events related to 1. the presentations of the fribbles and the labels 2. participants' response and 3. what type of tasks.
+
+I have coded these info in some columns and rows that I'm going to select:
+
 
 ```{r column selection}
 raw_dataFL<- dataFL[c('Participant.Private.ID', 'learningType', 'Test.Part' , 
@@ -153,8 +172,7 @@ raw_dataLF <- raw_dataLF %>%
 rm(rowsIwantTokeep, dataFL, dataLF);
 ```
 
-Both data sets have the same learning that is FL.
-Update: I have found a bug in the randomiser. Fixed now.
+I'm going to merge both datasets, FL and LF, because we have anyway a column "learning" that can tell us which one is which.
 
 ```{r}
 rbind(raw_dataFL, raw_dataLF)-> raw_data; 
@@ -162,7 +180,7 @@ rm(raw_dataFL, raw_dataLF);
 
 ```
 
-# Learning
+# Check learning
 
 Let's filter and check learning trials:
 
@@ -177,7 +195,7 @@ rm(learningBlocks)
 ```
 
 How many trials per participant? 
-```{r}
+```{r check number of trials per ppts}
 learning %>%                             
   group_by(subjID, learning) %>%    
   count() 
@@ -187,24 +205,28 @@ Great, 120 trials per participant.
 
 Let's check whether the blocks' length varied across participants:
 
-```{r}
+```{r check learning blocks length}
 learning %>%                             
   group_by(subjID, task) %>%
   count()
 ```
 
-Great! Each participant had a different amount of trials distributed across blocks.
-This means that our random dot task was presented randomly.
+Great! Each participant had a different amount of trials distributed across blocks. That's important because our random dot task was presented at the end of each block, and we wanted its presentation to be unpredictable.
+Anyway, the sum of all the learning trials was always 120.
 
-How many participants per learning?
 
-```{r}
+Did we assign our learning randomly every couple of people?
+
+```{r check learning randomization and grouping}
 table(learning$subjID, learning$learning)
 ```
+Kind of.
+Apparently, if a participant access Gorilla, but it's not allowed to start the experiment (e.g., the browser is not suitable), or leaves the session, this counts anyway for the randomisation.
 
+The rows related to the presentation of fribbles and labels, inherit Gorilla's http address of where they are stored.
+Nothing I can do to change this in Gorilla, but we can clean the rows by those info like this:
 
-cleaning the rows from the Gorilla's http
-```{r}
+```{r rows cleaning}
 as.factor(gsub("/task/70033/56/asset/|/task/70033/57/asset/", "", learning$fribbleID))-> learning$fribbleID
 as.factor(gsub(".jpg$", "", learning$fribbleID))-> learning$fribbleID
 
@@ -213,9 +235,18 @@ as.factor(gsub(".mp3$", "", learning$label))-> learning$label
 learning$resp <- as.factor('NA')
 ```
 
+This is how the learning dataframe looks like now:
 
+```{r}
+head(learning);
+```
 
-Let's check whether our fribbles were reapeted max 2 times during learning, by filtering for fribbles presented > 2 times:
+```{r}
+summary(learning);
+```
+
+Our fribbles were presented two times during learning. 
+Let's check fribbles presented > 2 times:
 ```{r}
 learning %>%                             
   group_by(subjID, fribbleID) %>%    
@@ -223,7 +254,6 @@ learning %>%
   filter(n >2)
 
 ```
-
 
 None, perfect.
 Let's check whether there are fribbles presented only once:
@@ -234,11 +264,60 @@ learning %>%
   count() %>%
   filter(n < 2)
 ```
-None, perfect.
 
-# Testing
+Perfect.
 
-Okay let's check our tests:
+Check the association between the fribbles and the labels.
+Fribbles ID are coded in this way: 
+e.g., 10175-> [1] is the category [01] is the number of the fribble [75] is the frequency.
+
+In the column fribbleID we have the fribble presented, in the column label we have the sound played.
+
+Association between fribbles and labels are fixed:
+
+- category 1, regardless of the frequency, has the label: dep
+
+- category 2, regardless of the frequency, has the label: bim
+
+- category 3, regardless of the frequency, has the label: tob
+
+I'm going to add a column for category, fribble number, and frequency, in order to check whether everything is okay:
+
+We should have only 3 categories, presented twice per participant. Each category is made of 20 exemplars.
+```{r check label fribble association during learning}
+learning$category <- 0
+learning[substr(as.character(learning$fribbleID), 1, 1)==1,]$category <- 1
+learning[substr(as.character(learning$fribbleID), 1, 1)==2,]$category <- 2
+learning[substr(as.character(learning$fribbleID), 1, 1)==3,]$category <- 3
+
+(nrow(learning[learning$category==1,]) / length(unique(learning$subjID))) / 2
+(nrow(learning[learning$category==2,]) / length(unique(learning$subjID))) / 2
+(nrow(learning[learning$category==3,]) / length(unique(learning$subjID))) / 2
+
+```
+We have 15 high frequency and 5 low frequency exemplars x category:
+
+```{r}
+learning$frequency <- 25
+learning[substr(as.character(learning$fribbleID), 4, 5)==75,]$frequency <- 75
+
+(nrow(learning[learning$frequency==25,]) / length(unique(learning$subjID))) / 2
+(nrow(learning[learning$frequency==75,]) / length(unique(learning$subjID))) / 2
+
+```
+
+Now let's check the fribble-label association:
+
+```{r fribble-label table}
+table(learning$category, learning$label, learning$frequency)
+```
+
+Okay, each label was associated to its correct fribble (coded here as category).
+
+
+# Check Testing
+
+I'm going to select the tests and clean the rows from Gorilla's http address:
 
 ```{r tests sanity check}
 tests <- c("generalizationPL", "generalizationLP", "contingencyJudgement", "randomDot");
@@ -259,13 +338,14 @@ as.factor(gsub(".mp3$", "", testing$label))-> testing$label
 
 ```
 
-# Generalization from picture to labels
+## Check test 1: Generalization from picture to labels
 
 We filter the rows for this task, and clean both the resp and fribble columns.
 
 ```{r loading task}
 generalizationPL <- testing %>%
   filter(task == 'generalizationPL') 
+generalizationPL <- droplevels(generalizationPL);
 
 as.factor(gsub("/task/70033/56/asset/|/task/70033/57/asset/", "", generalizationPL$resp))-> generalizationPL$resp
 as.factor(gsub(".mp3$", "", generalizationPL$resp))-> generalizationPL$resp
@@ -296,13 +376,15 @@ generalizationPL %>%
 
 Great! 
 
-Integrate stimuli info:
+Integrate stimuli info.
+In the file "fribbleSet" I have listed all the fribbles ID and their category, along with their cueIDs and body shape. I'm going to add those columns by merging the test file with the fribbleSet by fribbleID. The rest of the file is left untouched.
 
 ```{r merge with stimuli}
 merge(generalizationPL, fribbleSet, by = 'fribbleID')-> generalizationPL;
 generalizationPL$label.y <- NULL;
 
 generalizationPL <- rename(generalizationPL, label = label.x);
+
 ```
 
 
@@ -315,20 +397,25 @@ generalizationPL %>%
   count() 
 ```
 
-Great, some participant missed some trials, but that's fine overall.
+Great, some participant missed some trials (coded as NA), but that's okay.
 
 So far, so good.
 
+We have 24 trials per participant, but within those trials we have 8 trials per category, 4 low frequency and 4 high frequency trials.
+Let's check:
+```{r}
+head(table(generalizationPL$subjID, generalizationPL$category, generalizationPL$frequency))
+```
 
 
 Let's check the second task.
 
-# Generalization from label to pictures
+## Check test 2: Generalization from label to pictures
 
 ```{r from label to pics}
 generalizationLP <- testing %>%
   filter(task == 'generalizationLP') 
-
+generalizationLP <- droplevels(generalizationLP)
 ```
 
 How many trials per participant?
@@ -340,6 +427,9 @@ generalizationLP %>%
 ```
 
 24 trials, great.
+
+
+
 Let's check whether participants saw a unique fribble by checking for duplicates:
 First let's clean the rows from Gorilla gibberish.
 
@@ -384,7 +474,11 @@ rm(subj, temp, temp2, temp3, i, fribblePresented, duplicatedFribbles, dup)
 
 Great! participants saw always different fribble.
 
-Check whether fribbles presented were either high or low frequency :
+Check whether fribbles presented were either high or low frequency.
+
+In this task we have three pictures and one label pronounced. This means that the fribbleID column contains 3 images.
+I'm going to cycle over the dataset, and break the fribbleID column in three, then I'm going to print the fribble that within the same trial has a different frequency. I'm going to print the fribbles that are presented wrongly, e.g., "low high low" etc. If all fribbles are presented correctly: , e.g., "low low low" and "high high high", then the output is empty. 
+
 ```{r check fribble presentation low vs high freq}
 unique(generalizationLP$subjID)-> subj;
 
@@ -406,11 +500,24 @@ for (i in 1:nrow(task)){ #check by rows whether there is a unique number, print 
   } 
 };
 
-rm(task, trials, i, subj, temp, temp2, temp3);
+frequency <- ifelse(substr(as.character(task[,1]), 1, 1)==2, 'low', 'high')
+cbind(task, frequency)->task
+as.data.frame(task)-> task
+rm(trials, i, subj, temp, temp2, temp3);
 ```
 
 Great, fribbles presented were either low or high frequency.
-I'm going to merge the stimuli set:
+Check whether participants saw 4 trials with low and 4 trials with high frequency:
+
+Let's see how these are distributed:
+```{r}
+head(table(task$V4, task$frequency))
+```
+
+
+I'm going to merge the stimuli set now.
+
+When we do it, this time we need to merge by resp and not by fribbleID, because our fribble selected is coded in this column:
 
 ```{r merge stimuli LP}
 fribbleSet$resp <- fribbleSet$fribbleID # column's name needs to be the same in order to merge
@@ -433,14 +540,20 @@ generalizationLP %>%
 
 Cool.
 
-let's check our contingency judgement task.
+Check responses distribution over category:
+```{r}
+generalizationLP %>%                             
+  group_by(subjID, label, frequency) %>%  
+  count()
+```
 
-# Contingency Judgement task
+
+## Check test 3: Contingency Judgement task
 
 ```{r}
 contingencyJudgement <- testing %>%
   filter(task == 'contingencyJudgement') 
-
+contingencyJudgement <- droplevels(contingencyJudgement)
 ```
 
 How many trials per participant?
@@ -453,7 +566,7 @@ contingencyJudgement %>%
 
 Very good. 
 
-Are participants seeing a fribble more than once?
+Did participants see a fribble more than once?
 
 ```{r}
 droplevels(contingencyJudgement) %>%                             
@@ -466,9 +579,7 @@ No! that's great.
 
 Are labels repeated equally?
 ```{r}
-contingencyJudgement %>%                             
-  group_by(subjID, label) %>%  
-  count() 
+table(contingencyJudgement$subjID, contingencyJudgement$label)
 ```
 
 good
@@ -489,7 +600,7 @@ contingencyJudgement %>%
 
 
 
-# Random dot task
+## Check test 4: Random dot task
 
 Let's check our random dot task. This was inserted randomly during trials 4 times. 5 trials each time, plus 4 practice trials.
 
@@ -549,11 +660,9 @@ So, now we can check the overall accuracy of participants, filtering by timeouts
 aggregate(acc ~ subjID, data = randomDot[!(randomDot$resp == -1),], FUN = mean)# without timeouts
 ```
 
-So, the first subject was paying attention very poorly. When he was paying attention, he got acc > .68, so he definitely understood and was able to do the task, but simply didn't pay attention at all.
-
-
+Now that we have all tests separated, better to remove this file:
 ```{r, echo=FALSE}
-rm(fribbleSet, testing)
+rm(testing)
 ```
 
 # Data visualization
@@ -575,10 +684,12 @@ gghistogram(alltasks,
        fill = "task",
        palette = "jco"
 )
+
+rm(alltasks)
 ```
 
 
-## accuracy.
+## accuracy
 
 ### RandomDot
 
@@ -586,7 +697,7 @@ gghistogram(alltasks,
 unique(randomDot$subjID)-> subj;
 randomDot-> randomTask
 
-trials <- c(rep('practice', 6), rep('1', 5), 
+trials <- c(rep('0', 6), rep('1', 5), 
               rep('2', 5), rep('3', 5), 
               rep('4', 5))
 
@@ -602,15 +713,25 @@ randomTask$timeout <- ifelse(randomTask$resp== -1, 1, 0)
 
 ```
 
+```{r}
+temp<-randomTask %>%
+  count(timeout, subjID) %>%
+  filter(timeout == 1)
+
+unique(temp$subjID)-> subjs
+
+temp2<-randomTask[!(randomTask$subjID %in% subjs),] %>%
+  count(timeout, subjID) %>%
+  filter(timeout == 0)
+
+temp2[temp2$timeout==0,]$n <- 0
+
+rbind(temp,temp2)-> timeout
+```
 
 Histogram
 
 ```{r}
-
-timeout<- randomTask %>%
-  count(timeout, subjID)
-
-timeout[timeout$timeout==0,]$n <- 0
 
 hist(timeout$n, xlab = 'number of timeouts', 
      main = '', 
@@ -628,9 +749,9 @@ timeout <- randomTask %>%
   count() 
 
 
-ggbarplot(timeout, x = "blocks", y = "n",
+ggbarplot(timeout[timeout$n>1,], x = "blocks", y = "n",
           facet.by = "subjID",
-          sort.by.groups = TRUE,     # Don't sort inside each group
+          sort.by.groups = TRUE,     # Sort inside each group
           ylab = "num of timeouts")
 ```
 
@@ -658,13 +779,587 @@ ggstripchart(accdistr, x = "blocks", y = "m",
   geom_hline(yintercept = .50, col='red', lwd=1);
 
 ```
-
+```{r}
+accdistr[accdistr$m<.7,]
+```
 
 ```{r}
-aggregate(acc ~ subjID, randomTask[!(randomTask$resp == -1),], mean)
+rm(temp, temp2, timeout, subj, subjs, trials, trialstot, accdistr)
+```
 
+### Task 1: from picture to labels
+
+The column fribbleID stores the fribble presented, while the column label stores the labels presented. Resp column in this task refers to the label selected. Category and frequency refers to the fribbleID column.
+
+I'm going to add 1 in the accuracy column for every instance where response matches the category column, i.e., the participant correctly associated the fribble to its label.
+
+I remove the no-response, and compute accuracy based on category and response.
+
+```{r check number of participants}
+length(unique(generalizationPL$subjID))
+fl<- length(unique(generalizationPL[generalizationPL$learning=='FL',]$subjID))
+lf<- length(unique(generalizationPL[generalizationPL$learning=='LF',]$subjID))
+```
+
+We have `r fl` for feature-label learning, and `r lf` for label-feature learning.
+
+```{r hist of rt}
+par(mfrow=c(1,2))
+hist(generalizationPL[generalizationPL$rt<600,]$rt, main = 'rt < 600ms', xlab = 'trials');
+hist(generalizationPL[generalizationPL$rt>2000,]$rt, main = 'rt > 2000ms', xlab = 'trials');
+par(mfrow=c(1,1))
+
+```
+
+```{r  accuracy}
+rm(fl,lf)
+pictureLabel <- generalizationPL[!(is.na(generalizationPL$resp)),]
+
+pictureLabel$acc <- 0;
+pictureLabel[pictureLabel$category==1 & pictureLabel$resp=='dep',]$acc <- 1;
+
+pictureLabel[pictureLabel$category==2 & pictureLabel$resp=='bim',]$acc <- 1;
+
+pictureLabel[pictureLabel$category==3 & pictureLabel$resp=='tob',]$acc <- 1;
+
+```
+
+```{r check missing data}
+n <- length(unique(pictureLabel$subjID))
+nrows <- (nrow(generalizationPL)) - (nrow(pictureLabel))
+```
+
+```{r subjects lost?}
+sort(unique(pictureLabel$subjID))-> subjs;
+sort(unique(generalizationPL$subjID)) ->totsubjs;
+
+subjmissed<- setdiff(totsubjs, subjs);
+
+rm(subjs, totsubjs);
+```
+We have `r n` participants in this task, this is -`r length(subjmissed)` compared to our total number of participants. The subject(s) that didn't answer at all the task is: `r subjmissed`. 
+We have lost also `r nrows` responses, that is `r nrows/nrow(generalizationPL)*100` over the total: `r nrow(generalizationPL)`.
+
+
+Calculate the proportion of correct in each condition:
+
+
+```{r aggregating}
+rm(n, subjmissed, nrows)
+
+ss_prop<-aggregate(acc ~ frequency+category+subjID+learning, 
+                   data = pictureLabel[pictureLabel$rt > 200,], FUN = mean)
 ```
 
 
 
+
+Plot aggregated over subjs.
+To see accuracy distributed over categories.
+
+```{r}
+
+ms <- ss_prop %>%
+  group_by( category, frequency, learning) %>%
+  summarise(n=n(),
+    mean=mean(acc),
+    sd=sd(acc)
+  ) %>%
+  mutate( se=sd/sqrt(n))  %>% 
+  mutate( ci=se * qt((1-0.05)/2 + .5, n-1))
+
+ms$frequency <- as.factor(ms$frequency)
+plyr::revalue(ms$frequency, c("25"="low"))-> ms$frequency;
+plyr::revalue(ms$frequency, c("75"="high"))-> ms$frequency;
+
+ggplot(aes(x = category, y = mean, fill = frequency), data = ms) +
+  facet_grid( . ~ learning) + 
+  geom_bar(stat = "identity", color='white', position=position_dodge(), size=1.2) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.15, size=1,position=position_dodge(.9)) +
+  ylab("Accuracy ") +
+  xlab("category") +
+  ggtitle('pictureLabels') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggpubr::theme_pubclean() + 
+  theme(legend.position="bottom", legend.title = element_blank()) +
+  theme(text = element_text(size=10)) +
+  geom_hline(yintercept = .33, col='red', lwd=1);
+
+```
+
+
+```{r}
+df <- aggregate(acc ~ subjID+frequency+learning+category, 
+                data = pictureLabel[pictureLabel$rt > 200,], mean)
+df$frequency <- as.factor(df$frequency)
+plyr::revalue(df$frequency, c("25"="low"))-> df$frequency;
+plyr::revalue(df$frequency, c("75"="high"))-> df$frequency;
+
+ggviolin(df, x = "frequency", y = "acc", fill = "frequency",
+         palette = c("#00AFBB", "#E7B800"),
+         add = "boxplot", 
+         add.params = list(fill = "white"),
+         trim=TRUE) +
+        ggtitle('pictureLabels') +
+        facet_grid( learning ~ category) +
+        theme_pubclean()+
+  geom_hline(yintercept = .33, col='red', lwd=1);
+
+```
+
+Let's see how participants scored for the high/low frequency: 
+
+
+```{r}
+df <- aggregate(acc ~ subjID+frequency+learning, 
+                data = pictureLabel[pictureLabel$rt > 200,], mean)
+df$frequency <- as.factor(df$frequency)
+plyr::revalue(df$frequency, c("25"="low"))-> df$frequency;
+plyr::revalue(df$frequency, c("75"="high"))-> df$frequency;
+
+ggviolin(df, x = "frequency", y = "acc", fill = "frequency",
+         palette = c("#00AFBB", "#E7B800"),
+         add = "boxplot", 
+         add.params = list(fill = "white"),
+         trim=TRUE) +
+        ggtitle('pictureLabels') +
+        facet_grid( . ~ learning) +
+        theme_pubclean()+
+  geom_hline(yintercept = .33, col='red', lwd=1);
+
+```
+
+
+```{r}
+par(mfrow=c(2,2))
+hist(df[df$frequency=='low' & df$learning=='FL',]$acc, xlab = 'acc', main = 'low freq - FL ')
+hist(df[df$frequency=='low' & df$learning=='LF',]$acc, xlab = 'acc', main = 'low freq - LF ')
+hist(df[df$frequency=='high' & df$learning=='FL',]$acc, xlab = 'acc', main = 'high freq - FL ')
+hist(df[df$frequency=='high' & df$learning=='LF',]$acc, xlab = 'acc', main = 'high freq - LF ')
+par(mfrow=c(1,1))
+
+```
+
+
+```{r, include=TRUE}
+#barPlot aggregated over categories:
+
+ms <- aggregate(acc ~ subjID+frequency+learning, 
+                data=pictureLabel[pictureLabel$rt > 200,], FUN= mean)
+
+df<- ms %>%
+  group_by(frequency, learning)%>%
+  summarise(
+    mean = mean(acc),
+    sd = sd(acc),
+    n = n()) %>%
+  mutate( se=sd/sqrt(n))  %>% 
+  mutate( ci=se * qt((1-0.05)/2 + .5, n-1))
+
+df$frequency <- as.factor(df$frequency)
+plyr::revalue(df$frequency, c("25"="low"))-> df$frequency;
+plyr::revalue(df$frequency, c("75"="high"))-> df$frequency;
+
+
+pl<-ggplot(aes(x = frequency, y = mean, fill = frequency), data = df) +
+  facet_grid( . ~ learning) +
+  geom_bar(stat = "identity", color='white', position=position_dodge(), size=1.2) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.15, size=1,position=position_dodge(.9)) +
+  ylab("Accuracy ") +
+  xlab("frequency") +
+  ggtitle('pictureLabels') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggpubr::theme_pubclean() + 
+  theme(legend.position="bottom", legend.title = element_blank()) +
+  theme(text = element_text(size=10)) +
+  geom_hline(yintercept = .33, col='red', lwd=1);
+
+```
+
+### Task 2: from label to pictures
+
+Let's check now the generalizaton from label to pictures:
+
+```{r}
+length(unique(generalizationLP$subjID))
+fl<- length(unique(generalizationLP[generalizationLP$learning=='FL',]$subjID))
+lf<- length(unique(generalizationLP[generalizationLP$learning=='LF',]$subjID))
+```
+
+We have `r fl` for feature-label learning, and `r lf` for label-feature learning.
+
+```{r}
+rm(fl,lf)
+labelPicture <- generalizationLP[!(is.na(generalizationLP$resp)),]
+n<- length(unique(labelPicture$subjID))
+nrows <- (nrow(generalizationLP)) - (nrow(labelPicture))
+
+sort(unique(labelPicture$subjID))-> subjs;
+sort(unique(generalizationLP$subjID)) ->totsubjs;
+
+subjmissed<- setdiff(totsubjs, subjs);
+
+```
+Great, we have `r n` participants in this task, so -`r length(subjmissed)`, and we have missed `r nrows` over the total `r nrow(generalizationLP)`, that is `r nrows/nrow(generalizationLP)*100`. The subject(s) that missed completely the task is: `r subjmissed`.
+
+
+
+```{r }
+par(mfrow=c(1,2))
+hist(generalizationLP[generalizationLP$rt<600,]$rt, main = 'rt < 600ms', xlab = 'trials');
+hist(generalizationLP[generalizationLP$rt>2000,]$rt, main = 'rt > 2000ms', xlab = 'trials');
+par(mfrow=c(1,1))
+```
+
+```{r}
+rm(n, nrows, subjs, totsubjs);
+labelPicture$acc <- 0;
+labelPicture[labelPicture$category==1 & labelPicture$label=='dep',]$acc <- 1;
+labelPicture[labelPicture$category==2 & labelPicture$label=='bim',]$acc <- 1;
+labelPicture[labelPicture$category==3 & labelPicture$label=='tob',]$acc <- 1;
+
+```
+
+Calculate the proportion of correct in each condition
+
+```{r}
+rm(subjmissed)
+ss_prop<-aggregate(acc ~ frequency+category+subjID+learning, 
+                   data = labelPicture[labelPicture$rt > 200 ,], FUN = mean)
+
+```
+
+
+Plot aggregated over subjs.
+To see accuracy distributed over categories.
+
+```{r}
+
+ms <- ss_prop %>%
+  group_by(category, frequency, learning) %>%
+  summarise(
+    n=n(),
+    mean=mean(acc),
+    sd=sd(acc)
+  ) %>%
+  mutate( se=sd/sqrt(n))  %>% 
+  mutate( ci=se * qt((1-0.05)/2 + .5, n-1))
+
+ms$frequency <- as.factor(ms$frequency)
+plyr::revalue(ms$frequency, c("25"="low"))-> ms$frequency;
+plyr::revalue(ms$frequency, c("75"="high"))-> ms$frequency;
+
+ggplot(aes(x = category, y = mean, fill = frequency), data = ms) +
+  facet_grid( . ~ learning) + 
+  geom_bar(stat = "identity", color='white', position=position_dodge(), size=1.2) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.15, size=1,position=position_dodge(.9)) +
+  ylab("Accuracy ") +
+  xlab("category") +
+  ggtitle('labelPictures') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggpubr::theme_pubclean() + 
+  theme(legend.position="bottom", legend.title = element_blank()) +
+  theme(text = element_text(size=10)) +
+  geom_hline(yintercept = .33, col='red', lwd=1);
+
+```
+
+
+```{r}
+ms <- aggregate(acc ~ subjID+frequency+learning+category, 
+                data = labelPicture[labelPicture$rt > 200,], mean)
+
+ms$frequency <- as.factor(ms$frequency)
+plyr::revalue(ms$frequency, c("25"="low"))-> ms$frequency;
+plyr::revalue(ms$frequency, c("75"="high"))-> ms$frequency;
+
+ggviolin(ms, x = "frequency", y = "acc", fill = "frequency",
+         palette = c("#00AFBB", "#E7B800"),
+         add = "boxplot", 
+         add.params = list(fill = "white"),
+         trim=TRUE) +
+         ggtitle('labelPictures') +
+        facet_grid( learning ~ category) +
+        theme_pubclean()+
+  geom_hline(yintercept = .33, col='red', lwd=1);
+#rm(ms, ss_prop)
+
+```
+
+
+```{r}
+ms <- aggregate(acc ~ subjID+frequency+learning, 
+                data = labelPicture[labelPicture$rt > 200,], mean)
+
+ms$frequency <- as.factor(ms$frequency)
+plyr::revalue(ms$frequency, c("25"="low"))-> ms$frequency;
+plyr::revalue(ms$frequency, c("75"="high"))-> ms$frequency;
+
+ggviolin(ms, x = "frequency", y = "acc", fill = "frequency",
+         palette = c("#00AFBB", "#E7B800"),
+         add = "boxplot", 
+         add.params = list(fill = "white"),
+         trim=TRUE) +
+         ggtitle('labelPictures') +
+        facet_grid( . ~ learning) +
+        theme_pubclean()+
+  geom_hline(yintercept = .33, col='red', lwd=1);
+#rm(ms, ss_prop)
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+hist(ms[ms$frequency=='low' & ms$learning=='FL',]$acc, xlab = 'acc', main = 'low freq - FL ')
+hist(ms[ms$frequency=='low' & ms$learning=='LF',]$acc, xlab = 'acc', main = 'low freq - LF ')
+hist(ms[ms$frequency=='high' & ms$learning=='FL',]$acc, xlab = 'acc', main = 'high freq - FL ')
+hist(ms[ms$frequency=='high' & ms$learning=='LF',]$acc, xlab = 'acc', main = 'high freq - LF ')
+par(mfrow=c(1,1))
+
+```
+
+### Comparison with both task 1 and 2
+
+Inspection of the speed-accuracy trade-off:
+
+
+```{r}
+rt_range <- 2500
+n_bins <- 10
+break_seq <- seq(0, rt_range, rt_range/n_bins)
+
+timeslice_range <- labelPicture[labelPicture$rt > 200 ,] %>%
+  filter(learning == "FL") %>%
+  dplyr::mutate(RT_bin = cut(rt, breaks = break_seq)) %>%
+  dplyr::group_by(RT_bin, category) %>%
+  dplyr::mutate(RT_bin_avg = mean(rt, na.rm = T))
+
+count_range <- timeslice_range %>%
+  group_by(RT_bin, category) %>%
+  summarise(subjcount = n_distinct(subjID), totalcount = n())
+
+timeslice_range <- timeslice_range %>%
+  dplyr::group_by(RT_bin_avg, category, subjID) %>% 
+  dplyr::summarise(ss_acc = mean(acc, na.rm=T)) %>% 
+  dplyr::group_by(RT_bin_avg, category) %>%
+  dplyr::summarise(mean = mean(ss_acc),
+            n = n())
+
+ggplot(aes(x=RT_bin_avg, y=mean, weight = n), 
+           data = timeslice_range) + 
+  geom_point(aes(size = n), shape = 21, fill = "white", stroke = 1.5) +
+  geom_smooth(method = "lm", formula = y ~ poly(x,2), se = TRUE, color = "#0892d0", fill = "lightgray") +
+  geom_hline(yintercept = 0.5, lty = "dashed", color = 'red') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggthemes::theme_hc()+
+  xlab("Average RT on trials") +
+  ggtitle('speed-accuracy tradeoff - FL')
+  ylab("Proportion Correct")
+
+```
+
+
+```{r}
+rt_range <- 2500
+n_bins <- 10
+break_seq <- seq(0, rt_range, rt_range/n_bins)
+
+timeslice_range <- labelPicture[labelPicture$rt > 200 ,] %>%
+  filter(learning == "LF") %>%
+  dplyr::mutate(RT_bin = cut(rt, breaks = break_seq)) %>%
+  dplyr::group_by(RT_bin, category) %>%
+  dplyr::mutate(RT_bin_avg = mean(rt, na.rm = T))
+
+count_range <- timeslice_range %>%
+  group_by(RT_bin, category) %>%
+  summarise(subjcount = n_distinct(subjID), totalcount = n())
+
+timeslice_range <- timeslice_range %>%
+  dplyr::group_by(RT_bin_avg, category, subjID) %>% 
+  dplyr::summarise(ss_acc = mean(acc, na.rm=T)) %>% 
+  dplyr::group_by(RT_bin_avg, category) %>%
+  dplyr::summarise(mean = mean(ss_acc),
+            n = n())
+
+ggplot(aes(x=RT_bin_avg, y=mean, weight = n), 
+           data = timeslice_range) + 
+  geom_point(aes(size = n), shape = 21, fill = "white", stroke = 1.5) +
+  geom_smooth(method = "lm", formula = y ~ poly(x,2), se = TRUE, color = "#0892d0", fill = "lightgray") +
+  geom_hline(yintercept = 0.5, lty = "dashed", color = 'red') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggthemes::theme_hc()+
+  xlab("Average RT on trials") +
+  ggtitle('speed-accuracy tradeoff LF')
+  ylab("Proportion Correct")
+
+```
+
+
+```{r}
+aggregate(acc ~ subjID+learning, labelPicture[labelPicture$rt > 200 ,], mean)-> speedacc
+aggregate(rt ~ subjID+learning, labelPicture[labelPicture$rt > 200,], mean)-> speedacc2
+merge(speedacc, speedacc2, by =  c("subjID", "learning"))-> speedacc
+
+ggplot(aes(x=rt, y=acc), 
+           data = speedacc) + 
+  facet_grid( . ~ learning) + 
+  geom_point( shape = 21, fill = "white", size = 3, stroke = 1.5) +
+  #geom_smooth(method = "lm", formula = y ~ poly(x,2), se = TRUE, color = "#0892d0", fill = "lightgray") +
+  geom_hline(yintercept = 0.33, lty = "dashed", color = 'red') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggthemes::theme_hc()+
+  xlab("Average RT on subjs") +
+  ylab("Proportion Correct") +
+  ggtitle("speed-acc tradeoff")
+
+```
+
+
+```{r, fig.align='center'}
+
+ms <- aggregate(acc ~ subjID+frequency+learning, 
+                data=labelPicture[labelPicture$rt > 200,], FUN= mean)
+
+df<- ms %>%
+  group_by(frequency, learning)%>%
+  summarise(
+    mean = mean(acc),
+    sd = sd(acc),
+    n = n()) %>%
+  mutate( se=sd/sqrt(n))  %>% 
+  mutate( ci=se * qt((1-0.05)/2 + .5, n-1))
+
+df$frequency <- as.factor(df$frequency)
+plyr::revalue(df$frequency, c("25"="low"))-> df$frequency;
+plyr::revalue(df$frequency, c("75"="high"))-> df$frequency;
+
+
+lp<-ggplot(aes(x = frequency, y = mean, fill = frequency), data = df) +
+  facet_grid( . ~ learning) +
+  geom_bar(stat = "identity", color='white', position=position_dodge(), size=1.2) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.15, size=1,position=position_dodge(.9)) +
+  ylab("Accuracy ") +
+  xlab("frequency") +
+  ggtitle("labelPictures") +
+  coord_cartesian(ylim = c(0, 1))+
+  ggpubr::theme_pubclean() + 
+  theme(legend.position="bottom", legend.title = element_blank()) +
+  theme(text = element_text(size=10)) +
+  geom_hline(yintercept = .33, col='red', lwd=1);
+
+```
+
+```{r}
+grid.arrange(lp, pl, ncol=2)
+
+```
+
+Barplots + violinPlots with data from both tasks:
+
+```{r}
+rm(ms, lp, pl, df, ss_prop)
+genTask <- rbind(labelPicture, pictureLabel)
+```
+
+```{r}
+ms <- aggregate(acc ~ subjID+frequency+learning, data = genTask, mean)
+
+ms$frequency <- as.factor(ms$frequency)
+plyr::revalue(ms$frequency, c("25"="low"))-> ms$frequency;
+plyr::revalue(ms$frequency, c("75"="high"))-> ms$frequency;
+
+ggviolin(ms, x = "frequency", y = "acc", fill = "frequency",
+         palette = c("#00AFBB", "#E7B800"),
+         add = "boxplot", 
+         add.params = list(fill = "white"),
+         trim=TRUE) +
+        ggtitle('labelPictures + pictureLabels') + 
+        facet_grid( . ~ learning) +
+        theme_pubclean()+
+  geom_hline(yintercept = .33, col='red', lwd=1);
+
+```
+
+```{r}
+ms <- aggregate(acc ~ subjID+frequency+learning, data=genTask, FUN= mean)
+
+df<- ms %>%
+  group_by(frequency, learning)%>%
+  summarise(
+    mean = mean(acc),
+    sd = sd(acc),
+    n = n()) %>%
+  mutate( se=sd/sqrt(n))  %>% 
+  mutate( ci=se * qt((1-0.05)/2 + .5, n-1))
+
+df$frequency <- as.factor(df$frequency)
+plyr::revalue(df$frequency, c("25"="low"))-> df$frequency;
+plyr::revalue(df$frequency, c("75"="high"))-> df$frequency;
+
+
+ggplot(aes(x = frequency, y = mean, fill = frequency), data = df) +
+  facet_grid( . ~ learning) +
+  geom_bar(stat = "identity", color='white', position=position_dodge(), size=1.2) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.15, size=1,position=position_dodge(.9)) +
+  ylab("Accuracy ") +
+  xlab("frequency") +
+  ggtitle("labelPicture") +
+  ggtitle('picturelabels + labelpictures') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggpubr::theme_pubclean() + 
+  theme(legend.position="bottom", legend.title = element_blank()) +
+  theme(text = element_text(size=10)) +
+  geom_hline(yintercept = .33, col='red', lwd=1);
+
+```
+
+### Task 3: Contingency judgement 
+
+```{r}
+length(unique(contingencyJudgement$subjID))
+fl<- length(unique(contingencyJudgement[contingencyJudgement$learning=='FL',]$subjID))
+lf<- length(unique(contingencyJudgement[contingencyJudgement$learning=='LF',]$subjID))
+```
+
+We have `r fl` for feature-label learning, and `r lf` for label-feature learning.
+
+```{r}
+rm(fl,lf)
+conjudge <- contingencyJudgement[!(is.na(contingencyJudgement$resp)),]
+n<- length(unique(conjudge$subjID))
+nrows <- (nrow(contingencyJudgement)) - (nrow(conjudge))
+
+sort(unique(conjudge$subjID))-> subjs;
+sort(unique(contingencyJudgement$subjID)) ->totsubjs;
+
+subjmissed<- setdiff(totsubjs, subjs);
+
+```
+We have `r n` participants in this task, so -`r length(subjmissed)`, and we have missed `r nrows` over the total `r nrow(generalizationLP)`, that is `r nrows/nrow(generalizationLP)*100`. The subject(s) that missed completely the task is/are: `r subjmissed`.
+
+
+
+```{r }
+par(mfrow=c(1,2))
+hist(conjudge[conjudge$rt<1500,]$rt, main = 'rt < 1500ms', xlab = 'trials');
+hist(conjudge[conjudge$rt>3000,]$rt, main = 'rt > 3000ms', xlab = 'trials');
+par(mfrow=c(1,1))
+```
+
+Resp is coded as factor, need to correct this:
+
+```{r}
+as.numeric(levels(conjudge$resp))[conjudge$resp]-> conjudge$resp
+```
+
+
+```{r histogram}
+hist(conjudge$resp, main = 'resp distribution', xlab = 'choices')
+```
+
+Ok, here we don't have right or wrong answers, but we are more interested in take a look how the participants rated the fribble label association:
+
+```{r}
+aggregate(resp ~ category, data = conjudge, FUN = mean)
+```
 
