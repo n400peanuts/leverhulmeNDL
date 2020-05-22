@@ -3,11 +3,11 @@ title: "Preprocessing"
 author: "Eva"
 date: "4/3/2020"
 output:
-  pdf_document:
-    toc: yes
   html_document:
     toc: yes
     toc_float: yes
+  pdf_document:
+    toc: yes
 ---
 
 ```{r loading libraries, echo=FALSE, message=FALSE}
@@ -1118,10 +1118,11 @@ par(mfrow=c(1,1))
 
 ```
 
-### Comparison with both task 1 and 2
+### Comparison by learning by tasks
 
 Inspection of the speed-accuracy trade-off:
 
+labelPicture
 
 ```{r}
 rt_range <- 2500
@@ -1153,7 +1154,7 @@ ggplot(aes(x=RT_bin_avg, y=mean, weight = n),
   coord_cartesian(ylim = c(0, 1))+
   ggthemes::theme_hc()+
   xlab("Average RT on trials") +
-  ggtitle('speed-accuracy tradeoff - FL')
+  ggtitle('speed-accuracy tradeoff - FL - labelPicture')
   ylab("Proportion Correct")
 
 ```
@@ -1189,7 +1190,7 @@ ggplot(aes(x=RT_bin_avg, y=mean, weight = n),
   coord_cartesian(ylim = c(0, 1))+
   ggthemes::theme_hc()+
   xlab("Average RT on trials") +
-  ggtitle('speed-accuracy tradeoff LF')
+  ggtitle('speed-accuracy tradeoff LF - LabelPicture')
   ylab("Proportion Correct")
 
 ```
@@ -1210,10 +1211,106 @@ ggplot(aes(x=rt, y=acc),
   ggthemes::theme_hc()+
   xlab("Average RT on subjs") +
   ylab("Proportion Correct") +
-  ggtitle("speed-acc tradeoff")
+  ggtitle("speed-acc tradeoff - labelPicture")
 
 ```
 
+PictureLabel:
+
+```{r}
+rt_range <- 2500
+n_bins <- 10
+break_seq <- seq(0, rt_range, rt_range/n_bins)
+
+timeslice_range <- pictureLabel[pictureLabel$rt > 200 ,] %>%
+  filter(learning == "FL") %>%
+  dplyr::mutate(RT_bin = cut(rt, breaks = break_seq)) %>%
+  dplyr::group_by(RT_bin, category) %>%
+  dplyr::mutate(RT_bin_avg = mean(rt, na.rm = T))
+
+count_range <- timeslice_range %>%
+  group_by(RT_bin, category) %>%
+  summarise(subjcount = n_distinct(subjID), totalcount = n())
+
+timeslice_range <- timeslice_range %>%
+  dplyr::group_by(RT_bin_avg, category, subjID) %>% 
+  dplyr::summarise(ss_acc = mean(acc, na.rm=T)) %>% 
+  dplyr::group_by(RT_bin_avg, category) %>%
+  dplyr::summarise(mean = mean(ss_acc),
+            n = n())
+
+ggplot(aes(x=RT_bin_avg, y=mean, weight = n), 
+           data = timeslice_range) + 
+  geom_point(aes(size = n), shape = 21, fill = "white", stroke = 1.5) +
+  geom_smooth(method = "lm", formula = y ~ poly(x,2), se = TRUE, color = "#0892d0", fill = "lightgray") +
+  geom_hline(yintercept = 0.5, lty = "dashed", color = 'red') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggthemes::theme_hc()+
+  xlab("Average RT on trials") +
+  ggtitle('speed-accuracy tradeoff - FL - pictureLabel')
+  ylab("Proportion Correct")
+
+```
+
+
+
+```{r}
+rt_range <- 2500
+n_bins <- 10
+break_seq <- seq(0, rt_range, rt_range/n_bins)
+
+timeslice_range <- pictureLabel[pictureLabel$rt > 200 ,] %>%
+  filter(learning == "LF") %>%
+  dplyr::mutate(RT_bin = cut(rt, breaks = break_seq)) %>%
+  dplyr::group_by(RT_bin, category) %>%
+  dplyr::mutate(RT_bin_avg = mean(rt, na.rm = T))
+
+count_range <- timeslice_range %>%
+  group_by(RT_bin, category) %>%
+  summarise(subjcount = n_distinct(subjID), totalcount = n())
+
+timeslice_range <- timeslice_range %>%
+  dplyr::group_by(RT_bin_avg, category, subjID) %>% 
+  dplyr::summarise(ss_acc = mean(acc, na.rm=T)) %>% 
+  dplyr::group_by(RT_bin_avg, category) %>%
+  dplyr::summarise(mean = mean(ss_acc),
+            n = n())
+
+ggplot(aes(x=RT_bin_avg, y=mean, weight = n), 
+           data = timeslice_range) + 
+  geom_point(aes(size = n), shape = 21, fill = "white", stroke = 1.5) +
+  geom_smooth(method = "lm", formula = y ~ poly(x,2), se = TRUE, color = "#0892d0", fill = "lightgray") +
+  geom_hline(yintercept = 0.5, lty = "dashed", color = 'red') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggthemes::theme_hc()+
+  xlab("Average RT on trials") +
+  ggtitle('speed-accuracy tradeoff - LF - pictureLabel')
+  ylab("Proportion Correct")
+
+```
+
+```{r}
+aggregate(acc ~ subjID+learning, pictureLabel[pictureLabel$rt > 200 ,], mean)-> speedacc
+aggregate(rt ~ subjID+learning, pictureLabel[pictureLabel$rt > 200,], mean)-> speedacc2
+merge(speedacc, speedacc2, by =  c("subjID", "learning"))-> speedacc
+
+ggplot(aes(x=rt, y=acc), 
+           data = speedacc) + 
+  facet_grid( . ~ learning) + 
+  geom_point( shape = 21, fill = "white", size = 3, stroke = 1.5) +
+  #geom_smooth(method = "lm", formula = y ~ poly(x,2), se = TRUE, color = "#0892d0", fill = "lightgray") +
+  geom_hline(yintercept = 0.33, lty = "dashed", color = 'red') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggthemes::theme_hc()+
+  xlab("Average RT on subjs") +
+  ylab("Proportion Correct") +
+  ggtitle("speed-acc tradeoff - pictureLabel")
+
+```
+
+### Comparisons by tasks + learning + frequency
+
+Barplot labelPicture
 
 ```{r, fig.align='center'}
 

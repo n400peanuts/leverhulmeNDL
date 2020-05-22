@@ -2335,11 +2335,13 @@ Plot aggregated over subjs. To see accuracy distributed over categories.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{comparison-with-both-task-1-and-2}{%
-\subsubsection{Comparison with both task 1 and
-2}\label{comparison-with-both-task-1-and-2}}
+\hypertarget{comparison-by-learning-by-tasks}{%
+\subsubsection{Comparison by learning by
+tasks}\label{comparison-by-learning-by-tasks}}
 
 Inspection of the speed-accuracy trade-off:
+
+labelPicture
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2372,7 +2374,7 @@ Inspection of the speed-accuracy trade-off:
 \StringTok{  }\KeywordTok{coord_cartesian}\NormalTok{(}\DataTypeTok{ylim =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{))}\OperatorTok{+}
 \StringTok{  }\NormalTok{ggthemes}\OperatorTok{::}\KeywordTok{theme_hc}\NormalTok{()}\OperatorTok{+}
 \StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Average RT on trials"}\NormalTok{) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{'speed-accuracy tradeoff - FL'}\NormalTok{)}
+\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{'speed-accuracy tradeoff - FL - labelPicture'}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -2423,7 +2425,7 @@ Inspection of the speed-accuracy trade-off:
 \StringTok{  }\KeywordTok{coord_cartesian}\NormalTok{(}\DataTypeTok{ylim =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{))}\OperatorTok{+}
 \StringTok{  }\NormalTok{ggthemes}\OperatorTok{::}\KeywordTok{theme_hc}\NormalTok{()}\OperatorTok{+}
 \StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Average RT on trials"}\NormalTok{) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{'speed-accuracy tradeoff LF'}\NormalTok{)}
+\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{'speed-accuracy tradeoff LF - LabelPicture'}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -2459,11 +2461,143 @@ Inspection of the speed-accuracy trade-off:
 \StringTok{  }\NormalTok{ggthemes}\OperatorTok{::}\KeywordTok{theme_hc}\NormalTok{()}\OperatorTok{+}
 \StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Average RT on subjs"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Proportion Correct"}\NormalTok{) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"speed-acc tradeoff"}\NormalTok{)}
+\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"speed-acc tradeoff - labelPicture"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \includegraphics{preProcessing_files/figure-latex/unnamed-chunk-54-1.pdf}
+
+PictureLabel:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rt_range <-}\StringTok{ }\DecValTok{2500}
+\NormalTok{n_bins <-}\StringTok{ }\DecValTok{10}
+\NormalTok{break_seq <-}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, rt_range, rt_range}\OperatorTok{/}\NormalTok{n_bins)}
+
+\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{ ,] }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(learning }\OperatorTok{==}\StringTok{ "FL"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{RT_bin =} \KeywordTok{cut}\NormalTok{(rt, }\DataTypeTok{breaks =}\NormalTok{ break_seq)) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{group_by}\NormalTok{(RT_bin, category) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{RT_bin_avg =} \KeywordTok{mean}\NormalTok{(rt, }\DataTypeTok{na.rm =}\NormalTok{ T))}
+
+\NormalTok{count_range <-}\StringTok{ }\NormalTok{timeslice_range }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(RT_bin, category) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{subjcount =} \KeywordTok{n_distinct}\NormalTok{(subjID), }\DataTypeTok{totalcount =} \KeywordTok{n}\NormalTok{())}
+
+\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{timeslice_range }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{group_by}\NormalTok{(RT_bin_avg, category, subjID) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{ss_acc =} \KeywordTok{mean}\NormalTok{(acc, }\DataTypeTok{na.rm=}\NormalTok{T)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{group_by}\NormalTok{(RT_bin_avg, category) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{mean =} \KeywordTok{mean}\NormalTok{(ss_acc),}
+            \DataTypeTok{n =} \KeywordTok{n}\NormalTok{())}
+
+\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{RT_bin_avg, }\DataTypeTok{y=}\NormalTok{mean, }\DataTypeTok{weight =}\NormalTok{ n), }
+           \DataTypeTok{data =}\NormalTok{ timeslice_range) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{size =}\NormalTok{ n), }\DataTypeTok{shape =} \DecValTok{21}\NormalTok{, }\DataTypeTok{fill =} \StringTok{"white"}\NormalTok{, }\DataTypeTok{stroke =} \FloatTok{1.5}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_smooth}\NormalTok{(}\DataTypeTok{method =} \StringTok{"lm"}\NormalTok{, }\DataTypeTok{formula =}\NormalTok{ y }\OperatorTok{~}\StringTok{ }\KeywordTok{poly}\NormalTok{(x,}\DecValTok{2}\NormalTok{), }\DataTypeTok{se =} \OtherTok{TRUE}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#0892d0"}\NormalTok{, }\DataTypeTok{fill =} \StringTok{"lightgray"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_hline}\NormalTok{(}\DataTypeTok{yintercept =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{lty =} \StringTok{"dashed"}\NormalTok{, }\DataTypeTok{color =} \StringTok{'red'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{coord_cartesian}\NormalTok{(}\DataTypeTok{ylim =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{))}\OperatorTok{+}
+\StringTok{  }\NormalTok{ggthemes}\OperatorTok{::}\KeywordTok{theme_hc}\NormalTok{()}\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Average RT on trials"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{'speed-accuracy tradeoff - FL - pictureLabel'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-55-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+  \KeywordTok{ylab}\NormalTok{(}\StringTok{"Proportion Correct"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $y
+## [1] "Proportion Correct"
+## 
+## attr(,"class")
+## [1] "labels"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rt_range <-}\StringTok{ }\DecValTok{2500}
+\NormalTok{n_bins <-}\StringTok{ }\DecValTok{10}
+\NormalTok{break_seq <-}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, rt_range, rt_range}\OperatorTok{/}\NormalTok{n_bins)}
+
+\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{ ,] }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(learning }\OperatorTok{==}\StringTok{ "LF"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{RT_bin =} \KeywordTok{cut}\NormalTok{(rt, }\DataTypeTok{breaks =}\NormalTok{ break_seq)) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{group_by}\NormalTok{(RT_bin, category) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{RT_bin_avg =} \KeywordTok{mean}\NormalTok{(rt, }\DataTypeTok{na.rm =}\NormalTok{ T))}
+
+\NormalTok{count_range <-}\StringTok{ }\NormalTok{timeslice_range }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(RT_bin, category) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{subjcount =} \KeywordTok{n_distinct}\NormalTok{(subjID), }\DataTypeTok{totalcount =} \KeywordTok{n}\NormalTok{())}
+
+\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{timeslice_range }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{group_by}\NormalTok{(RT_bin_avg, category, subjID) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{ss_acc =} \KeywordTok{mean}\NormalTok{(acc, }\DataTypeTok{na.rm=}\NormalTok{T)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{group_by}\NormalTok{(RT_bin_avg, category) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{mean =} \KeywordTok{mean}\NormalTok{(ss_acc),}
+            \DataTypeTok{n =} \KeywordTok{n}\NormalTok{())}
+
+\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{RT_bin_avg, }\DataTypeTok{y=}\NormalTok{mean, }\DataTypeTok{weight =}\NormalTok{ n), }
+           \DataTypeTok{data =}\NormalTok{ timeslice_range) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{size =}\NormalTok{ n), }\DataTypeTok{shape =} \DecValTok{21}\NormalTok{, }\DataTypeTok{fill =} \StringTok{"white"}\NormalTok{, }\DataTypeTok{stroke =} \FloatTok{1.5}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_smooth}\NormalTok{(}\DataTypeTok{method =} \StringTok{"lm"}\NormalTok{, }\DataTypeTok{formula =}\NormalTok{ y }\OperatorTok{~}\StringTok{ }\KeywordTok{poly}\NormalTok{(x,}\DecValTok{2}\NormalTok{), }\DataTypeTok{se =} \OtherTok{TRUE}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#0892d0"}\NormalTok{, }\DataTypeTok{fill =} \StringTok{"lightgray"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_hline}\NormalTok{(}\DataTypeTok{yintercept =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{lty =} \StringTok{"dashed"}\NormalTok{, }\DataTypeTok{color =} \StringTok{'red'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{coord_cartesian}\NormalTok{(}\DataTypeTok{ylim =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{))}\OperatorTok{+}
+\StringTok{  }\NormalTok{ggthemes}\OperatorTok{::}\KeywordTok{theme_hc}\NormalTok{()}\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Average RT on trials"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{'speed-accuracy tradeoff - LF - pictureLabel'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-56-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+  \KeywordTok{ylab}\NormalTok{(}\StringTok{"Proportion Correct"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $y
+## [1] "Proportion Correct"
+## 
+## attr(,"class")
+## [1] "labels"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{ ,], mean)->}\StringTok{ }\NormalTok{speedacc}
+\KeywordTok{aggregate}\NormalTok{(rt }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{,], mean)->}\StringTok{ }\NormalTok{speedacc2}
+\KeywordTok{merge}\NormalTok{(speedacc, speedacc2, }\DataTypeTok{by =}  \KeywordTok{c}\NormalTok{(}\StringTok{"subjID"}\NormalTok{, }\StringTok{"learning"}\NormalTok{))->}\StringTok{ }\NormalTok{speedacc}
+
+\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{rt, }\DataTypeTok{y=}\NormalTok{acc), }
+           \DataTypeTok{data =}\NormalTok{ speedacc) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{( . }\OperatorTok{~}\StringTok{ }\NormalTok{learning) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{( }\DataTypeTok{shape =} \DecValTok{21}\NormalTok{, }\DataTypeTok{fill =} \StringTok{"white"}\NormalTok{, }\DataTypeTok{size =} \DecValTok{3}\NormalTok{, }\DataTypeTok{stroke =} \FloatTok{1.5}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\CommentTok{#geom_smooth(method = "lm", formula = y ~ poly(x,2), se = TRUE, color = "#0892d0", fill = "lightgray") +}
+\StringTok{  }\KeywordTok{geom_hline}\NormalTok{(}\DataTypeTok{yintercept =} \FloatTok{0.33}\NormalTok{, }\DataTypeTok{lty =} \StringTok{"dashed"}\NormalTok{, }\DataTypeTok{color =} \StringTok{'red'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{coord_cartesian}\NormalTok{(}\DataTypeTok{ylim =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{))}\OperatorTok{+}
+\StringTok{  }\NormalTok{ggthemes}\OperatorTok{::}\KeywordTok{theme_hc}\NormalTok{()}\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Average RT on subjs"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Proportion Correct"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"speed-acc tradeoff - pictureLabel"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-57-1.pdf}
+
+\hypertarget{comparisons-by-tasks-learning-frequency}{%
+\subsubsection{Comparisons by tasks + learning +
+frequency}\label{comparisons-by-tasks-learning-frequency}}
+
+Barplot labelPicture
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2505,7 +2639,7 @@ Inspection of the speed-accuracy trade-off:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-56-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-59-1.pdf}
 
 Barplots + violinPlots with data from both tasks:
 
@@ -2536,7 +2670,7 @@ Barplots + violinPlots with data from both tasks:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-58-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-61-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2572,7 +2706,7 @@ Barplots + violinPlots with data from both tasks:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-59-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-62-1.pdf}
 
 \hypertarget{task-3-contingency-judgement}{%
 \subsubsection{Task 3: Contingency
@@ -2625,7 +2759,7 @@ completely the task is/are: 1414932, 1420171, 1420199, 1422475, 1431960,
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-62-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-65-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
