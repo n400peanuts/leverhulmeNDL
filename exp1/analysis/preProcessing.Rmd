@@ -1,14 +1,17 @@
 ---
-title: "Preprocessing"
+title: "FLO replication - Preprocessing and analysis"
 author: "Eva"
 date: "4/3/2020"
 output:
+  pdf_document:
+    toc: yes
+    toc_depth: 3
   html_document:
     toc: yes
     toc_float: yes
-  pdf_document:
-    toc: yes
 ---
+
+
 
 ```{r loading libraries, echo=FALSE, message=FALSE}
 library(tidyverse);
@@ -19,6 +22,9 @@ library(ggpubr);
 library(RColorBrewer)
 library(langcog)
 library(gridExtra);
+library(ggExtra);
+library(lmerTest);
+library(emmeans);
 ```
 
 # clean WS, set WD 
@@ -41,6 +47,19 @@ fribbleSet <- read.csv(paste(localGitDir, "/exp1/stimuli/stimuli.csv", sep = "")
                         "fribbleID"="factor"
                         ));
 ```
+
+# Load functions from the lab repo
+
+```{r}
+urlFolder <- 'https://api.github.com/repos/n400peanuts/languagelearninglab/git/trees/master?recursive=1'
+urlRaw <- 'https://raw.githubusercontent.com/n400peanuts/languagelearninglab/master/tools/'
+
+source('C:/Users/eva_v/Documents/languagelearninglab/tools/loadFunctionsGithub.R')
+
+loadFunctionsGithub(urlFolder = urlFolder, urlRaw = urlRaw);
+rm(urlFolder, urlRaw)
+```
+
 
 # Check stimuli set
 It's important to check that every fribble is unique in the way its features are assembled within each category.
@@ -111,7 +130,7 @@ rm(`data_exp_15519-v14_task-q8hp`)
 
 ```
 
-```{r}
+```{r merge datasets}
 rbind(dataFL, dataFL2)-> dataFL
 rbind(dataLF, dataLF2)-> dataLF
 
@@ -194,14 +213,14 @@ learning <- droplevels(learning);
 rm(learningBlocks)
 ```
 
-How many trials per participant? 
+## How many trials per participant? 
 ```{r check number of trials per ppts}
 learning %>%                             
   group_by(subjID, learning) %>%    
   count() 
 ```
 
-Great, 120 trials per participant.
+Great, 120 trials per participant, per learning.
 
 Let's check whether the blocks' length varied across participants:
 
@@ -215,16 +234,15 @@ Great! Each participant had a different amount of trials distributed across bloc
 Anyway, the sum of all the learning trials was always 120.
 
 
-Did we assign our learning randomly every couple of people?
+## Did we assign our learning randomly every couple of people?
 
 ```{r check learning randomization and grouping}
 table(learning$subjID, learning$learning)
 ```
 Kind of.
-Apparently, if a participant access Gorilla, but it's not allowed to start the experiment (e.g., the browser is not suitable), or leaves the session, this counts anyway for the randomisation.
+After chicking with Gorilla's suppoert: apparently, if a participant access Gorilla, but it's not allowed to start the experiment (e.g., the browser is not suitable), or leaves the session, this counts anyway for the randomisation.
 
-The rows related to the presentation of fribbles and labels, inherit Gorilla's http address of where they are stored.
-Nothing I can do to change this in Gorilla, but we can clean the rows by those info like this:
+The rows related to the presentation of fribbles and labels, inherit Gorilla's http address of where they are stored. Nothing I can do to change this in Gorilla, but we can clean the rows by those info like this:
 
 ```{r rows cleaning}
 as.factor(gsub("/task/70033/56/asset/|/task/70033/57/asset/", "", learning$fribbleID))-> learning$fribbleID
@@ -246,7 +264,8 @@ summary(learning);
 ```
 
 Our fribbles were presented two times during learning. 
-Let's check fribbles presented > 2 times:
+
+## Check if fribbles are presented > 2 times:
 ```{r}
 learning %>%                             
   group_by(subjID, fribbleID) %>%    
@@ -256,7 +275,8 @@ learning %>%
 ```
 
 None, perfect.
-Let's check whether there are fribbles presented only once:
+
+## Check whether there are fribbles presented only once:
 
 ```{r}
 learning %>%                             
@@ -267,7 +287,8 @@ learning %>%
 
 Perfect.
 
-Check the association between the fribbles and the labels.
+## Check the association between the fribbles and the labels (high and low frequency with the correct labels)
+
 Fribbles ID are coded in this way: 
 e.g., 10175-> [1] is the category [01] is the number of the fribble [75] is the frequency.
 
@@ -284,6 +305,7 @@ Association between fribbles and labels are fixed:
 I'm going to add a column for category, fribble number, and frequency, in order to check whether everything is okay:
 
 We should have only 3 categories, presented twice per participant. Each category is made of 20 exemplars.
+
 ```{r check label fribble association during learning}
 learning$category <- 0
 learning[substr(as.character(learning$fribbleID), 1, 1)==1,]$category <- 1
@@ -351,12 +373,13 @@ as.factor(gsub("/task/70033/56/asset/|/task/70033/57/asset/", "", generalization
 as.factor(gsub(".mp3$", "", generalizationPL$resp))-> generalizationPL$resp
 as.factor(gsub(".jpg", "", generalizationPL$resp))-> generalizationPL$resp
 
-as.factor(gsub('[[:punct:]]|"', "", generalizationPL$label))-> generalizationPL$label 
+gsub('[[:punct:]]|"', "", generalizationPL$label)-> generalizationPL$label 
+
 as.factor(gsub('mp3', "_", generalizationPL$label))-> generalizationPL$label
 
 ```
 
-Check how many trials participants:
+### Check how many trials participants
 
 ```{r check num of trials}
 generalizationPL %>%                             
@@ -366,7 +389,8 @@ generalizationPL %>%
 
 Great, 24 trials per participant. 
 
-Check whether participants saw a unique fribble:
+### Check whether participants saw a unique fribble:
+
 ```{r check fribbles num of presentation}
 generalizationPL %>%                             
   group_by(subjID, fribbleID) %>%  
@@ -401,8 +425,11 @@ Great, some participant missed some trials (coded as NA), but that's okay.
 
 So far, so good.
 
-We have 24 trials per participant, but within those trials we have 8 trials per category, 4 low frequency and 4 high frequency trials.
-Let's check:
+
+### Check trial/stimuli per category, per frequency, per subject
+
+We have 24 trials per participant, but within those trials we *should* have 8 trials per category, 4 low frequency and 4 high frequency trials.
+
 ```{r}
 head(table(generalizationPL$subjID, generalizationPL$category, generalizationPL$frequency))
 ```
@@ -418,7 +445,7 @@ generalizationLP <- testing %>%
 generalizationLP <- droplevels(generalizationLP)
 ```
 
-How many trials per participant?
+### How many trials per participant?
 
 ```{r}
 generalizationLP %>%                             
@@ -430,14 +457,17 @@ generalizationLP %>%
 
 
 
-Let's check whether participants saw a unique fribble by checking for duplicates:
+### Check whether participants saw a unique fribble
+
 First let's clean the rows from Gorilla gibberish.
 
 ```{r}
 as.factor(gsub('[[:punct:]]|"', "", generalizationLP$fribbleID))-> generalizationLP$fribbleID 
+
 as.factor(gsub('jpg', "_", generalizationLP$fribbleID))-> generalizationLP$fribbleID
 
 as.factor(gsub("/task/70033/56/asset/|/task/70033/57/asset/", "", generalizationLP$resp))-> generalizationLP$resp
+
 as.factor(gsub(".jpg", "", generalizationLP$resp))-> generalizationLP$resp
 
 ```
@@ -474,7 +504,7 @@ rm(subj, temp, temp2, temp3, i, fribblePresented, duplicatedFribbles, dup)
 
 Great! participants saw always different fribble.
 
-Check whether fribbles presented were either high or low frequency.
+### Check whether fribbles presented were either high or low frequency within trials
 
 In this task we have three pictures and one label pronounced. This means that the fribbleID column contains 3 images.
 I'm going to cycle over the dataset, and break the fribbleID column in three, then I'm going to print the fribble that within the same trial has a different frequency. I'm going to print the fribbles that are presented wrongly, e.g., "low high low" etc. If all fribbles are presented correctly: , e.g., "low low low" and "high high high", then the output is empty. 
@@ -509,7 +539,8 @@ rm(trials, i, subj, temp, temp2, temp3);
 Great, fribbles presented were either low or high frequency.
 Check whether participants saw 4 trials with low and 4 trials with high frequency:
 
-Let's see how these are distributed:
+### Check trial distribution per frequency:
+
 ```{r}
 head(table(task$V4, task$frequency))
 ```
@@ -530,7 +561,7 @@ generalizationLP <- rename(generalizationLP, fribbleID = fribbleID.x);
 
 ```
 
-Let's check whether we have responses in all the three categories:
+### Check responses distribution by category:
 
 ```{r}
 generalizationLP %>%                             
@@ -540,7 +571,8 @@ generalizationLP %>%
 
 Cool.
 
-Check responses distribution over category:
+### Check responses distribution by frequency:
+
 ```{r}
 generalizationLP %>%                             
   group_by(subjID, label, frequency) %>%  
@@ -556,7 +588,7 @@ contingencyJudgement <- testing %>%
 contingencyJudgement <- droplevels(contingencyJudgement)
 ```
 
-How many trials per participant?
+### How many trials per participant?
 
 ```{r}
 contingencyJudgement %>%                             
@@ -566,7 +598,7 @@ contingencyJudgement %>%
 
 Very good. 
 
-Did participants see a fribble more than once?
+### Did participants see a fribble more than once?
 
 ```{r}
 droplevels(contingencyJudgement) %>%                             
@@ -577,7 +609,8 @@ droplevels(contingencyJudgement) %>%
 ```
 No! that's great.
 
-Are labels repeated equally?
+### Are labels repeated equally?
+
 ```{r}
 table(contingencyJudgement$subjID, contingencyJudgement$label)
 ```
@@ -590,7 +623,7 @@ contingencyJudgement$label.y <- NULL;
 contingencyJudgement <- rename(contingencyJudgement, label = label.x)
 ```
 
-Check category presentation:
+### Check category presentation:
 
 ```{r}
 contingencyJudgement %>%                             
@@ -611,7 +644,7 @@ randomDot <- testing %>%
 
 ```
 
-How many trials per participant?
+### How many trials per participant?
 
 ```{r}
 randomDot %>%                             
@@ -621,7 +654,8 @@ randomDot %>%
 ```
 
 we have 5 trials repeated during learning four times (20) plus 4 practice trials.
-How was accuracy distributed across participants?
+
+### How was accuracy distributed across participants?
 
 First, let's consider that when we have a timeout, the output is -1
 
@@ -654,7 +688,7 @@ There are more NA's in acc than can be explained by timeouts. This means that al
 randomDot[is.na(randomDot$acc),]$acc <- 0 #recode everything that is wrong or timeout as 0
 ```
 
-So, now we can check the overall accuracy of participants, filtering by timeouts:
+### Check the overall accuracy of participants, filtering by timeouts:
 
 ```{r timeout table}
 aggregate(acc ~ subjID, data = randomDot[!(randomDot$resp == -1),], FUN = mean)# without timeouts
@@ -666,8 +700,16 @@ rm(testing)
 ```
 
 # Data visualization
+Okay, from the sanity checks done above we can draw two conclusions: 
 
-## rt
+1. Learning and Testing was presented as it was supposed to be and 
+
+2. data was stored correctly
+
+
+Let's see now if data makes sense.
+
+## Reaction times
 
 ```{r}
 rbind(generalizationPL, generalizationLP, contingencyJudgement)-> alltasks
@@ -682,12 +724,31 @@ gghistogram(alltasks,
        xlab = "rt", 
        color = "task", 
        fill = "task",
-       palette = "jco"
+       bins = 40,
+       palette = "jco",
+       add = "median"
 )
 
-rm(alltasks)
 ```
 
+The two generalization tasks looks quite different. I'm going to plot it separately for a better inspection:
+
+```{r histogram separated by generalization tasks, fig.height = 8, fig.width = 10, fig.align= "center"}
+p<- gghistogram(alltasks, #will throw warnings related to non responses but that's okay, ggplot simply removes them
+       x = "rt",
+       y = "..count..",
+       xlab = "rt",
+       facet.by = "task",
+       add = "median",
+       bins = 40
+)
+
+facet(p, facet.by = "task",
+      nrow = 3,
+      ncol = 1)
+```
+
+The tails of the first two tasks don't end smoothly, especially in task 2.
 
 ## accuracy
 
@@ -706,7 +767,7 @@ trialstot <- as.factor(rep(trials, length(subj)))
 randomTask$blocks <- trialstot
 ```
 
-How many timeouts?
+#### How many timeouts by participant?
 
 ```{r}
 randomTask$timeout <- ifelse(randomTask$resp== -1, 1, 0)
@@ -729,9 +790,9 @@ temp2[temp2$timeout==0,]$n <- 0
 rbind(temp,temp2)-> timeout
 ```
 
-Histogram
+Histrogram by participant:
 
-```{r}
+```{r, fig.height = 4, fig.width = 6, fig.align= "center" }
 
 hist(timeout$n, xlab = 'number of timeouts', 
      main = '', 
@@ -754,6 +815,11 @@ ggbarplot(timeout[timeout$n>1,], x = "blocks", y = "n",
           sort.by.groups = TRUE,     # Sort inside each group
           ylab = "num of timeouts")
 ```
+#### Subjects that made more than 3 timeouts
+
+```{r}
+unique(timeout[timeout$n>3,]$subjID) -> problematicPeople
+```
 
 
 ```{r}
@@ -761,6 +827,7 @@ accdistr <- randomTask[!(randomTask$resp == -1),] %>%
   group_by(subjID, blocks) %>%
   summarise(m = mean(acc))
 ```
+
 
 ```{r}
 
@@ -780,8 +847,26 @@ ggstripchart(accdistr, x = "blocks", y = "m",
 
 ```
 ```{r}
-accdistr[accdistr$m<.7,]
+accdistr[accdistr$m<=.5,]
 ```
+
+#### People that scored less than 50% in >1 block:
+
+
+
+```{r}
+c("1422475", "1422689") -> dumbPeople
+```
+
+```{r}
+setdiff(dumbPeople, problematicPeople)-> dumbPeople
+```
+
+Let's consider them as bad subjects.
+```{r}
+c(problematicPeople, dumbPeople)->badsubjs
+```
+
 
 ```{r}
 rm(temp, temp2, timeout, subj, subjs, trials, trialstot, accdistr)
@@ -795,6 +880,7 @@ I'm going to add 1 in the accuracy column for every instance where response matc
 
 I remove the no-response, and compute accuracy based on category and response.
 
+#### How many participants do we have per learning?
 ```{r check number of participants}
 length(unique(generalizationPL$subjID))
 fl<- length(unique(generalizationPL[generalizationPL$learning=='FL',]$subjID))
@@ -803,6 +889,10 @@ lf<- length(unique(generalizationPL[generalizationPL$learning=='LF',]$subjID))
 
 We have `r fl` for feature-label learning, and `r lf` for label-feature learning.
 
+#### Check tails of the rt distribution
+
+The point is that we can't rely on responses made very early, because these might be simply mistakes or technical errors.
+
 ```{r hist of rt}
 par(mfrow=c(1,2))
 hist(generalizationPL[generalizationPL$rt<600,]$rt, main = 'rt < 600ms', xlab = 'trials');
@@ -810,6 +900,14 @@ hist(generalizationPL[generalizationPL$rt>2000,]$rt, main = 'rt > 2000ms', xlab 
 par(mfrow=c(1,1))
 
 ```
+
+I would remove rt <100ms for all tasks.
+
+#### How many, what type of trials do we have?
+```{r}
+round(nrow(generalizationPL[generalizationPL$rt<100,]) / nrow(generalizationPL)*100,2)
+```
+
 
 ```{r  accuracy}
 rm(fl,lf)
@@ -840,17 +938,28 @@ rm(subjs, totsubjs);
 We have `r n` participants in this task, this is -`r length(subjmissed)` compared to our total number of participants. The subject(s) that didn't answer at all the task is: `r subjmissed`. 
 We have lost also `r nrows` responses, that is `r nrows/nrow(generalizationPL)*100` over the total: `r nrow(generalizationPL)`.
 
+How many trials per participant do we have now?
 
-Calculate the proportion of correct in each condition:
+```{r}
+pictureLabel %>%
+  group_by(subjID) %>%
+  count() 
+```
+No one had less than 18 trials, over the total (24). That's fine!
 
+#### Barplot accuracy by category + frequency + learning
+
+picture label 
 
 ```{r aggregating}
+c(badsubjs, subjmissed) -> badsubjs
+
 rm(n, subjmissed, nrows)
 
 ss_prop<-aggregate(acc ~ frequency+category+subjID+learning, 
-                   data = pictureLabel[pictureLabel$rt > 200,], FUN = mean)
+                   data = pictureLabel[pictureLabel$rt > 100 &
+                                       !(pictureLabel$subjID %in% badsubjs),], FUN = mean)
 ```
-
 
 
 
@@ -887,10 +996,12 @@ ggplot(aes(x = category, y = mean, fill = frequency), data = ms) +
 
 ```
 
+#### Violin plot accuracy by category + frequency + learning
 
-```{r}
+```{r, fig.height = 5, fig.width = 8, fig.align= "center" }
 df <- aggregate(acc ~ subjID+frequency+learning+category, 
-                data = pictureLabel[pictureLabel$rt > 200,], mean)
+                data = pictureLabel[pictureLabel$rt > 100  &
+                                       !(pictureLabel$subjID %in% badsubjs),], mean)
 df$frequency <- as.factor(df$frequency)
 plyr::revalue(df$frequency, c("25"="low"))-> df$frequency;
 plyr::revalue(df$frequency, c("75"="high"))-> df$frequency;
@@ -907,12 +1018,15 @@ ggviolin(df, x = "frequency", y = "acc", fill = "frequency",
 
 ```
 
+#### Violin plot accuracy by frequency + learning
+
 Let's see how participants scored for the high/low frequency: 
 
 
 ```{r}
 df <- aggregate(acc ~ subjID+frequency+learning, 
-                data = pictureLabel[pictureLabel$rt > 200,], mean)
+                data = pictureLabel[pictureLabel$rt > 100  &
+                                       !(pictureLabel$subjID %in% badsubjs),], mean)
 df$frequency <- as.factor(df$frequency)
 plyr::revalue(df$frequency, c("25"="low"))-> df$frequency;
 plyr::revalue(df$frequency, c("75"="high"))-> df$frequency;
@@ -929,6 +1043,13 @@ ggviolin(df, x = "frequency", y = "acc", fill = "frequency",
 
 ```
 
+```{r}
+df %>%
+  group_by(learning, frequency) %>%
+  summarise(mean(acc))
+```
+
+Closer inspection:
 
 ```{r}
 par(mfrow=c(2,2))
@@ -940,12 +1061,14 @@ par(mfrow=c(1,1))
 
 ```
 
+#### Barplot accuracy by frequency + learning
 
 ```{r, include=TRUE}
 #barPlot aggregated over categories:
 
 ms <- aggregate(acc ~ subjID+frequency+learning, 
-                data=pictureLabel[pictureLabel$rt > 200,], FUN= mean)
+                data=pictureLabel[pictureLabel$rt > 100 &
+                                  !(pictureLabel$subjID %in% badsubjs)  ,], FUN= mean)
 
 df<- ms %>%
   group_by(frequency, learning)%>%
@@ -986,6 +1109,9 @@ fl<- length(unique(generalizationLP[generalizationLP$learning=='FL',]$subjID))
 lf<- length(unique(generalizationLP[generalizationLP$learning=='LF',]$subjID))
 ```
 
+
+#### How many participants do we have per learning?
+
 We have `r fl` for feature-label learning, and `r lf` for label-feature learning.
 
 ```{r}
@@ -1002,16 +1128,48 @@ subjmissed<- setdiff(totsubjs, subjs);
 ```
 Great, we have `r n` participants in this task, so -`r length(subjmissed)`, and we have missed `r nrows` over the total `r nrow(generalizationLP)`, that is `r nrows/nrow(generalizationLP)*100`. The subject(s) that missed completely the task is: `r subjmissed`.
 
+#### How many, what type of trials do we have?
+
+How many datapoints did we lose for no-responses?
+```{r}
+round(nrow(generalizationLP[(is.na(generalizationLP$resp)),])/nrow(generalizationLP)*100,2)
+```
+
+How many trials were rt < 100?
+```{r}
+round(nrow(generalizationLP[generalizationLP$rt<100,])/ nrow(generalizationLP)*100,2)
+```
+
+Once trimmed, how many trials per participant do we have in this task?
+```{r}
+labelPicture %>%
+  group_by(subjID) %>%
+  count() %>%
+  filter(n<=18)
+```
+
+Here we have less datapoints. 
+For sure, 1422680 needs to be added to the black list because has few correct trials.
+
+```{r}
+c(badsubjs, 1422680) -> badsubjs
+```
 
 
-```{r }
+
+#### Check tails of the rt distribution
+
+```{r hist rt tails, fig.height = 4, fig.width = 6, fig.align= "center" }
 par(mfrow=c(1,2))
 hist(generalizationLP[generalizationLP$rt<600,]$rt, main = 'rt < 600ms', xlab = 'trials');
 hist(generalizationLP[generalizationLP$rt>2000,]$rt, main = 'rt > 2000ms', xlab = 'trials');
 par(mfrow=c(1,1))
 ```
 
-```{r}
+
+
+
+```{r acc calculation}
 rm(n, nrows, subjs, totsubjs);
 labelPicture$acc <- 0;
 labelPicture[labelPicture$category==1 & labelPicture$label=='dep',]$acc <- 1;
@@ -1020,12 +1178,18 @@ labelPicture[labelPicture$category==3 & labelPicture$label=='tob',]$acc <- 1;
 
 ```
 
+
+#### Barplot accuracy by category+learning+frequency
+
 Calculate the proportion of correct in each condition
+
+
 
 ```{r}
 rm(subjmissed)
 ss_prop<-aggregate(acc ~ frequency+category+subjID+learning, 
-                   data = labelPicture[labelPicture$rt > 200 ,], FUN = mean)
+                   data = labelPicture[labelPicture$rt > 100 &
+                                         !(labelPicture$subjID %in% badsubjs),], FUN = mean)
 
 ```
 
@@ -1064,10 +1228,12 @@ ggplot(aes(x = category, y = mean, fill = frequency), data = ms) +
 
 ```
 
+#### Violin plot accuracy by category+learning+frequency
 
-```{r}
+```{r, fig.height = 4, fig.width = 6, fig.align= "center" }
 ms <- aggregate(acc ~ subjID+frequency+learning+category, 
-                data = labelPicture[labelPicture$rt > 200,], mean)
+                data = labelPicture[labelPicture$rt > 100 &
+                                         !(labelPicture$subjID %in% badsubjs),], mean)
 
 ms$frequency <- as.factor(ms$frequency)
 plyr::revalue(ms$frequency, c("25"="low"))-> ms$frequency;
@@ -1086,10 +1252,13 @@ ggviolin(ms, x = "frequency", y = "acc", fill = "frequency",
 
 ```
 
+#### Violinplot accuracy by learning+frequency
 
-```{r}
+
+```{r, fig.height = 4, fig.width = 6, fig.align= "center" }
 ms <- aggregate(acc ~ subjID+frequency+learning, 
-                data = labelPicture[labelPicture$rt > 200,], mean)
+                data = labelPicture[labelPicture$rt > 100 &
+                                         !(labelPicture$subjID %in% badsubjs),], mean)
 
 ms$frequency <- as.factor(ms$frequency)
 plyr::revalue(ms$frequency, c("25"="low"))-> ms$frequency;
@@ -1106,9 +1275,17 @@ ggviolin(ms, x = "frequency", y = "acc", fill = "frequency",
   geom_hline(yintercept = .33, col='red', lwd=1);
 #rm(ms, ss_prop)
 
+
 ```
 
 ```{r}
+ms %>%
+  group_by(learning, frequency) %>%
+  summarise(mean(acc))
+```
+
+
+```{r hist distribution of responses}
 par(mfrow=c(2,2))
 hist(ms[ms$frequency=='low' & ms$learning=='FL',]$acc, xlab = 'acc', main = 'low freq - FL ')
 hist(ms[ms$frequency=='low' & ms$learning=='LF',]$acc, xlab = 'acc', main = 'low freq - LF ')
@@ -1118,18 +1295,130 @@ par(mfrow=c(1,1))
 
 ```
 
-### Comparison by learning by tasks
+
+#### Barplot accuracy by frequency + learning
+
+```{r, include=TRUE}
+#barPlot aggregated over categories:
+
+ms <- aggregate(acc ~ subjID+frequency+learning, 
+                data=labelPicture[labelPicture$rt > 100 &
+                                  !(labelPicture$subjID %in% badsubjs)  ,], FUN= mean)
+
+df<- ms %>%
+  group_by(frequency, learning)%>%
+  summarise(
+    mean = mean(acc),
+    sd = sd(acc),
+    n = n()) %>%
+  mutate( se=sd/sqrt(n))  %>% 
+  mutate( ci=se * qt((1-0.05)/2 + .5, n-1))
+
+df$frequency <- as.factor(df$frequency)
+plyr::revalue(df$frequency, c("25"="low"))-> df$frequency;
+plyr::revalue(df$frequency, c("75"="high"))-> df$frequency;
+
+
+lp<-ggplot(aes(x = frequency, y = mean, fill = frequency), data = df) +
+  facet_grid( . ~ learning) +
+  geom_bar(stat = "identity", color='white', position=position_dodge(), size=1.2) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.15, size=1,position=position_dodge(.9)) +
+  ylab("Accuracy ") +
+  xlab("frequency") +
+  ggtitle('labelPictures') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggpubr::theme_pubclean() + 
+  theme(legend.position="bottom", legend.title = element_blank()) +
+  theme(text = element_text(size=10)) +
+  geom_hline(yintercept = .33, col='red', lwd=1);
+
+```
+
+
+### Comparison by frequency by learning by tasks
+Quick summary of what we have so far:
+
+```{r barplots with both tasks, fig.height = 12, fig.width = 8, fig.align= "center" }
+grid.arrange(pl,lp)
+```
+
+
+
+What's going on in the low frequency condition? 
+One way to see whether they simply learned another association is to check that wrong choices are distributed equally (50%) to the other two categories. If they are, then they didn't learn anything, but if they are not distributed equally, they have learned another association.
+
+Label picture: 
+```{r}
+#select only inaccurate trials
+temp <- labelPicture[labelPicture$acc==0,] 
+
+round(nrow(temp)/nrow(labelPicture)*100,2)
+```
+
+How many of those are low frequency trials?
+
+```{r}
+round(nrow(temp[temp$frequency==25,])/nrow(labelPicture)*100,2)
+```
+
+Label picture task:
+
+correct choice is listed in "label", that is, label presented.
+Participant's choice is listed in "category", that is, the fribble's category.
+
+```{r}
+temp %>%
+  filter(frequency=="25") %>%
+  group_by(learning, label, category) %>%
+  count()
+```
+
+Nope, they definitely learned another association. The association they have learned is based on the high saliency feature, rather than on the low saliency one. Let's see if that is the case also for the other task:
+
+Picture label task: 
+```{r}
+#select only inaccurate trials
+temp <- pictureLabel[pictureLabel$acc==0,] 
+
+round(nrow(temp)/nrow(pictureLabel)*100,2)
+
+```
+
+How many of those are low frequency trials?
+
+```{r}
+round(nrow(temp[temp$frequency==25,])/nrow(pictureLabel)*100,2)
+```
+
+Errors across tasks are comparable.
+
+Picture label task:
+
+correct choice is listed in "category", that is, the category of the fribble presented.
+Participant's choice is listed in "resp" column, that is, the label chosen.
+
+```{r}
+temp %>%
+  filter(frequency=="25") %>%
+  group_by(learning, category, resp) %>%
+  count()
+```
+
+In both tasks participants were driven by the high salient feature in making errors, they simply learned only one association between the label and the high salient feature, and made decisions based on this.
+
+## Speed-accuracy trade-off by tasks
 
 Inspection of the speed-accuracy trade-off:
 
-labelPicture
+### labelPicture
 
 ```{r}
 rt_range <- 2500
 n_bins <- 10
 break_seq <- seq(0, rt_range, rt_range/n_bins)
 
-timeslice_range <- labelPicture[labelPicture$rt > 200 ,] %>%
+timeslice_range <- labelPicture[labelPicture$rt > 100 &
+                                         !(labelPicture$subjID %in% badsubjs) ,] %>%
   filter(learning == "FL") %>%
   dplyr::mutate(RT_bin = cut(rt, breaks = break_seq)) %>%
   dplyr::group_by(RT_bin, category) %>%
@@ -1165,7 +1454,8 @@ rt_range <- 2500
 n_bins <- 10
 break_seq <- seq(0, rt_range, rt_range/n_bins)
 
-timeslice_range <- labelPicture[labelPicture$rt > 200 ,] %>%
+timeslice_range <- labelPicture[labelPicture$rt > 100 &
+                                         !(labelPicture$subjID %in% badsubjs),] %>%
   filter(learning == "LF") %>%
   dplyr::mutate(RT_bin = cut(rt, breaks = break_seq)) %>%
   dplyr::group_by(RT_bin, category) %>%
@@ -1197,8 +1487,10 @@ ggplot(aes(x=RT_bin_avg, y=mean, weight = n),
 
 
 ```{r}
-aggregate(acc ~ subjID+learning, labelPicture[labelPicture$rt > 200 ,], mean)-> speedacc
-aggregate(rt ~ subjID+learning, labelPicture[labelPicture$rt > 200,], mean)-> speedacc2
+aggregate(acc ~ subjID+learning, labelPicture[labelPicture$rt > 100 &
+                                         !(labelPicture$subjID %in% badsubjs) ,], mean)-> speedacc
+aggregate(rt ~ subjID+learning, labelPicture[labelPicture$rt > 100 &
+                                         !(labelPicture$subjID %in% badsubjs),], mean)-> speedacc2
 merge(speedacc, speedacc2, by =  c("subjID", "learning"))-> speedacc
 
 ggplot(aes(x=rt, y=acc), 
@@ -1215,14 +1507,46 @@ ggplot(aes(x=rt, y=acc),
 
 ```
 
-PictureLabel:
+```{r, fig.height = 8, fig.width = 12, fig.align= "center"}
+aggregate(acc ~ subjID+learning+frequency, labelPicture[labelPicture$rt > 100 &
+                                         !(labelPicture$subjID %in% badsubjs) ,], mean)-> speedacc
+aggregate(rt ~ subjID+learning+frequency, labelPicture[labelPicture$rt > 100 &
+                                         !(labelPicture$subjID %in% badsubjs),], mean)-> speedacc2
+merge(speedacc, speedacc2, by =  c("subjID", "learning", "frequency"))-> speedacc
+rm(speedacc2)
+dplyr::recode(speedacc$frequency, "25"="low", "75"="high")-> speedacc$frequency;
+
+ggplot(aes(x=rt, y=acc), 
+           data = speedacc) + 
+  facet_grid( learning ~ frequency) + 
+  geom_point( shape = 21, fill = "white", size = 3, stroke = 1.5) +
+  #geom_smooth(method = "lm", formula = y ~ poly(x,2), se = TRUE, color = "#0892d0", fill = "lightgray") +
+  geom_hline(yintercept = 0.33, lty = "dashed", color = 'red') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggthemes::theme_base()+
+  xlab("Average RT on subjs") +
+  ylab("Proportion Correct") +
+  ggtitle("speed-acc tradeoff - labelPicture")
+
+```
+
+```{r}
+speedacc %>%
+  group_by(frequency, learning) %>%
+  summarise(mean(rt), median(rt))
+```
+
+
+
+### PictureLabel
 
 ```{r}
 rt_range <- 2500
 n_bins <- 10
 break_seq <- seq(0, rt_range, rt_range/n_bins)
 
-timeslice_range <- pictureLabel[pictureLabel$rt > 200 ,] %>%
+timeslice_range <- pictureLabel[pictureLabel$rt > 100 &
+                                         !(pictureLabel$subjID %in% badsubjs),] %>%
   filter(learning == "FL") %>%
   dplyr::mutate(RT_bin = cut(rt, breaks = break_seq)) %>%
   dplyr::group_by(RT_bin, category) %>%
@@ -1259,7 +1583,8 @@ rt_range <- 2500
 n_bins <- 10
 break_seq <- seq(0, rt_range, rt_range/n_bins)
 
-timeslice_range <- pictureLabel[pictureLabel$rt > 200 ,] %>%
+timeslice_range <- pictureLabel[pictureLabel$rt > 100  &
+                                         !(pictureLabel$subjID %in% badsubjs),] %>%
   filter(learning == "LF") %>%
   dplyr::mutate(RT_bin = cut(rt, breaks = break_seq)) %>%
   dplyr::group_by(RT_bin, category) %>%
@@ -1290,8 +1615,10 @@ ggplot(aes(x=RT_bin_avg, y=mean, weight = n),
 ```
 
 ```{r}
-aggregate(acc ~ subjID+learning, pictureLabel[pictureLabel$rt > 200 ,], mean)-> speedacc
-aggregate(rt ~ subjID+learning, pictureLabel[pictureLabel$rt > 200,], mean)-> speedacc2
+aggregate(acc ~ subjID+learning, pictureLabel[pictureLabel$rt > 100  &
+                                         !(pictureLabel$subjID %in% badsubjs),], mean)-> speedacc
+aggregate(rt ~ subjID+learning, pictureLabel[pictureLabel$rt > 100  &
+                                         !(pictureLabel$subjID %in% badsubjs),], mean)-> speedacc2
 merge(speedacc, speedacc2, by =  c("subjID", "learning"))-> speedacc
 
 ggplot(aes(x=rt, y=acc), 
@@ -1308,6 +1635,36 @@ ggplot(aes(x=rt, y=acc),
 
 ```
 
+```{r, fig.height = 8, fig.width = 12, fig.align= "center"}
+aggregate(acc ~ subjID+learning+frequency, pictureLabel[pictureLabel$rt > 100  &
+                                         !(pictureLabel$subjID %in% badsubjs),], mean)-> speedacc
+aggregate(rt ~ subjID+learning+frequency, pictureLabel[pictureLabel$rt > 100  &
+                                         !(pictureLabel$subjID %in% badsubjs),], mean)-> speedacc2
+merge(speedacc, speedacc2, by =  c("subjID", "learning", "frequency"))-> speedacc
+rm(speedacc2)
+dplyr::recode(speedacc$frequency, "25"="low", "75"="high")-> speedacc$frequency;
+
+ggplot(aes(x=rt, y=acc), 
+           data = speedacc) + 
+  facet_grid( learning ~ frequency) + 
+  geom_point( shape = 21, fill = "white", size = 3, stroke = 1.5) +
+  #geom_smooth(method = "lm", formula = y ~ poly(x,2), se = TRUE, color = "#0892d0", fill = "lightgray") +
+  geom_hline(yintercept = 0.33, lty = "dashed", color = 'red') +
+  coord_cartesian(ylim = c(0, 1))+
+  ggthemes::theme_base()+
+  xlab("Average RT on subjs") +
+  ylab("Proportion Correct") +
+  ggtitle("speed-acc tradeoff - pictureLabel")
+
+
+```
+
+```{r}
+speedacc %>%
+  group_by(frequency, learning) %>%
+  summarise(mean(rt), median(rt))
+```
+
 ### Comparisons by tasks + learning + frequency
 
 Barplot labelPicture
@@ -1315,7 +1672,8 @@ Barplot labelPicture
 ```{r, fig.align='center'}
 
 ms <- aggregate(acc ~ subjID+frequency+learning, 
-                data=labelPicture[labelPicture$rt > 200,], FUN= mean)
+                data=labelPicture[labelPicture$rt > 100  &
+                                         !(labelPicture$subjID %in% badsubjs),], FUN= mean)
 
 df<- ms %>%
   group_by(frequency, learning)%>%
@@ -1359,7 +1717,8 @@ genTask <- rbind(labelPicture, pictureLabel)
 ```
 
 ```{r}
-ms <- aggregate(acc ~ subjID+frequency+learning, data = genTask, mean)
+ms <- aggregate(acc ~ subjID+frequency+learning, data = genTask[genTask$rt>100 &
+                                         !(genTask$subjID %in% badsubjs),], mean)
 
 ms$frequency <- as.factor(ms$frequency)
 plyr::revalue(ms$frequency, c("25"="low"))-> ms$frequency;
@@ -1378,7 +1737,8 @@ ggviolin(ms, x = "frequency", y = "acc", fill = "frequency",
 ```
 
 ```{r}
-ms <- aggregate(acc ~ subjID+frequency+learning, data=genTask, FUN= mean)
+ms <- aggregate(acc ~ subjID+frequency+learning, data=genTask[genTask$rt>100 &
+                                         !(genTask$subjID %in% badsubjs),], FUN= mean)
 
 df<- ms %>%
   group_by(frequency, learning)%>%
@@ -1458,5 +1818,176 @@ Ok, here we don't have right or wrong answers, but we are more interested in tak
 
 ```{r}
 aggregate(resp ~ category, data = conjudge, FUN = mean)
+```
+
+Let's clean the global environment:
+
+```{r}
+rm(n_bins, rt_range, problematicPeople, frequency, dumbPeople, break_seq, task, temp, timeslice_range, p, ms, n, nrows, subjs, totsubjs ,genTask, fribbleSet, count_range, alltasks, subjmissed, df)
+```
+
+
+# Bayes factor calculation with GLMMs
+
+## Estimates of the betas from the FLO paper
+
+```{r}
+#means
+highfreq_mean<- mean(88, 98)
+lowfreq_mean <- mean(38, 78)
+
+n <- c(32) 
+
+#sd
+highfreq_sd <- c(5*sqrt(n))  #Paper has standard errors represented (I guess),
+                     #I'm going to transform it back to standard deviations
+lowfreq_sd <- c(5*sqrt(n)) #also, they look the same to me from the picture
+                           #but low frequency should lead more variability.
+```
+
+Main effect of frequency:
+```{r}
+frequency_beta<- logodds(highfreq_mean) - logodds(lowfreq_mean)
+```
+
+Main effect of learning:
+```{r}
+#mean
+LF_mean <- mean(38, 88)
+FL_mean <- mean(78, 98)
+
+n <- c(16)
+
+#sd
+LF_sd <- c(5*sqrt(n)) #how can be possible that learnings have the same se?
+FL_sd <- c(5*sqrt(n))
+```
+
+```{r}
+learning_beta <- logodds(FL_mean) - logodds(LF_mean)
+#positive > higher in the FL
+```
+
+Interaction between freq and learning:
+
+Frequency effect (high-low) is greater in the LF than in FL:
+```{r}
+#(logodds(highfreq_FL)-logodds(lowfreq_FL))- (logodds(highfreq_LF)-logodds(lowfreq_LF))
+freqBylearning_beta <- (logodds(98)-logodds(78))- (logodds(88)-logodds(38))*-1
+```
+
+
+## Combine both generalization tasks in one dataset
+
+I'm going to combine both generalization tasks in one single dataset called genTask
+```{r}
+genTask <- rbind(labelPicture[labelPicture$rt > 100 & !(labelPicture$subjID %in% badsubjs),], 
+                 pictureLabel[pictureLabel$rt > 100 & !(pictureLabel$subjID %in% badsubjs),])
+
+genTask$frequency <- as.factor(genTask$frequency)
+plyr::revalue(genTask$frequency, c("25"="low"))-> genTask$frequency;
+plyr::revalue(genTask$frequency, c("75"="high"))-> genTask$frequency;
+
+
+```
+
+
+Relevel the variables:
+
+```{r}
+genTask$learning = relevel(genTask$learning, ref = "LF")
+genTask$frequency = relevel(genTask$frequency, ref = "low")
+genTask <- lizCenter(genTask, list("learning" , "frequency", "task"))
+```
+
+## The model
+
+```{r}
+genTask_model <- glmer(acc ~  frequency.ct*learning.ct + task + (frequency.ct|subjID) , 
+         data = genTask, 
+         family="binomial",
+         control=glmerControl(optimizer = "bobyqa"))
+
+adjusted.genTask_model = adjust_intercept_model(genTask_model, chance = log(0.33/(1-0.33)))
+round(adjusted.genTask_model,5)
+```
+
+Further inspection:
+```{r}
+genTask_model.emm <- emmeans(genTask_model , ~ frequency.ct * learning.ct )
+contrast(genTask_model.emm, "consec",  simple = "each", combine = F, adjust = "bonferroni")
+```
+
+Okay, with both tasks together the take home message is the following:
+
+- Main effect of frequency, with high frequency having higher accuracy than low frequency in both learnings.
+
+- Main effect of learning, with FL learning having higher accuracy in the high frequency condition.
+
+- No difference between learnings in the low frequency condition.
+
+- No difference between tasks
+
+
+I'm going to create a table with the estimates:
+```{r}
+genTask_bf = data.frame(
+    condition = c(
+                   "frequency by learning",
+                   "learning",
+                   "frequency",
+                   "task"
+                   ),
+               
+    meandiff = c(
+      round(summary(genTask_model)$coefficients["frequency.ct:learning.ct", "Estimate"],3),
+       round(summary(genTask_model)$coefficients["learning.ct", "Estimate"],3),
+       round(summary(genTask_model)$coefficients["frequency.ct", "Estimate"],3),
+       round(summary(genTask_model)$coefficients["taskgeneralizationPL", "Estimate"],3)
+       ),
+    
+    sd = c(
+      round(summary(genTask_model)$coefficients["frequency.ct:learning.ct", "Std. Error"],3),
+       round(summary(genTask_model)$coefficients["learning.ct", "Std. Error"],3),
+       round(summary(genTask_model)$coefficients["frequency.ct", "Std. Error"],3),
+       round(summary(genTask_model)$coefficients["taskgeneralizationPL", "Std. Error"],3)
+       )
+)
+
+genTask_bf
+```
+
+## BF for Frequency:
+```{r}
+Bf(sd = genTask_bf[genTask_bf$condition=='frequency',]$sd, 
+   obtained = genTask_bf[genTask_bf$condition=='frequency',]$meandiff, 
+   uniform = 0, 
+   sdtheory = highfreq_sd, 
+   meanoftheory = frequency_beta, 
+   tail = 1)
+```
+
+## BF for learning:
+```{r}
+Bf(sd = genTask_bf[genTask_bf$condition=='learning',]$sd, 
+   obtained = genTask_bf[genTask_bf$condition=='learning',]$meandiff, 
+   uniform = 0, 
+   sdtheory = LF_sd, 
+   meanoftheory = learning_beta, 
+   tail = 1)
+```
+
+## BF for the interaction frequency by learning 
+```{r}
+Bf(sd = genTask_bf[genTask_bf$condition=='frequency by learning',]$sd, 
+   obtained = genTask_bf[genTask_bf$condition=='frequency by learning',]$meandiff, 
+   uniform = 0, 
+   sdtheory = LF_sd, #don't know how to compute sd of the interaction
+   meanoftheory = freqBylearning_beta, 
+   tail = 1)
+```
+
+```{r}
+rm(speedacc, n, lowfreq_mean, highfreq_mean, lowfreq_sd, highfreq_sd, LF_mean, FL_mean, LF_sd, FL_sd)
 ```
 

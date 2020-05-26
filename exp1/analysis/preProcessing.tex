@@ -36,7 +36,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
 \hypersetup{
-  pdftitle={Preprocessing},
+  pdftitle={FLO replication - Preprocessing and analysis},
   pdfauthor={Eva},
   hidelinks,
   pdfcreator={LaTeX via pandoc}}
@@ -100,7 +100,7 @@
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 \setcounter{secnumdepth}{-\maxdimen} % remove section numbering
 
-\title{Preprocessing}
+\title{FLO replication - Preprocessing and analysis}
 \author{Eva}
 \date{4/3/2020}
 
@@ -108,7 +108,7 @@
 \maketitle
 
 {
-\setcounter{tocdepth}{2}
+\setcounter{tocdepth}{3}
 \tableofcontents
 }
 \hypertarget{clean-ws-set-wd}{%
@@ -139,6 +139,31 @@ in the rest of the code) the highest point in your local folder:
                         \StringTok{"label"}\NormalTok{=}\StringTok{"factor"}\NormalTok{,}
                         \StringTok{"fribbleID"}\NormalTok{=}\StringTok{"factor"}
 \NormalTok{                        ));}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{load-functions-from-the-lab-repo}{%
+\section{Load functions from the lab
+repo}\label{load-functions-from-the-lab-repo}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{urlFolder <-}\StringTok{ 'https://api.github.com/repos/n400peanuts/languagelearninglab/git/trees/master?recursive=1'}
+\NormalTok{urlRaw <-}\StringTok{ 'https://raw.githubusercontent.com/n400peanuts/languagelearninglab/master/tools/'}
+
+\KeywordTok{source}\NormalTok{(}\StringTok{'C:/Users/eva_v/Documents/languagelearninglab/tools/loadFunctionsGithub.R'}\NormalTok{)}
+
+\KeywordTok{loadFunctionsGithub}\NormalTok{(}\DataTypeTok{urlFolder =}\NormalTok{ urlFolder, }\DataTypeTok{urlRaw =}\NormalTok{ urlRaw);}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "----loading. Please wait----"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{rm}\NormalTok{(urlFolder, urlRaw)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -331,7 +356,9 @@ Let's filter and check learning trials:
 \end{Highlighting}
 \end{Shaded}
 
-How many trials per participant?
+\hypertarget{how-many-trials-per-participant}{%
+\subsection{How many trials per
+participant?}\label{how-many-trials-per-participant}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -359,7 +386,7 @@ How many trials per participant?
 ## # ... with 70 more rows
 \end{verbatim}
 
-Great, 120 trials per participant.
+Great, 120 trials per participant, per learning.
 
 Let's check whether the blocks' length varied across participants:
 
@@ -395,7 +422,9 @@ presented at the end of each block, and we wanted its presentation to be
 unpredictable. Anyway, the sum of all the learning trials was always
 120.
 
-Did we assign our learning randomly every couple of people?
+\hypertarget{did-we-assign-our-learning-randomly-every-couple-of-people}{%
+\subsection{Did we assign our learning randomly every couple of
+people?}\label{did-we-assign-our-learning-randomly-every-couple-of-people}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -488,9 +517,10 @@ Did we assign our learning randomly every couple of people?
 ##   1432323   0 120
 \end{verbatim}
 
-Kind of. Apparently, if a participant access Gorilla, but it's not
-allowed to start the experiment (e.g., the browser is not suitable), or
-leaves the session, this counts anyway for the randomisation.
+Kind of. After chicking with Gorilla's suppoert: apparently, if a
+participant access Gorilla, but it's not allowed to start the experiment
+(e.g., the browser is not suitable), or leaves the session, this counts
+anyway for the randomisation.
 
 The rows related to the presentation of fribbles and labels, inherit
 Gorilla's http address of where they are stored. Nothing I can do to
@@ -566,8 +596,11 @@ This is how the learning dataframe looks like now:
 ##  NA's   :9600
 \end{verbatim}
 
-Our fribbles were presented two times during learning. Let's check
-fribbles presented \textgreater{} 2 times:
+Our fribbles were presented two times during learning.
+
+\hypertarget{check-if-fribbles-are-presented-2-times}{%
+\subsection{Check if fribbles are presented \textgreater{} 2
+times:}\label{check-if-fribbles-are-presented-2-times}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -589,8 +622,11 @@ fribbles presented \textgreater{} 2 times:
 ## # ... with 3 variables: subjID <int>, fribbleID <fct>, n <int>
 \end{verbatim}
 
-None, perfect. Let's check whether there are fribbles presented only
-once:
+None, perfect.
+
+\hypertarget{check-whether-there-are-fribbles-presented-only-once}{%
+\subsection{Check whether there are fribbles presented only
+once:}\label{check-whether-there-are-fribbles-presented-only-once}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -614,9 +650,13 @@ once:
 
 Perfect.
 
-Check the association between the fribbles and the labels. Fribbles ID
-are coded in this way: e.g., 10175-\textgreater{} {[}1{]} is the
-category {[}01{]} is the number of the fribble {[}75{]} is the
+\hypertarget{check-the-association-between-the-fribbles-and-the-labels-high-and-low-frequency-with-the-correct-labels}{%
+\subsection{Check the association between the fribbles and the labels
+(high and low frequency with the correct
+labels)}\label{check-the-association-between-the-fribbles-and-the-labels-high-and-low-frequency-with-the-correct-labels}}
+
+Fribbles ID are coded in this way: e.g., 10175-\textgreater{} {[}1{]} is
+the category {[}01{]} is the number of the fribble {[}75{]} is the
 frequency.
 
 In the column fribbleID we have the fribble presented, in the column
@@ -770,12 +810,15 @@ columns.
 \KeywordTok{as.factor}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{".mp3$"}\NormalTok{, }\StringTok{""}\NormalTok{, generalizationPL}\OperatorTok{$}\NormalTok{resp))->}\StringTok{ }\NormalTok{generalizationPL}\OperatorTok{$}\NormalTok{resp}
 \KeywordTok{as.factor}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{".jpg"}\NormalTok{, }\StringTok{""}\NormalTok{, generalizationPL}\OperatorTok{$}\NormalTok{resp))->}\StringTok{ }\NormalTok{generalizationPL}\OperatorTok{$}\NormalTok{resp}
 
-\KeywordTok{as.factor}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{'[[:punct:]]|"'}\NormalTok{, }\StringTok{""}\NormalTok{, generalizationPL}\OperatorTok{$}\NormalTok{label))->}\StringTok{ }\NormalTok{generalizationPL}\OperatorTok{$}\NormalTok{label }
+\KeywordTok{gsub}\NormalTok{(}\StringTok{'[[:punct:]]|"'}\NormalTok{, }\StringTok{""}\NormalTok{, generalizationPL}\OperatorTok{$}\NormalTok{label)->}\StringTok{ }\NormalTok{generalizationPL}\OperatorTok{$}\NormalTok{label }
+
 \KeywordTok{as.factor}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{'mp3'}\NormalTok{, }\StringTok{"_"}\NormalTok{, generalizationPL}\OperatorTok{$}\NormalTok{label))->}\StringTok{ }\NormalTok{generalizationPL}\OperatorTok{$}\NormalTok{label}
 \end{Highlighting}
 \end{Shaded}
 
-Check how many trials participants:
+\hypertarget{check-how-many-trials-participants}{%
+\subsubsection{Check how many trials
+participants}\label{check-how-many-trials-participants}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -805,7 +848,9 @@ Check how many trials participants:
 
 Great, 24 trials per participant.
 
-Check whether participants saw a unique fribble:
+\hypertarget{check-whether-participants-saw-a-unique-fribble}{%
+\subsubsection{Check whether participants saw a unique
+fribble:}\label{check-whether-participants-saw-a-unique-fribble}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -889,9 +934,13 @@ okay.
 
 So far, so good.
 
-We have 24 trials per participant, but within those trials we have 8
-trials per category, 4 low frequency and 4 high frequency trials. Let's
-check:
+\hypertarget{check-trialstimuli-per-category-per-frequency-per-subject}{%
+\subsubsection{Check trial/stimuli per category, per frequency, per
+subject}\label{check-trialstimuli-per-category-per-frequency-per-subject}}
+
+We have 24 trials per participant, but within those trials we
+\emph{should} have 8 trials per category, 4 low frequency and 4 high
+frequency trials.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -937,7 +986,9 @@ pictures}\label{check-test-2-generalization-from-label-to-pictures}}
 \end{Highlighting}
 \end{Shaded}
 
-How many trials per participant?
+\hypertarget{how-many-trials-per-participant-1}{%
+\subsubsection{How many trials per
+participant?}\label{how-many-trials-per-participant-1}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -967,15 +1018,20 @@ How many trials per participant?
 
 24 trials, great.
 
-Let's check whether participants saw a unique fribble by checking for
-duplicates: First let's clean the rows from Gorilla gibberish.
+\hypertarget{check-whether-participants-saw-a-unique-fribble-1}{%
+\subsubsection{Check whether participants saw a unique
+fribble}\label{check-whether-participants-saw-a-unique-fribble-1}}
+
+First let's clean the rows from Gorilla gibberish.
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{as.factor}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{'[[:punct:]]|"'}\NormalTok{, }\StringTok{""}\NormalTok{, generalizationLP}\OperatorTok{$}\NormalTok{fribbleID))->}\StringTok{ }\NormalTok{generalizationLP}\OperatorTok{$}\NormalTok{fribbleID }
+
 \KeywordTok{as.factor}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{'jpg'}\NormalTok{, }\StringTok{"_"}\NormalTok{, generalizationLP}\OperatorTok{$}\NormalTok{fribbleID))->}\StringTok{ }\NormalTok{generalizationLP}\OperatorTok{$}\NormalTok{fribbleID}
 
 \KeywordTok{as.factor}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{"/task/70033/56/asset/|/task/70033/57/asset/"}\NormalTok{, }\StringTok{""}\NormalTok{, generalizationLP}\OperatorTok{$}\NormalTok{resp))->}\StringTok{ }\NormalTok{generalizationLP}\OperatorTok{$}\NormalTok{resp}
+
 \KeywordTok{as.factor}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{".jpg"}\NormalTok{, }\StringTok{""}\NormalTok{, generalizationLP}\OperatorTok{$}\NormalTok{resp))->}\StringTok{ }\NormalTok{generalizationLP}\OperatorTok{$}\NormalTok{resp}
 \end{Highlighting}
 \end{Shaded}
@@ -1181,7 +1237,10 @@ Then check for duplicates:
 
 Great! participants saw always different fribble.
 
-Check whether fribbles presented were either high or low frequency.
+\hypertarget{check-whether-fribbles-presented-were-either-high-or-low-frequency-within-trials}{%
+\subsubsection{Check whether fribbles presented were either high or low
+frequency within
+trials}\label{check-whether-fribbles-presented-were-either-high-or-low-frequency-within-trials}}
 
 In this task we have three pictures and one label pronounced. This means
 that the fribbleID column contains 3 images. I'm going to cycle over the
@@ -1224,7 +1283,9 @@ Great, fribbles presented were either low or high frequency. Check
 whether participants saw 4 trials with low and 4 trials with high
 frequency:
 
-Let's see how these are distributed:
+\hypertarget{check-trial-distribution-per-frequency}{%
+\subsubsection{Check trial distribution per
+frequency:}\label{check-trial-distribution-per-frequency}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1260,7 +1321,9 @@ because our fribble selected is coded in this column:
 \end{Highlighting}
 \end{Shaded}
 
-Let's check whether we have responses in all the three categories:
+\hypertarget{check-responses-distribution-by-category}{%
+\subsubsection{Check responses distribution by
+category:}\label{check-responses-distribution-by-category}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1290,7 +1353,9 @@ Let's check whether we have responses in all the three categories:
 
 Cool.
 
-Check responses distribution over category:
+\hypertarget{check-responses-distribution-by-frequency}{%
+\subsubsection{Check responses distribution by
+frequency:}\label{check-responses-distribution-by-frequency}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1330,7 +1395,9 @@ task}\label{check-test-3-contingency-judgement-task}}
 \end{Highlighting}
 \end{Shaded}
 
-How many trials per participant?
+\hypertarget{how-many-trials-per-participant-2}{%
+\subsubsection{How many trials per
+participant?}\label{how-many-trials-per-participant-2}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1360,7 +1427,9 @@ How many trials per participant?
 
 Very good.
 
-Did participants see a fribble more than once?
+\hypertarget{did-participants-see-a-fribble-more-than-once}{%
+\subsubsection{Did participants see a fribble more than
+once?}\label{did-participants-see-a-fribble-more-than-once}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1384,7 +1453,9 @@ Did participants see a fribble more than once?
 
 No! that's great.
 
-Are labels repeated equally?
+\hypertarget{are-labels-repeated-equally}{%
+\subsubsection{Are labels repeated
+equally?}\label{are-labels-repeated-equally}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1487,7 +1558,9 @@ good
 \end{Highlighting}
 \end{Shaded}
 
-Check category presentation:
+\hypertarget{check-category-presentation}{%
+\subsubsection{Check category
+presentation:}\label{check-category-presentation}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1529,7 +1602,9 @@ trials 4 times. 5 trials each time, plus 4 practice trials.
 \end{Highlighting}
 \end{Shaded}
 
-How many trials per participant?
+\hypertarget{how-many-trials-per-participant-3}{%
+\subsubsection{How many trials per
+participant?}\label{how-many-trials-per-participant-3}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1558,7 +1633,11 @@ How many trials per participant?
 \end{verbatim}
 
 we have 5 trials repeated during learning four times (20) plus 4
-practice trials. How was accuracy distributed across participants?
+practice trials.
+
+\hypertarget{how-was-accuracy-distributed-across-participants}{%
+\subsubsection{How was accuracy distributed across
+participants?}\label{how-was-accuracy-distributed-across-participants}}
 
 First, let's consider that when we have a timeout, the output is -1
 
@@ -1634,8 +1713,9 @@ that also wrong responses are coded as NA. We need to recode those.
 \end{Highlighting}
 \end{Shaded}
 
-So, now we can check the overall accuracy of participants, filtering by
-timeouts:
+\hypertarget{check-the-overall-accuracy-of-participants-filtering-by-timeouts}{%
+\subsubsection{Check the overall accuracy of participants, filtering by
+timeouts:}\label{check-the-overall-accuracy-of-participants-filtering-by-timeouts}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1732,8 +1812,20 @@ Now that we have all tests separated, better to remove this file:
 \hypertarget{data-visualization}{%
 \section{Data visualization}\label{data-visualization}}
 
-\hypertarget{rt}{%
-\subsection{rt}\label{rt}}
+Okay, from the sanity checks done above we can draw two conclusions:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Learning and Testing was presented as it was supposed to be and
+\item
+  data was stored correctly
+\end{enumerate}
+
+Let's see now if data makes sense.
+
+\hypertarget{reaction-times}{%
+\subsection{Reaction times}\label{reaction-times}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1750,15 +1842,12 @@ Now that we have all tests separated, better to remove this file:
        \DataTypeTok{xlab =} \StringTok{"rt"}\NormalTok{, }
        \DataTypeTok{color =} \StringTok{"task"}\NormalTok{, }
        \DataTypeTok{fill =} \StringTok{"task"}\NormalTok{,}
-       \DataTypeTok{palette =} \StringTok{"jco"}
+       \DataTypeTok{bins =} \DecValTok{40}\NormalTok{,}
+       \DataTypeTok{palette =} \StringTok{"jco"}\NormalTok{,}
+       \DataTypeTok{add =} \StringTok{"median"}
 \NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
-
-\begin{verbatim}
-## Warning: Using `bins = 30` by default. Pick better value with the argument
-## `bins`.
-\end{verbatim}
 
 \begin{verbatim}
 ## Warning: Removed 697 rows containing non-finite values (stat_bin).
@@ -1766,11 +1855,34 @@ Now that we have all tests separated, better to remove this file:
 
 \includegraphics{preProcessing_files/figure-latex/RT hist-1.pdf}
 
+The two generalization tasks looks quite different. I'm going to plot it
+separately for a better inspection:
+
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{rm}\NormalTok{(alltasks)}
+\NormalTok{p<-}\StringTok{ }\KeywordTok{gghistogram}\NormalTok{(alltasks, }\CommentTok{#will throw warnings related to non responses but that's okay, ggplot simply removes them}
+       \DataTypeTok{x =} \StringTok{"rt"}\NormalTok{,}
+       \DataTypeTok{y =} \StringTok{"..count.."}\NormalTok{,}
+       \DataTypeTok{xlab =} \StringTok{"rt"}\NormalTok{,}
+       \DataTypeTok{facet.by =} \StringTok{"task"}\NormalTok{,}
+       \DataTypeTok{add =} \StringTok{"median"}\NormalTok{,}
+       \DataTypeTok{bins =} \DecValTok{40}
+\NormalTok{)}
+
+\KeywordTok{facet}\NormalTok{(p, }\DataTypeTok{facet.by =} \StringTok{"task"}\NormalTok{,}
+      \DataTypeTok{nrow =} \DecValTok{3}\NormalTok{,}
+      \DataTypeTok{ncol =} \DecValTok{1}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
+
+\begin{verbatim}
+## Warning: Removed 697 rows containing non-finite values (stat_bin).
+\end{verbatim}
+
+\begin{center}\includegraphics{preProcessing_files/figure-latex/histogram separated by generalization tasks-1} \end{center}
+
+The tails of the first two tasks don't end smoothly, especially in task
+2.
 
 \hypertarget{accuracy}{%
 \subsection{accuracy}\label{accuracy}}
@@ -1793,7 +1905,9 @@ Now that we have all tests separated, better to remove this file:
 \end{Highlighting}
 \end{Shaded}
 
-How many timeouts?
+\hypertarget{how-many-timeouts-by-participant}{%
+\paragraph{How many timeouts by
+participant?}\label{how-many-timeouts-by-participant}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1819,7 +1933,7 @@ How many timeouts?
 \end{Highlighting}
 \end{Shaded}
 
-Histogram
+Histrogram by participant:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1831,7 +1945,7 @@ Histogram
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-32-1.pdf}
+\begin{center}\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-32-1} \end{center}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1849,6 +1963,13 @@ Histogram
 \end{Shaded}
 
 \includegraphics{preProcessing_files/figure-latex/unnamed-chunk-33-1.pdf}
+\#\#\#\# Subjects that made more than 3 timeouts
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{unique}\NormalTok{(timeout[timeout}\OperatorTok{$}\NormalTok{n}\OperatorTok{>}\DecValTok{3}\NormalTok{,]}\OperatorTok{$}\NormalTok{subjID) ->}\StringTok{ }\NormalTok{problematicPeople}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1876,33 +1997,52 @@ Histogram
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-35-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-36-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{accdistr[accdistr}\OperatorTok{$}\NormalTok{m}\OperatorTok{<}\NormalTok{.}\DecValTok{7}\NormalTok{,]}
+\NormalTok{accdistr[accdistr}\OperatorTok{$}\NormalTok{m}\OperatorTok{<=}\NormalTok{.}\DecValTok{5}\NormalTok{,]}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-## # A tibble: 13 x 3
-## # Groups:   subjID [8]
-##     subjID blocks     m
-##      <int> <fct>  <dbl>
-##  1 1414932 3      0.6  
-##  2 1414932 4      0.25 
-##  3 1422470 1      0.4  
-##  4 1422475 2      0.5  
-##  5 1422475 3      0.2  
-##  6 1422475 4      0    
-##  7 1422689 3      0    
-##  8 1422689 4      0.4  
-##  9 1431942 4      0.4  
-## 10 1431944 1      0.6  
-## 11 1431944 3      0.6  
-## 12 1431956 4      0.6  
-## 13 1432003 0      0.667
+## # A tibble: 8 x 3
+## # Groups:   subjID [5]
+##    subjID blocks     m
+##     <int> <fct>  <dbl>
+## 1 1414932 4       0.25
+## 2 1422470 1       0.4 
+## 3 1422475 2       0.5 
+## 4 1422475 3       0.2 
+## 5 1422475 4       0   
+## 6 1422689 3       0   
+## 7 1422689 4       0.4 
+## 8 1431942 4       0.4
 \end{verbatim}
+
+\hypertarget{people-that-scored-less-than-50-in-1-block}{%
+\paragraph{People that scored less than 50\% in \textgreater1
+block:}\label{people-that-scored-less-than-50-in-1-block}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{c}\NormalTok{(}\StringTok{"1422475"}\NormalTok{, }\StringTok{"1422689"}\NormalTok{) ->}\StringTok{ }\NormalTok{dumbPeople}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{setdiff}\NormalTok{(dumbPeople, problematicPeople)->}\StringTok{ }\NormalTok{dumbPeople}
+\end{Highlighting}
+\end{Shaded}
+
+Let's consider them as bad subjects.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{c}\NormalTok{(problematicPeople, dumbPeople)->badsubjs}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1926,6 +2066,10 @@ associated the fribble to its label.
 I remove the no-response, and compute accuracy based on category and
 response.
 
+\hypertarget{how-many-participants-do-we-have-per-learning}{%
+\paragraph{How many participants do we have per
+learning?}\label{how-many-participants-do-we-have-per-learning}}
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{length}\NormalTok{(}\KeywordTok{unique}\NormalTok{(generalizationPL}\OperatorTok{$}\NormalTok{subjID))}
@@ -1946,6 +2090,13 @@ response.
 We have 41 for feature-label learning, and 39 for label-feature
 learning.
 
+\hypertarget{check-tails-of-the-rt-distribution}{%
+\paragraph{Check tails of the rt
+distribution}\label{check-tails-of-the-rt-distribution}}
+
+The point is that we can't rely on responses made very early, because
+these might be simply mistakes or technical errors.
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
@@ -1961,6 +2112,22 @@ learning.
 \KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
+
+I would remove rt \textless100ms for all tasks.
+
+\hypertarget{how-many-what-type-of-trials-do-we-have}{%
+\paragraph{How many, what type of trials do we
+have?}\label{how-many-what-type-of-trials-do-we-have}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{round}\NormalTok{(}\KeywordTok{nrow}\NormalTok{(generalizationPL[generalizationPL}\OperatorTok{$}\NormalTok{rt}\OperatorTok{<}\DecValTok{100}\NormalTok{,]) }\OperatorTok{/}\StringTok{ }\KeywordTok{nrow}\NormalTok{(generalizationPL)}\OperatorTok{*}\DecValTok{100}\NormalTok{,}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 7.81
+\end{verbatim}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1999,14 +2166,51 @@ number of participants. The subject(s) that didn't answer at all the
 task is: 1420171. We have lost also 136 responses, that is 7.0833333
 over the total: 1920.
 
-Calculate the proportion of correct in each condition:
+How many trials per participant do we have now?
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\NormalTok{pictureLabel }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(subjID) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{count}\NormalTok{() }
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 79 x 2
+## # Groups:   subjID [79]
+##     subjID     n
+##      <int> <int>
+##  1 1414932    20
+##  2 1414933    24
+##  3 1414937    23
+##  4 1414945    20
+##  5 1414957    23
+##  6 1415040    23
+##  7 1420163    23
+##  8 1420165    21
+##  9 1420169    24
+## 10 1420177    23
+## # ... with 69 more rows
+\end{verbatim}
+
+No one had less than 18 trials, over the total (24). That's fine!
+
+\hypertarget{barplot-accuracy-by-category-frequency-learning}{%
+\paragraph{Barplot accuracy by category + frequency +
+learning}\label{barplot-accuracy-by-category-frequency-learning}}
+
+picture label
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{c}\NormalTok{(badsubjs, subjmissed) ->}\StringTok{ }\NormalTok{badsubjs}
+
 \KeywordTok{rm}\NormalTok{(n, subjmissed, nrows)}
 
 \NormalTok{ss_prop<-}\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{frequency}\OperatorTok{+}\NormalTok{category}\OperatorTok{+}\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, }
-                   \DataTypeTok{data =}\NormalTok{ pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{,], }\DataTypeTok{FUN =}\NormalTok{ mean)}
+                   \DataTypeTok{data =}\NormalTok{ pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                       }\OperatorTok{!}\NormalTok{(pictureLabel}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], }\DataTypeTok{FUN =}\NormalTok{ mean)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -2042,12 +2246,17 @@ Plot aggregated over subjs. To see accuracy distributed over categories.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-38-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-44-1.pdf}
+
+\hypertarget{violin-plot-accuracy-by-category-frequency-learning}{%
+\paragraph{Violin plot accuracy by category + frequency +
+learning}\label{violin-plot-accuracy-by-category-frequency-learning}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{df <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{frequency}\OperatorTok{+}\NormalTok{learning}\OperatorTok{+}\NormalTok{category, }
-                \DataTypeTok{data =}\NormalTok{ pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{,], mean)}
+                \DataTypeTok{data =}\NormalTok{ pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100}  \OperatorTok{&}
+\StringTok{                                       }\OperatorTok{!}\NormalTok{(pictureLabel}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], mean)}
 \NormalTok{df}\OperatorTok{$}\NormalTok{frequency <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(df}\OperatorTok{$}\NormalTok{frequency)}
 \NormalTok{plyr}\OperatorTok{::}\KeywordTok{revalue}\NormalTok{(df}\OperatorTok{$}\NormalTok{frequency, }\KeywordTok{c}\NormalTok{(}\StringTok{"25"}\NormalTok{=}\StringTok{"low"}\NormalTok{))->}\StringTok{ }\NormalTok{df}\OperatorTok{$}\NormalTok{frequency;}
 \NormalTok{plyr}\OperatorTok{::}\KeywordTok{revalue}\NormalTok{(df}\OperatorTok{$}\NormalTok{frequency, }\KeywordTok{c}\NormalTok{(}\StringTok{"75"}\NormalTok{=}\StringTok{"high"}\NormalTok{))->}\StringTok{ }\NormalTok{df}\OperatorTok{$}\NormalTok{frequency;}
@@ -2064,14 +2273,19 @@ Plot aggregated over subjs. To see accuracy distributed over categories.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-39-1.pdf}
+\begin{center}\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-45-1} \end{center}
+
+\hypertarget{violin-plot-accuracy-by-frequency-learning}{%
+\paragraph{Violin plot accuracy by frequency +
+learning}\label{violin-plot-accuracy-by-frequency-learning}}
 
 Let's see how participants scored for the high/low frequency:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{df <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{frequency}\OperatorTok{+}\NormalTok{learning, }
-                \DataTypeTok{data =}\NormalTok{ pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{,], mean)}
+                \DataTypeTok{data =}\NormalTok{ pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100}  \OperatorTok{&}
+\StringTok{                                       }\OperatorTok{!}\NormalTok{(pictureLabel}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], mean)}
 \NormalTok{df}\OperatorTok{$}\NormalTok{frequency <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(df}\OperatorTok{$}\NormalTok{frequency)}
 \NormalTok{plyr}\OperatorTok{::}\KeywordTok{revalue}\NormalTok{(df}\OperatorTok{$}\NormalTok{frequency, }\KeywordTok{c}\NormalTok{(}\StringTok{"25"}\NormalTok{=}\StringTok{"low"}\NormalTok{))->}\StringTok{ }\NormalTok{df}\OperatorTok{$}\NormalTok{frequency;}
 \NormalTok{plyr}\OperatorTok{::}\KeywordTok{revalue}\NormalTok{(df}\OperatorTok{$}\NormalTok{frequency, }\KeywordTok{c}\NormalTok{(}\StringTok{"75"}\NormalTok{=}\StringTok{"high"}\NormalTok{))->}\StringTok{ }\NormalTok{df}\OperatorTok{$}\NormalTok{frequency;}
@@ -2088,7 +2302,28 @@ Let's see how participants scored for the high/low frequency:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-40-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-46-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(learning, frequency) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\KeywordTok{mean}\NormalTok{(acc))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 3
+## # Groups:   learning [2]
+##   learning frequency `mean(acc)`
+##   <fct>    <fct>           <dbl>
+## 1 FL       low             0.489
+## 2 FL       high            0.760
+## 3 LF       low             0.386
+## 4 LF       high            0.636
+\end{verbatim}
+
+Closer inspection:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2100,7 +2335,7 @@ Let's see how participants scored for the high/low frequency:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-41-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-48-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2108,12 +2343,17 @@ Let's see how participants scored for the high/low frequency:
 \end{Highlighting}
 \end{Shaded}
 
+\hypertarget{barplot-accuracy-by-frequency-learning}{%
+\paragraph{Barplot accuracy by frequency +
+learning}\label{barplot-accuracy-by-frequency-learning}}
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{#barPlot aggregated over categories:}
 
 \NormalTok{ms <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{frequency}\OperatorTok{+}\NormalTok{learning, }
-                \DataTypeTok{data=}\NormalTok{pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{,], }\DataTypeTok{FUN=}\NormalTok{ mean)}
+                \DataTypeTok{data=}\NormalTok{pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                  }\OperatorTok{!}\NormalTok{(pictureLabel}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs)  ,], }\DataTypeTok{FUN=}\NormalTok{ mean)}
 
 \NormalTok{df<-}\StringTok{ }\NormalTok{ms }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(frequency, learning)}\OperatorTok{%>%}
@@ -2167,6 +2407,10 @@ Let's check now the generalizaton from label to pictures:
 \end{Highlighting}
 \end{Shaded}
 
+\hypertarget{how-many-participants-do-we-have-per-learning-1}{%
+\paragraph{How many participants do we have per
+learning?}\label{how-many-participants-do-we-have-per-learning-1}}
+
 We have 41 for feature-label learning, and 39 for label-feature
 learning.
 
@@ -2188,6 +2432,73 @@ Great, we have 80 participants in this task, so -0, and we have missed
 179 over the total 1920, that is 9.3229167. The subject(s) that missed
 completely the task is: .
 
+\hypertarget{how-many-what-type-of-trials-do-we-have-1}{%
+\paragraph{How many, what type of trials do we
+have?}\label{how-many-what-type-of-trials-do-we-have-1}}
+
+How many datapoints did we lose for no-responses?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{round}\NormalTok{(}\KeywordTok{nrow}\NormalTok{(generalizationLP[(}\KeywordTok{is.na}\NormalTok{(generalizationLP}\OperatorTok{$}\NormalTok{resp)),])}\OperatorTok{/}\KeywordTok{nrow}\NormalTok{(generalizationLP)}\OperatorTok{*}\DecValTok{100}\NormalTok{,}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 9.32
+\end{verbatim}
+
+How many trials were rt \textless{} 100?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{round}\NormalTok{(}\KeywordTok{nrow}\NormalTok{(generalizationLP[generalizationLP}\OperatorTok{$}\NormalTok{rt}\OperatorTok{<}\DecValTok{100}\NormalTok{,])}\OperatorTok{/}\StringTok{ }\KeywordTok{nrow}\NormalTok{(generalizationLP)}\OperatorTok{*}\DecValTok{100}\NormalTok{,}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 9.38
+\end{verbatim}
+
+Once trimmed, how many trials per participant do we have in this task?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{labelPicture }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(subjID) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{count}\NormalTok{() }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(n}\OperatorTok{<=}\DecValTok{18}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 8 x 2
+## # Groups:   subjID [8]
+##    subjID     n
+##     <int> <int>
+## 1 1420577    18
+## 2 1422475    18
+## 3 1422477    17
+## 4 1422677    17
+## 5 1422680     9
+## 6 1422689    17
+## 7 1432009     8
+## 8 1432075    17
+\end{verbatim}
+
+Here we have less datapoints. For sure, 1422680 needs to be added to the
+black list because has few correct trials.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{c}\NormalTok{(badsubjs, }\DecValTok{1422680}\NormalTok{) ->}\StringTok{ }\NormalTok{badsubjs}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{check-tails-of-the-rt-distribution-1}{%
+\paragraph{Check tails of the rt
+distribution}\label{check-tails-of-the-rt-distribution-1}}
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
@@ -2196,7 +2507,7 @@ completely the task is: .
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-45-1.pdf}
+\begin{center}\includegraphics{preProcessing_files/figure-latex/hist rt tails-1} \end{center}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2214,13 +2525,18 @@ completely the task is: .
 \end{Highlighting}
 \end{Shaded}
 
+\hypertarget{barplot-accuracy-by-categorylearningfrequency}{%
+\paragraph{Barplot accuracy by
+category+learning+frequency}\label{barplot-accuracy-by-categorylearningfrequency}}
+
 Calculate the proportion of correct in each condition
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{rm}\NormalTok{(subjmissed)}
 \NormalTok{ss_prop<-}\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{frequency}\OperatorTok{+}\NormalTok{category}\OperatorTok{+}\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, }
-                   \DataTypeTok{data =}\NormalTok{ labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{ ,], }\DataTypeTok{FUN =}\NormalTok{ mean)}
+                   \DataTypeTok{data =}\NormalTok{ labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], }\DataTypeTok{FUN =}\NormalTok{ mean)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -2257,12 +2573,17 @@ Plot aggregated over subjs. To see accuracy distributed over categories.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-48-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-57-1.pdf}
+
+\hypertarget{violin-plot-accuracy-by-categorylearningfrequency}{%
+\paragraph{Violin plot accuracy by
+category+learning+frequency}\label{violin-plot-accuracy-by-categorylearningfrequency}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ms <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{frequency}\OperatorTok{+}\NormalTok{learning}\OperatorTok{+}\NormalTok{category, }
-                \DataTypeTok{data =}\NormalTok{ labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{,], mean)}
+                \DataTypeTok{data =}\NormalTok{ labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], mean)}
 
 \NormalTok{ms}\OperatorTok{$}\NormalTok{frequency <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(ms}\OperatorTok{$}\NormalTok{frequency)}
 \NormalTok{plyr}\OperatorTok{::}\KeywordTok{revalue}\NormalTok{(ms}\OperatorTok{$}\NormalTok{frequency, }\KeywordTok{c}\NormalTok{(}\StringTok{"25"}\NormalTok{=}\StringTok{"low"}\NormalTok{))->}\StringTok{ }\NormalTok{ms}\OperatorTok{$}\NormalTok{frequency;}
@@ -2280,7 +2601,7 @@ Plot aggregated over subjs. To see accuracy distributed over categories.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-49-1.pdf}
+\begin{center}\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-58-1} \end{center}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2288,10 +2609,15 @@ Plot aggregated over subjs. To see accuracy distributed over categories.
 \end{Highlighting}
 \end{Shaded}
 
+\hypertarget{violinplot-accuracy-by-learningfrequency}{%
+\paragraph{Violinplot accuracy by
+learning+frequency}\label{violinplot-accuracy-by-learningfrequency}}
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ms <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{frequency}\OperatorTok{+}\NormalTok{learning, }
-                \DataTypeTok{data =}\NormalTok{ labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{,], mean)}
+                \DataTypeTok{data =}\NormalTok{ labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], mean)}
 
 \NormalTok{ms}\OperatorTok{$}\NormalTok{frequency <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(ms}\OperatorTok{$}\NormalTok{frequency)}
 \NormalTok{plyr}\OperatorTok{::}\KeywordTok{revalue}\NormalTok{(ms}\OperatorTok{$}\NormalTok{frequency, }\KeywordTok{c}\NormalTok{(}\StringTok{"25"}\NormalTok{=}\StringTok{"low"}\NormalTok{))->}\StringTok{ }\NormalTok{ms}\OperatorTok{$}\NormalTok{frequency;}
@@ -2309,13 +2635,32 @@ Plot aggregated over subjs. To see accuracy distributed over categories.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-50-1.pdf}
+\begin{center}\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-59-1} \end{center}
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{#rm(ms, ss_prop)}
 \end{Highlighting}
 \end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ms }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(learning, frequency) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\KeywordTok{mean}\NormalTok{(acc))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 3
+## # Groups:   learning [2]
+##   learning frequency `mean(acc)`
+##   <fct>    <fct>           <dbl>
+## 1 FL       low             0.433
+## 2 FL       high            0.780
+## 3 LF       low             0.418
+## 4 LF       high            0.648
+\end{verbatim}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2327,7 +2672,7 @@ Plot aggregated over subjs. To see accuracy distributed over categories.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-51-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/hist distribution of responses-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2335,13 +2680,207 @@ Plot aggregated over subjs. To see accuracy distributed over categories.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{comparison-by-learning-by-tasks}{%
-\subsubsection{Comparison by learning by
-tasks}\label{comparison-by-learning-by-tasks}}
+\hypertarget{barplot-accuracy-by-frequency-learning-1}{%
+\paragraph{Barplot accuracy by frequency +
+learning}\label{barplot-accuracy-by-frequency-learning-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#barPlot aggregated over categories:}
+
+\NormalTok{ms <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{frequency}\OperatorTok{+}\NormalTok{learning, }
+                \DataTypeTok{data=}\NormalTok{labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                  }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs)  ,], }\DataTypeTok{FUN=}\NormalTok{ mean)}
+
+\NormalTok{df<-}\StringTok{ }\NormalTok{ms }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(frequency, learning)}\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}
+    \DataTypeTok{mean =} \KeywordTok{mean}\NormalTok{(acc),}
+    \DataTypeTok{sd =} \KeywordTok{sd}\NormalTok{(acc),}
+    \DataTypeTok{n =} \KeywordTok{n}\NormalTok{()) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{( }\DataTypeTok{se=}\NormalTok{sd}\OperatorTok{/}\KeywordTok{sqrt}\NormalTok{(n))  }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{( }\DataTypeTok{ci=}\NormalTok{se }\OperatorTok{*}\StringTok{ }\KeywordTok{qt}\NormalTok{((}\DecValTok{1}\FloatTok{-0.05}\NormalTok{)}\OperatorTok{/}\DecValTok{2} \OperatorTok{+}\StringTok{ }\FloatTok{.5}\NormalTok{, n}\DecValTok{-1}\NormalTok{))}
+
+\NormalTok{df}\OperatorTok{$}\NormalTok{frequency <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(df}\OperatorTok{$}\NormalTok{frequency)}
+\NormalTok{plyr}\OperatorTok{::}\KeywordTok{revalue}\NormalTok{(df}\OperatorTok{$}\NormalTok{frequency, }\KeywordTok{c}\NormalTok{(}\StringTok{"25"}\NormalTok{=}\StringTok{"low"}\NormalTok{))->}\StringTok{ }\NormalTok{df}\OperatorTok{$}\NormalTok{frequency;}
+\NormalTok{plyr}\OperatorTok{::}\KeywordTok{revalue}\NormalTok{(df}\OperatorTok{$}\NormalTok{frequency, }\KeywordTok{c}\NormalTok{(}\StringTok{"75"}\NormalTok{=}\StringTok{"high"}\NormalTok{))->}\StringTok{ }\NormalTok{df}\OperatorTok{$}\NormalTok{frequency;}
+
+
+\NormalTok{lp<-}\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ frequency, }\DataTypeTok{y =}\NormalTok{ mean, }\DataTypeTok{fill =}\NormalTok{ frequency), }\DataTypeTok{data =}\NormalTok{ df) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{( . }\OperatorTok{~}\StringTok{ }\NormalTok{learning) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\DataTypeTok{stat =} \StringTok{"identity"}\NormalTok{, }\DataTypeTok{color=}\StringTok{'white'}\NormalTok{, }\DataTypeTok{position=}\KeywordTok{position_dodge}\NormalTok{(), }\DataTypeTok{size=}\FloatTok{1.2}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_errorbar}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymin=}\NormalTok{mean}\OperatorTok{-}\NormalTok{se, }\DataTypeTok{ymax=}\NormalTok{mean}\OperatorTok{+}\NormalTok{se), }\DataTypeTok{width=}\NormalTok{.}\DecValTok{15}\NormalTok{, }\DataTypeTok{size=}\DecValTok{1}\NormalTok{,}\DataTypeTok{position=}\KeywordTok{position_dodge}\NormalTok{(.}\DecValTok{9}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Accuracy "}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"frequency"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{'labelPictures'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{coord_cartesian}\NormalTok{(}\DataTypeTok{ylim =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{))}\OperatorTok{+}
+\StringTok{  }\NormalTok{ggpubr}\OperatorTok{::}\KeywordTok{theme_pubclean}\NormalTok{() }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position=}\StringTok{"bottom"}\NormalTok{, }\DataTypeTok{legend.title =} \KeywordTok{element_blank}\NormalTok{()) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{text =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size=}\DecValTok{10}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_hline}\NormalTok{(}\DataTypeTok{yintercept =} \FloatTok{.33}\NormalTok{, }\DataTypeTok{col=}\StringTok{'red'}\NormalTok{, }\DataTypeTok{lwd=}\DecValTok{1}\NormalTok{);}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{comparison-by-frequency-by-learning-by-tasks}{%
+\subsubsection{Comparison by frequency by learning by
+tasks}\label{comparison-by-frequency-by-learning-by-tasks}}
+
+Quick summary of what we have so far:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{grid.arrange}\NormalTok{(pl,lp)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{preProcessing_files/figure-latex/barplots with both tasks-1} \end{center}
+
+What's going on in the low frequency condition? One way to see whether
+they simply learned another association is to check that wrong choices
+are distributed equally (50\%) to the other two categories. If they are,
+then they didn't learn anything, but if they are not distributed
+equally, they have learned another association.
+
+Label picture:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#select only inaccurate trials}
+\NormalTok{temp <-}\StringTok{ }\NormalTok{labelPicture[labelPicture}\OperatorTok{$}\NormalTok{acc}\OperatorTok{==}\DecValTok{0}\NormalTok{,] }
+
+\KeywordTok{round}\NormalTok{(}\KeywordTok{nrow}\NormalTok{(temp)}\OperatorTok{/}\KeywordTok{nrow}\NormalTok{(labelPicture)}\OperatorTok{*}\DecValTok{100}\NormalTok{,}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 43.83
+\end{verbatim}
+
+How many of those are low frequency trials?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{round}\NormalTok{(}\KeywordTok{nrow}\NormalTok{(temp[temp}\OperatorTok{$}\NormalTok{frequency}\OperatorTok{==}\DecValTok{25}\NormalTok{,])}\OperatorTok{/}\KeywordTok{nrow}\NormalTok{(labelPicture)}\OperatorTok{*}\DecValTok{100}\NormalTok{,}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 28.49
+\end{verbatim}
+
+Label picture task:
+
+correct choice is listed in ``label'', that is, label presented.
+Participant's choice is listed in ``category'', that is, the fribble's
+category.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{temp }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(frequency}\OperatorTok{==}\StringTok{"25"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(learning, label, category) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{count}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 12 x 4
+## # Groups:   learning, label, category [12]
+##    learning label category     n
+##    <fct>    <fct>    <int> <int>
+##  1 FL       bim          1    24
+##  2 FL       bim          3    54
+##  3 FL       dep          2    63
+##  4 FL       dep          3    21
+##  5 FL       tob          1    62
+##  6 FL       tob          2    26
+##  7 LF       bim          1     8
+##  8 LF       bim          3    75
+##  9 LF       dep          2    49
+## 10 LF       dep          3    24
+## 11 LF       tob          1    58
+## 12 LF       tob          2    32
+\end{verbatim}
+
+Nope, they definitely learned another association. The association they
+have learned is based on the high saliency feature, rather than on the
+low saliency one. Let's see if that is the case also for the other task:
+
+Picture label task:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#select only inaccurate trials}
+\NormalTok{temp <-}\StringTok{ }\NormalTok{pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{acc}\OperatorTok{==}\DecValTok{0}\NormalTok{,] }
+
+\KeywordTok{round}\NormalTok{(}\KeywordTok{nrow}\NormalTok{(temp)}\OperatorTok{/}\KeywordTok{nrow}\NormalTok{(pictureLabel)}\OperatorTok{*}\DecValTok{100}\NormalTok{,}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 44.28
+\end{verbatim}
+
+How many of those are low frequency trials?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{round}\NormalTok{(}\KeywordTok{nrow}\NormalTok{(temp[temp}\OperatorTok{$}\NormalTok{frequency}\OperatorTok{==}\DecValTok{25}\NormalTok{,])}\OperatorTok{/}\KeywordTok{nrow}\NormalTok{(pictureLabel)}\OperatorTok{*}\DecValTok{100}\NormalTok{,}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 28.92
+\end{verbatim}
+
+Errors across tasks are comparable.
+
+Picture label task:
+
+correct choice is listed in ``category'', that is, the category of the
+fribble presented. Participant's choice is listed in ``resp'' column,
+that is, the label chosen.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{temp }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(frequency}\OperatorTok{==}\StringTok{"25"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(learning, category, resp) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{count}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 12 x 4
+## # Groups:   learning, category, resp [12]
+##    learning category resp      n
+##    <fct>       <int> <fct> <int>
+##  1 FL              1 bim      27
+##  2 FL              1 tob      71
+##  3 FL              2 dep      45
+##  4 FL              2 tob      35
+##  5 FL              3 bim      51
+##  6 FL              3 dep      26
+##  7 LF              1 bim      33
+##  8 LF              1 tob      65
+##  9 LF              2 dep      34
+## 10 LF              2 tob      39
+## 11 LF              3 bim      62
+## 12 LF              3 dep      28
+\end{verbatim}
+
+In both tasks participants were driven by the high salient feature in
+making errors, they simply learned only one association between the
+label and the high salient feature, and made decisions based on this.
+
+\hypertarget{speed-accuracy-trade-off-by-tasks}{%
+\subsection{Speed-accuracy trade-off by
+tasks}\label{speed-accuracy-trade-off-by-tasks}}
 
 Inspection of the speed-accuracy trade-off:
 
-labelPicture
+\hypertarget{labelpicture}{%
+\subsubsection{labelPicture}\label{labelpicture}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2349,7 +2888,8 @@ labelPicture
 \NormalTok{n_bins <-}\StringTok{ }\DecValTok{10}
 \NormalTok{break_seq <-}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, rt_range, rt_range}\OperatorTok{/}\NormalTok{n_bins)}
 
-\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{ ,] }\OperatorTok{%>%}
+\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs) ,] }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(learning }\OperatorTok{==}\StringTok{ "FL"}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{RT_bin =} \KeywordTok{cut}\NormalTok{(rt, }\DataTypeTok{breaks =}\NormalTok{ break_seq)) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{group_by}\NormalTok{(RT_bin, category) }\OperatorTok{%>%}
@@ -2378,7 +2918,7 @@ labelPicture
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-52-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-68-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2400,7 +2940,8 @@ labelPicture
 \NormalTok{n_bins <-}\StringTok{ }\DecValTok{10}
 \NormalTok{break_seq <-}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, rt_range, rt_range}\OperatorTok{/}\NormalTok{n_bins)}
 
-\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{ ,] }\OperatorTok{%>%}
+\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),] }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(learning }\OperatorTok{==}\StringTok{ "LF"}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{RT_bin =} \KeywordTok{cut}\NormalTok{(rt, }\DataTypeTok{breaks =}\NormalTok{ break_seq)) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{group_by}\NormalTok{(RT_bin, category) }\OperatorTok{%>%}
@@ -2429,7 +2970,7 @@ labelPicture
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-53-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-69-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2447,8 +2988,10 @@ labelPicture
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{ ,], mean)->}\StringTok{ }\NormalTok{speedacc}
-\KeywordTok{aggregate}\NormalTok{(rt }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{,], mean)->}\StringTok{ }\NormalTok{speedacc2}
+\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs) ,], mean)->}\StringTok{ }\NormalTok{speedacc}
+\KeywordTok{aggregate}\NormalTok{(rt }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], mean)->}\StringTok{ }\NormalTok{speedacc2}
 \KeywordTok{merge}\NormalTok{(speedacc, speedacc2, }\DataTypeTok{by =}  \KeywordTok{c}\NormalTok{(}\StringTok{"subjID"}\NormalTok{, }\StringTok{"learning"}\NormalTok{))->}\StringTok{ }\NormalTok{speedacc}
 
 \KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{rt, }\DataTypeTok{y=}\NormalTok{acc), }
@@ -2465,9 +3008,55 @@ labelPicture
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-54-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-70-1.pdf}
 
-PictureLabel:
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning}\OperatorTok{+}\NormalTok{frequency, labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs) ,], mean)->}\StringTok{ }\NormalTok{speedacc}
+\KeywordTok{aggregate}\NormalTok{(rt }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning}\OperatorTok{+}\NormalTok{frequency, labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], mean)->}\StringTok{ }\NormalTok{speedacc2}
+\KeywordTok{merge}\NormalTok{(speedacc, speedacc2, }\DataTypeTok{by =}  \KeywordTok{c}\NormalTok{(}\StringTok{"subjID"}\NormalTok{, }\StringTok{"learning"}\NormalTok{, }\StringTok{"frequency"}\NormalTok{))->}\StringTok{ }\NormalTok{speedacc}
+\KeywordTok{rm}\NormalTok{(speedacc2)}
+\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{recode}\NormalTok{(speedacc}\OperatorTok{$}\NormalTok{frequency, }\StringTok{"25"}\NormalTok{=}\StringTok{"low"}\NormalTok{, }\StringTok{"75"}\NormalTok{=}\StringTok{"high"}\NormalTok{)->}\StringTok{ }\NormalTok{speedacc}\OperatorTok{$}\NormalTok{frequency;}
+
+\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{rt, }\DataTypeTok{y=}\NormalTok{acc), }
+           \DataTypeTok{data =}\NormalTok{ speedacc) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{( learning }\OperatorTok{~}\StringTok{ }\NormalTok{frequency) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{( }\DataTypeTok{shape =} \DecValTok{21}\NormalTok{, }\DataTypeTok{fill =} \StringTok{"white"}\NormalTok{, }\DataTypeTok{size =} \DecValTok{3}\NormalTok{, }\DataTypeTok{stroke =} \FloatTok{1.5}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\CommentTok{#geom_smooth(method = "lm", formula = y ~ poly(x,2), se = TRUE, color = "#0892d0", fill = "lightgray") +}
+\StringTok{  }\KeywordTok{geom_hline}\NormalTok{(}\DataTypeTok{yintercept =} \FloatTok{0.33}\NormalTok{, }\DataTypeTok{lty =} \StringTok{"dashed"}\NormalTok{, }\DataTypeTok{color =} \StringTok{'red'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{coord_cartesian}\NormalTok{(}\DataTypeTok{ylim =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{))}\OperatorTok{+}
+\StringTok{  }\NormalTok{ggthemes}\OperatorTok{::}\KeywordTok{theme_base}\NormalTok{()}\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Average RT on subjs"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Proportion Correct"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"speed-acc tradeoff - labelPicture"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-71-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{speedacc }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(frequency, learning) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\KeywordTok{mean}\NormalTok{(rt), }\KeywordTok{median}\NormalTok{(rt))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 4
+## # Groups:   frequency [2]
+##   frequency learning `mean(rt)` `median(rt)`
+##   <chr>     <fct>         <dbl>        <dbl>
+## 1 high      FL            1392.        1380.
+## 2 high      LF            1405.        1389.
+## 3 low       FL            1521.        1602.
+## 4 low       LF            1502.        1531.
+\end{verbatim}
+
+\hypertarget{picturelabel}{%
+\subsubsection{PictureLabel}\label{picturelabel}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2475,7 +3064,8 @@ PictureLabel:
 \NormalTok{n_bins <-}\StringTok{ }\DecValTok{10}
 \NormalTok{break_seq <-}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, rt_range, rt_range}\OperatorTok{/}\NormalTok{n_bins)}
 
-\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{ ,] }\OperatorTok{%>%}
+\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(pictureLabel}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),] }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(learning }\OperatorTok{==}\StringTok{ "FL"}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{RT_bin =} \KeywordTok{cut}\NormalTok{(rt, }\DataTypeTok{breaks =}\NormalTok{ break_seq)) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{group_by}\NormalTok{(RT_bin, category) }\OperatorTok{%>%}
@@ -2504,7 +3094,7 @@ PictureLabel:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-55-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-73-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2526,7 +3116,8 @@ PictureLabel:
 \NormalTok{n_bins <-}\StringTok{ }\DecValTok{10}
 \NormalTok{break_seq <-}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, rt_range, rt_range}\OperatorTok{/}\NormalTok{n_bins)}
 
-\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{ ,] }\OperatorTok{%>%}
+\NormalTok{timeslice_range <-}\StringTok{ }\NormalTok{pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100}  \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(pictureLabel}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),] }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(learning }\OperatorTok{==}\StringTok{ "LF"}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{RT_bin =} \KeywordTok{cut}\NormalTok{(rt, }\DataTypeTok{breaks =}\NormalTok{ break_seq)) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{group_by}\NormalTok{(RT_bin, category) }\OperatorTok{%>%}
@@ -2555,7 +3146,7 @@ PictureLabel:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-56-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-74-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2573,8 +3164,10 @@ PictureLabel:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{ ,], mean)->}\StringTok{ }\NormalTok{speedacc}
-\KeywordTok{aggregate}\NormalTok{(rt }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{,], mean)->}\StringTok{ }\NormalTok{speedacc2}
+\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100}  \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(pictureLabel}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], mean)->}\StringTok{ }\NormalTok{speedacc}
+\KeywordTok{aggregate}\NormalTok{(rt }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning, pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100}  \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(pictureLabel}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], mean)->}\StringTok{ }\NormalTok{speedacc2}
 \KeywordTok{merge}\NormalTok{(speedacc, speedacc2, }\DataTypeTok{by =}  \KeywordTok{c}\NormalTok{(}\StringTok{"subjID"}\NormalTok{, }\StringTok{"learning"}\NormalTok{))->}\StringTok{ }\NormalTok{speedacc}
 
 \KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{rt, }\DataTypeTok{y=}\NormalTok{acc), }
@@ -2591,7 +3184,52 @@ PictureLabel:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-57-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-75-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning}\OperatorTok{+}\NormalTok{frequency, pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100}  \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(pictureLabel}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], mean)->}\StringTok{ }\NormalTok{speedacc}
+\KeywordTok{aggregate}\NormalTok{(rt }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{learning}\OperatorTok{+}\NormalTok{frequency, pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100}  \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(pictureLabel}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], mean)->}\StringTok{ }\NormalTok{speedacc2}
+\KeywordTok{merge}\NormalTok{(speedacc, speedacc2, }\DataTypeTok{by =}  \KeywordTok{c}\NormalTok{(}\StringTok{"subjID"}\NormalTok{, }\StringTok{"learning"}\NormalTok{, }\StringTok{"frequency"}\NormalTok{))->}\StringTok{ }\NormalTok{speedacc}
+\KeywordTok{rm}\NormalTok{(speedacc2)}
+\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{recode}\NormalTok{(speedacc}\OperatorTok{$}\NormalTok{frequency, }\StringTok{"25"}\NormalTok{=}\StringTok{"low"}\NormalTok{, }\StringTok{"75"}\NormalTok{=}\StringTok{"high"}\NormalTok{)->}\StringTok{ }\NormalTok{speedacc}\OperatorTok{$}\NormalTok{frequency;}
+
+\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{rt, }\DataTypeTok{y=}\NormalTok{acc), }
+           \DataTypeTok{data =}\NormalTok{ speedacc) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{( learning }\OperatorTok{~}\StringTok{ }\NormalTok{frequency) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{( }\DataTypeTok{shape =} \DecValTok{21}\NormalTok{, }\DataTypeTok{fill =} \StringTok{"white"}\NormalTok{, }\DataTypeTok{size =} \DecValTok{3}\NormalTok{, }\DataTypeTok{stroke =} \FloatTok{1.5}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\CommentTok{#geom_smooth(method = "lm", formula = y ~ poly(x,2), se = TRUE, color = "#0892d0", fill = "lightgray") +}
+\StringTok{  }\KeywordTok{geom_hline}\NormalTok{(}\DataTypeTok{yintercept =} \FloatTok{0.33}\NormalTok{, }\DataTypeTok{lty =} \StringTok{"dashed"}\NormalTok{, }\DataTypeTok{color =} \StringTok{'red'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{coord_cartesian}\NormalTok{(}\DataTypeTok{ylim =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{))}\OperatorTok{+}
+\StringTok{  }\NormalTok{ggthemes}\OperatorTok{::}\KeywordTok{theme_base}\NormalTok{()}\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Average RT on subjs"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Proportion Correct"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"speed-acc tradeoff - pictureLabel"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-76-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{speedacc }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(frequency, learning) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\KeywordTok{mean}\NormalTok{(rt), }\KeywordTok{median}\NormalTok{(rt))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 4
+## # Groups:   frequency [2]
+##   frequency learning `mean(rt)` `median(rt)`
+##   <chr>     <fct>         <dbl>        <dbl>
+## 1 high      FL             886.         864.
+## 2 high      LF             994.         977.
+## 3 low       FL             953.         962.
+## 4 low       LF             983.        1011.
+\end{verbatim}
 
 \hypertarget{comparisons-by-tasks-learning-frequency}{%
 \subsubsection{Comparisons by tasks + learning +
@@ -2602,7 +3240,8 @@ Barplot labelPicture
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ms <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{frequency}\OperatorTok{+}\NormalTok{learning, }
-                \DataTypeTok{data=}\NormalTok{labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{200}\NormalTok{,], }\DataTypeTok{FUN=}\NormalTok{ mean)}
+                \DataTypeTok{data=}\NormalTok{labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100}  \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], }\DataTypeTok{FUN=}\NormalTok{ mean)}
 
 \NormalTok{df<-}\StringTok{ }\NormalTok{ms }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(frequency, learning)}\OperatorTok{%>%}
@@ -2639,7 +3278,7 @@ Barplot labelPicture
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-59-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-79-1.pdf}
 
 Barplots + violinPlots with data from both tasks:
 
@@ -2652,7 +3291,8 @@ Barplots + violinPlots with data from both tasks:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ms <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{frequency}\OperatorTok{+}\NormalTok{learning, }\DataTypeTok{data =}\NormalTok{ genTask, mean)}
+\NormalTok{ms <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{frequency}\OperatorTok{+}\NormalTok{learning, }\DataTypeTok{data =}\NormalTok{ genTask[genTask}\OperatorTok{$}\NormalTok{rt}\OperatorTok{>}\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(genTask}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], mean)}
 
 \NormalTok{ms}\OperatorTok{$}\NormalTok{frequency <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(ms}\OperatorTok{$}\NormalTok{frequency)}
 \NormalTok{plyr}\OperatorTok{::}\KeywordTok{revalue}\NormalTok{(ms}\OperatorTok{$}\NormalTok{frequency, }\KeywordTok{c}\NormalTok{(}\StringTok{"25"}\NormalTok{=}\StringTok{"low"}\NormalTok{))->}\StringTok{ }\NormalTok{ms}\OperatorTok{$}\NormalTok{frequency;}
@@ -2670,11 +3310,12 @@ Barplots + violinPlots with data from both tasks:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-61-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-81-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ms <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{frequency}\OperatorTok{+}\NormalTok{learning, }\DataTypeTok{data=}\NormalTok{genTask, }\DataTypeTok{FUN=}\NormalTok{ mean)}
+\NormalTok{ms <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(acc }\OperatorTok{~}\StringTok{ }\NormalTok{subjID}\OperatorTok{+}\NormalTok{frequency}\OperatorTok{+}\NormalTok{learning, }\DataTypeTok{data=}\NormalTok{genTask[genTask}\OperatorTok{$}\NormalTok{rt}\OperatorTok{>}\DecValTok{100} \OperatorTok{&}
+\StringTok{                                         }\OperatorTok{!}\NormalTok{(genTask}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], }\DataTypeTok{FUN=}\NormalTok{ mean)}
 
 \NormalTok{df<-}\StringTok{ }\NormalTok{ms }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(frequency, learning)}\OperatorTok{%>%}
@@ -2706,7 +3347,7 @@ Barplots + violinPlots with data from both tasks:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-62-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-82-1.pdf}
 
 \hypertarget{task-3-contingency-judgement}{%
 \subsubsection{Task 3: Contingency
@@ -2759,7 +3400,7 @@ completely the task is/are: 1414932, 1420171, 1420199, 1422475, 1431960,
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-65-1.pdf}
+\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-85-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2799,5 +3440,302 @@ association:
 ## 2        2  -5.50000
 ## 3        3 -10.09728
 \end{verbatim}
+
+Let's clean the global environment:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{rm}\NormalTok{(n_bins, rt_range, problematicPeople, frequency, dumbPeople, break_seq, task, temp, timeslice_range, p, ms, n, nrows, subjs, totsubjs ,genTask, fribbleSet, count_range, alltasks, subjmissed, df)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{bayes-factor-calculation-with-glmms}{%
+\section{Bayes factor calculation with
+GLMMs}\label{bayes-factor-calculation-with-glmms}}
+
+\hypertarget{estimates-of-the-betas-from-the-flo-paper}{%
+\subsection{Estimates of the betas from the FLO
+paper}\label{estimates-of-the-betas-from-the-flo-paper}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#means}
+\NormalTok{highfreq_mean<-}\StringTok{ }\KeywordTok{mean}\NormalTok{(}\DecValTok{88}\NormalTok{, }\DecValTok{98}\NormalTok{)}
+\NormalTok{lowfreq_mean <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(}\DecValTok{38}\NormalTok{, }\DecValTok{78}\NormalTok{)}
+
+\NormalTok{n <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{32}\NormalTok{) }
+
+\CommentTok{#sd}
+\NormalTok{highfreq_sd <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{5}\OperatorTok{*}\KeywordTok{sqrt}\NormalTok{(n))  }\CommentTok{#Paper has standard errors represented (I guess),}
+                     \CommentTok{#I'm going to transform it back to standard deviations}
+\NormalTok{lowfreq_sd <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{5}\OperatorTok{*}\KeywordTok{sqrt}\NormalTok{(n)) }\CommentTok{#also, they look the same to me from the picture}
+                           \CommentTok{#but low frequency should lead more variability.}
+\end{Highlighting}
+\end{Shaded}
+
+Main effect of frequency:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{frequency_beta<-}\StringTok{ }\KeywordTok{logodds}\NormalTok{(highfreq_mean) }\OperatorTok{-}\StringTok{ }\KeywordTok{logodds}\NormalTok{(lowfreq_mean)}
+\end{Highlighting}
+\end{Shaded}
+
+Main effect of learning:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#mean}
+\NormalTok{LF_mean <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(}\DecValTok{38}\NormalTok{, }\DecValTok{88}\NormalTok{)}
+\NormalTok{FL_mean <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(}\DecValTok{78}\NormalTok{, }\DecValTok{98}\NormalTok{)}
+
+\NormalTok{n <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{16}\NormalTok{)}
+
+\CommentTok{#sd}
+\NormalTok{LF_sd <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{5}\OperatorTok{*}\KeywordTok{sqrt}\NormalTok{(n)) }\CommentTok{#how can be possible that learnings have the same se?}
+\NormalTok{FL_sd <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{5}\OperatorTok{*}\KeywordTok{sqrt}\NormalTok{(n))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{learning_beta <-}\StringTok{ }\KeywordTok{logodds}\NormalTok{(FL_mean) }\OperatorTok{-}\StringTok{ }\KeywordTok{logodds}\NormalTok{(LF_mean)}
+\CommentTok{#positive > higher in the FL}
+\end{Highlighting}
+\end{Shaded}
+
+Interaction between freq and learning:
+
+Frequency effect (high-low) is greater in the LF than in FL:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#(logodds(highfreq_FL)-logodds(lowfreq_FL))- (logodds(highfreq_LF)-logodds(lowfreq_LF))}
+\NormalTok{freqBylearning_beta <-}\StringTok{ }\NormalTok{(}\KeywordTok{logodds}\NormalTok{(}\DecValTok{98}\NormalTok{)}\OperatorTok{-}\KeywordTok{logodds}\NormalTok{(}\DecValTok{78}\NormalTok{))}\OperatorTok{-}\StringTok{ }\NormalTok{(}\KeywordTok{logodds}\NormalTok{(}\DecValTok{88}\NormalTok{)}\OperatorTok{-}\KeywordTok{logodds}\NormalTok{(}\DecValTok{38}\NormalTok{))}\OperatorTok{*-}\DecValTok{1}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{combine-both-generalization-tasks-in-one-dataset}{%
+\subsection{Combine both generalization tasks in one
+dataset}\label{combine-both-generalization-tasks-in-one-dataset}}
+
+I'm going to combine both generalization tasks in one single dataset
+called genTask
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{genTask <-}\StringTok{ }\KeywordTok{rbind}\NormalTok{(labelPicture[labelPicture}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}\StringTok{ }\OperatorTok{!}\NormalTok{(labelPicture}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),], }
+\NormalTok{                 pictureLabel[pictureLabel}\OperatorTok{$}\NormalTok{rt }\OperatorTok{>}\StringTok{ }\DecValTok{100} \OperatorTok{&}\StringTok{ }\OperatorTok{!}\NormalTok{(pictureLabel}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs),])}
+
+\NormalTok{genTask}\OperatorTok{$}\NormalTok{frequency <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(genTask}\OperatorTok{$}\NormalTok{frequency)}
+\NormalTok{plyr}\OperatorTok{::}\KeywordTok{revalue}\NormalTok{(genTask}\OperatorTok{$}\NormalTok{frequency, }\KeywordTok{c}\NormalTok{(}\StringTok{"25"}\NormalTok{=}\StringTok{"low"}\NormalTok{))->}\StringTok{ }\NormalTok{genTask}\OperatorTok{$}\NormalTok{frequency;}
+\NormalTok{plyr}\OperatorTok{::}\KeywordTok{revalue}\NormalTok{(genTask}\OperatorTok{$}\NormalTok{frequency, }\KeywordTok{c}\NormalTok{(}\StringTok{"75"}\NormalTok{=}\StringTok{"high"}\NormalTok{))->}\StringTok{ }\NormalTok{genTask}\OperatorTok{$}\NormalTok{frequency;}
+\end{Highlighting}
+\end{Shaded}
+
+Relevel the variables:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{genTask}\OperatorTok{$}\NormalTok{learning =}\StringTok{ }\KeywordTok{relevel}\NormalTok{(genTask}\OperatorTok{$}\NormalTok{learning, }\DataTypeTok{ref =} \StringTok{"LF"}\NormalTok{)}
+\NormalTok{genTask}\OperatorTok{$}\NormalTok{frequency =}\StringTok{ }\KeywordTok{relevel}\NormalTok{(genTask}\OperatorTok{$}\NormalTok{frequency, }\DataTypeTok{ref =} \StringTok{"low"}\NormalTok{)}
+\NormalTok{genTask <-}\StringTok{ }\KeywordTok{lizCenter}\NormalTok{(genTask, }\KeywordTok{list}\NormalTok{(}\StringTok{"learning"}\NormalTok{ , }\StringTok{"frequency"}\NormalTok{, }\StringTok{"task"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{the-model}{%
+\subsection{The model}\label{the-model}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{genTask_model <-}\StringTok{ }\KeywordTok{glmer}\NormalTok{(acc }\OperatorTok{~}\StringTok{  }\NormalTok{frequency.ct}\OperatorTok{*}\NormalTok{learning.ct }\OperatorTok{+}\StringTok{ }\NormalTok{task }\OperatorTok{+}\StringTok{ }\NormalTok{(frequency.ct}\OperatorTok{|}\NormalTok{subjID) , }
+         \DataTypeTok{data =}\NormalTok{ genTask, }
+         \DataTypeTok{family=}\StringTok{"binomial"}\NormalTok{,}
+         \DataTypeTok{control=}\KeywordTok{glmerControl}\NormalTok{(}\DataTypeTok{optimizer =} \StringTok{"bobyqa"}\NormalTok{))}
+
+\NormalTok{adjusted.genTask_model =}\StringTok{ }\KeywordTok{adjust_intercept_model}\NormalTok{(genTask_model, }\DataTypeTok{chance =} \KeywordTok{log}\NormalTok{(}\FloatTok{0.33}\OperatorTok{/}\NormalTok{(}\DecValTok{1}\FloatTok{-0.33}\NormalTok{)))}
+\KeywordTok{round}\NormalTok{(adjusted.genTask_model,}\DecValTok{5}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                          Estimate Std. Error z value Pr(>|z|)
+## (Intercept)               1.29212    0.16620 7.77446  0.00000
+## frequency.ct              1.84662    0.27642 6.68049  0.00000
+## learning.ct               0.67456    0.31832 2.11912  0.03408
+## taskgeneralizationPL      0.00942    0.08848 0.10644  0.91524
+## frequency.ct:learning.ct  0.54929    0.54842 1.00158  0.31655
+\end{verbatim}
+
+Further inspection:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{genTask_model.emm <-}\StringTok{ }\KeywordTok{emmeans}\NormalTok{(genTask_model , }\OperatorTok{~}\StringTok{ }\NormalTok{frequency.ct }\OperatorTok{*}\StringTok{ }\NormalTok{learning.ct )}
+\KeywordTok{contrast}\NormalTok{(genTask_model.emm, }\StringTok{"consec"}\NormalTok{,  }\DataTypeTok{simple =} \StringTok{"each"}\NormalTok{, }\DataTypeTok{combine =}\NormalTok{ F, }\DataTypeTok{adjust =} \StringTok{"bonferroni"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $`simple contrasts for frequency.ct`
+## learning.ct = -0.532:
+##  contrast                               estimate    SE  df z.ratio p.value
+##  0.500307314074985 - -0.499692685925015     1.55 0.395 Inf 3.931   0.0001 
+## 
+## learning.ct =  0.468:
+##  contrast                               estimate    SE  df z.ratio p.value
+##  0.500307314074985 - -0.499692685925015     2.10 0.383 Inf 5.490   <.0001 
+## 
+## Results are averaged over the levels of: task 
+## Results are given on the log odds ratio (not the response) scale. 
+## 
+## $`simple contrasts for learning.ct`
+## frequency.ct = -0.5:
+##  contrast                               estimate    SE  df z.ratio p.value
+##  0.468039336201598 - -0.531960663798402    0.400 0.383 Inf 1.044   0.2963 
+## 
+## frequency.ct =  0.5:
+##  contrast                               estimate    SE  df z.ratio p.value
+##  0.468039336201598 - -0.531960663798402    0.949 0.454 Inf 2.090   0.0366 
+## 
+## Results are averaged over the levels of: task 
+## Results are given on the log odds ratio (not the response) scale.
+\end{verbatim}
+
+Okay, with both tasks together the take home message is the following:
+
+\begin{itemize}
+\item
+  Main effect of frequency, with high frequency having higher accuracy
+  than low frequency in both learnings.
+\item
+  Main effect of learning, with FL learning having higher accuracy in
+  the high frequency condition.
+\item
+  No difference between learnings in the low frequency condition.
+\item
+  No difference between tasks
+\end{itemize}
+
+I'm going to create a table with the estimates:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{genTask_bf =}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}
+    \DataTypeTok{condition =} \KeywordTok{c}\NormalTok{(}
+                   \StringTok{"frequency by learning"}\NormalTok{,}
+                   \StringTok{"learning"}\NormalTok{,}
+                   \StringTok{"frequency"}\NormalTok{,}
+                   \StringTok{"task"}
+\NormalTok{                   ),}
+               
+    \DataTypeTok{meandiff =} \KeywordTok{c}\NormalTok{(}
+      \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"frequency.ct:learning.ct"}\NormalTok{, }\StringTok{"Estimate"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
+       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"learning.ct"}\NormalTok{, }\StringTok{"Estimate"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
+       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"frequency.ct"}\NormalTok{, }\StringTok{"Estimate"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
+       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"taskgeneralizationPL"}\NormalTok{, }\StringTok{"Estimate"}\NormalTok{],}\DecValTok{3}\NormalTok{)}
+\NormalTok{       ),}
+    
+    \DataTypeTok{sd =} \KeywordTok{c}\NormalTok{(}
+      \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"frequency.ct:learning.ct"}\NormalTok{, }\StringTok{"Std. Error"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
+       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"learning.ct"}\NormalTok{, }\StringTok{"Std. Error"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
+       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"frequency.ct"}\NormalTok{, }\StringTok{"Std. Error"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
+       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"taskgeneralizationPL"}\NormalTok{, }\StringTok{"Std. Error"}\NormalTok{],}\DecValTok{3}\NormalTok{)}
+\NormalTok{       )}
+\NormalTok{)}
+
+\NormalTok{genTask_bf}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##               condition meandiff    sd
+## 1 frequency by learning    0.549 0.548
+## 2              learning    0.675 0.318
+## 3             frequency    1.847 0.276
+## 4                  task    0.009 0.088
+\end{verbatim}
+
+\hypertarget{bf-for-frequency}{%
+\subsection{BF for Frequency:}\label{bf-for-frequency}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{Bf}\NormalTok{(}\DataTypeTok{sd =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'frequency'}\NormalTok{,]}\OperatorTok{$}\NormalTok{sd, }
+   \DataTypeTok{obtained =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'frequency'}\NormalTok{,]}\OperatorTok{$}\NormalTok{meandiff, }
+   \DataTypeTok{uniform =} \DecValTok{0}\NormalTok{, }
+   \DataTypeTok{sdtheory =}\NormalTok{ highfreq_sd, }
+   \DataTypeTok{meanoftheory =}\NormalTok{ frequency_beta, }
+   \DataTypeTok{tail =} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $LikelihoodTheory
+## [1] 0.02820103
+## 
+## $Likelihoodnull
+## [1] 2.72547e-10
+## 
+## $BayesFactor
+## [1] 103472175
+\end{verbatim}
+
+\hypertarget{bf-for-learning}{%
+\subsection{BF for learning:}\label{bf-for-learning}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{Bf}\NormalTok{(}\DataTypeTok{sd =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'learning'}\NormalTok{,]}\OperatorTok{$}\NormalTok{sd, }
+   \DataTypeTok{obtained =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'learning'}\NormalTok{,]}\OperatorTok{$}\NormalTok{meandiff, }
+   \DataTypeTok{uniform =} \DecValTok{0}\NormalTok{, }
+   \DataTypeTok{sdtheory =}\NormalTok{ LF_sd, }
+   \DataTypeTok{meanoftheory =}\NormalTok{ learning_beta, }
+   \DataTypeTok{tail =} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $LikelihoodTheory
+## [1] 0.03914723
+## 
+## $Likelihoodnull
+## [1] 0.1318569
+## 
+## $BayesFactor
+## [1] 0.2968918
+\end{verbatim}
+
+\hypertarget{bf-for-the-interaction-frequency-by-learning}{%
+\subsection{BF for the interaction frequency by
+learning}\label{bf-for-the-interaction-frequency-by-learning}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{Bf}\NormalTok{(}\DataTypeTok{sd =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'frequency by learning'}\NormalTok{,]}\OperatorTok{$}\NormalTok{sd, }
+   \DataTypeTok{obtained =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'frequency by learning'}\NormalTok{,]}\OperatorTok{$}\NormalTok{meandiff, }
+   \DataTypeTok{uniform =} \DecValTok{0}\NormalTok{, }
+   \DataTypeTok{sdtheory =}\NormalTok{ LF_sd, }\CommentTok{#don't know how to compute sd of the interaction}
+   \DataTypeTok{meanoftheory =}\NormalTok{ freqBylearning_beta, }
+   \DataTypeTok{tail =} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $LikelihoodTheory
+## [1] 0.03346949
+## 
+## $Likelihoodnull
+## [1] 0.4407467
+## 
+## $BayesFactor
+## [1] 0.07593815
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{rm}\NormalTok{(speedacc, n, lowfreq_mean, highfreq_mean, lowfreq_sd, highfreq_sd, LF_mean, FL_mean, LF_sd, FL_sd)}
+\end{Highlighting}
+\end{Shaded}
 
 \end{document}
