@@ -3548,7 +3548,7 @@ Relevel the variables:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{genTask_model <-}\StringTok{ }\KeywordTok{glmer}\NormalTok{(acc }\OperatorTok{~}\StringTok{  }\NormalTok{frequency.ct}\OperatorTok{*}\NormalTok{learning.ct }\OperatorTok{+}\StringTok{ }\NormalTok{task }\OperatorTok{+}\StringTok{ }\NormalTok{(frequency.ct}\OperatorTok{|}\NormalTok{subjID) , }
+\NormalTok{genTask_model <-}\StringTok{ }\KeywordTok{glmer}\NormalTok{(acc }\OperatorTok{~}\StringTok{  }\NormalTok{frequency.ct}\OperatorTok{*}\NormalTok{learning.ct }\OperatorTok{+}\StringTok{ }\NormalTok{task.ct }\OperatorTok{+}\StringTok{ }\NormalTok{(frequency.ct}\OperatorTok{|}\NormalTok{subjID) , }
          \DataTypeTok{data =}\NormalTok{ genTask, }
          \DataTypeTok{family=}\StringTok{"binomial"}\NormalTok{,}
          \DataTypeTok{control=}\KeywordTok{glmerControl}\NormalTok{(}\DataTypeTok{optimizer =} \StringTok{"bobyqa"}\NormalTok{))}
@@ -3560,11 +3560,11 @@ Relevel the variables:
 
 \begin{verbatim}
 ##                          Estimate Std. Error z value Pr(>|z|)
-## (Intercept)               1.29212    0.16620 7.77446  0.00000
+## (Intercept)               1.29687    0.16005 8.10276  0.00000
 ## frequency.ct              1.84662    0.27642 6.68049  0.00000
-## learning.ct               0.67456    0.31832 2.11912  0.03408
-## taskgeneralizationPL      0.00942    0.08848 0.10644  0.91524
-## frequency.ct:learning.ct  0.54929    0.54842 1.00158  0.31655
+## learning.ct               0.67457    0.31829 2.11934  0.03406
+## task.ct                   0.00942    0.08848 0.10644  0.91523
+## frequency.ct:learning.ct  0.54929    0.54827 1.00185  0.31641
 \end{verbatim}
 
 Further inspection:
@@ -3584,21 +3584,21 @@ Further inspection:
 ## 
 ## learning.ct =  0.468:
 ##  contrast                               estimate    SE  df z.ratio p.value
-##  0.500307314074985 - -0.499692685925015     2.10 0.383 Inf 5.490   <.0001 
+##  0.500307314074985 - -0.499692685925015     2.10 0.383 Inf 5.491   <.0001 
 ## 
-## Results are averaged over the levels of: task 
+## Results are averaged over the levels of: task.ct 
 ## Results are given on the log odds ratio (not the response) scale. 
 ## 
 ## $`simple contrasts for learning.ct`
 ## frequency.ct = -0.5:
 ##  contrast                               estimate    SE  df z.ratio p.value
-##  0.468039336201598 - -0.531960663798402    0.400 0.383 Inf 1.044   0.2963 
+##  0.468039336201598 - -0.531960663798402    0.400 0.383 Inf 1.045   0.2962 
 ## 
 ## frequency.ct =  0.5:
 ##  contrast                               estimate    SE  df z.ratio p.value
 ##  0.468039336201598 - -0.531960663798402    0.949 0.454 Inf 2.090   0.0366 
 ## 
-## Results are averaged over the levels of: task 
+## Results are averaged over the levels of: task.ct 
 ## Results are given on the log odds ratio (not the response) scale.
 \end{verbatim}
 
@@ -3633,14 +3633,14 @@ I'm going to create a table with the estimates:
       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"frequency.ct:learning.ct"}\NormalTok{, }\StringTok{"Estimate"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
        \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"learning.ct"}\NormalTok{, }\StringTok{"Estimate"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
        \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"frequency.ct"}\NormalTok{, }\StringTok{"Estimate"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
-       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"taskgeneralizationPL"}\NormalTok{, }\StringTok{"Estimate"}\NormalTok{],}\DecValTok{3}\NormalTok{)}
+       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"task.ct"}\NormalTok{, }\StringTok{"Estimate"}\NormalTok{],}\DecValTok{3}\NormalTok{)}
 \NormalTok{       ),}
     
-    \DataTypeTok{sd =} \KeywordTok{c}\NormalTok{(}
+    \DataTypeTok{se =} \KeywordTok{c}\NormalTok{(}
       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"frequency.ct:learning.ct"}\NormalTok{, }\StringTok{"Std. Error"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
        \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"learning.ct"}\NormalTok{, }\StringTok{"Std. Error"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
        \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"frequency.ct"}\NormalTok{, }\StringTok{"Std. Error"}\NormalTok{],}\DecValTok{3}\NormalTok{),}
-       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"taskgeneralizationPL"}\NormalTok{, }\StringTok{"Std. Error"}\NormalTok{],}\DecValTok{3}\NormalTok{)}
+       \KeywordTok{round}\NormalTok{(}\KeywordTok{summary}\NormalTok{(genTask_model)}\OperatorTok{$}\NormalTok{coefficients[}\StringTok{"task.ct"}\NormalTok{, }\StringTok{"Std. Error"}\NormalTok{],}\DecValTok{3}\NormalTok{)}
 \NormalTok{       )}
 \NormalTok{)}
 
@@ -3649,7 +3649,7 @@ I'm going to create a table with the estimates:
 \end{Shaded}
 
 \begin{verbatim}
-##               condition meandiff    sd
+##               condition meandiff    se
 ## 1 frequency by learning    0.549 0.548
 ## 2              learning    0.675 0.318
 ## 3             frequency    1.847 0.276
@@ -3661,7 +3661,7 @@ I'm going to create a table with the estimates:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{Bf}\NormalTok{(}\DataTypeTok{sd =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'frequency'}\NormalTok{,]}\OperatorTok{$}\NormalTok{sd, }
+\KeywordTok{Bf}\NormalTok{(}\DataTypeTok{sd =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'frequency'}\NormalTok{,]}\OperatorTok{$}\NormalTok{se, }
    \DataTypeTok{obtained =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'frequency'}\NormalTok{,]}\OperatorTok{$}\NormalTok{meandiff, }
    \DataTypeTok{uniform =} \DecValTok{0}\NormalTok{, }
    \DataTypeTok{sdtheory =}\NormalTok{ highfreq_sd, }
@@ -3686,7 +3686,7 @@ I'm going to create a table with the estimates:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{Bf}\NormalTok{(}\DataTypeTok{sd =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'learning'}\NormalTok{,]}\OperatorTok{$}\NormalTok{sd, }
+\KeywordTok{Bf}\NormalTok{(}\DataTypeTok{sd =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'learning'}\NormalTok{,]}\OperatorTok{$}\NormalTok{se, }
    \DataTypeTok{obtained =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'learning'}\NormalTok{,]}\OperatorTok{$}\NormalTok{meandiff, }
    \DataTypeTok{uniform =} \DecValTok{0}\NormalTok{, }
    \DataTypeTok{sdtheory =}\NormalTok{ LF_sd, }
@@ -3712,7 +3712,7 @@ learning}\label{bf-for-the-interaction-frequency-by-learning}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{Bf}\NormalTok{(}\DataTypeTok{sd =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'frequency by learning'}\NormalTok{,]}\OperatorTok{$}\NormalTok{sd, }
+\KeywordTok{Bf}\NormalTok{(}\DataTypeTok{sd =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'frequency by learning'}\NormalTok{,]}\OperatorTok{$}\NormalTok{se, }
    \DataTypeTok{obtained =}\NormalTok{ genTask_bf[genTask_bf}\OperatorTok{$}\NormalTok{condition}\OperatorTok{==}\StringTok{'frequency by learning'}\NormalTok{,]}\OperatorTok{$}\NormalTok{meandiff, }
    \DataTypeTok{uniform =} \DecValTok{0}\NormalTok{, }
    \DataTypeTok{sdtheory =}\NormalTok{ LF_sd, }\CommentTok{#don't know how to compute sd of the interaction}

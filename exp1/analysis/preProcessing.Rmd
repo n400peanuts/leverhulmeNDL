@@ -54,7 +54,26 @@ fribbleSet <- read.csv(paste(localGitDir, "/exp1/stimuli/stimuli.csv", sep = "")
 urlFolder <- 'https://api.github.com/repos/n400peanuts/languagelearninglab/git/trees/master?recursive=1'
 urlRaw <- 'https://raw.githubusercontent.com/n400peanuts/languagelearninglab/master/tools/'
 
-source('C:/Users/eva_v/Documents/languagelearninglab/tools/loadFunctionsGithub.R')
+loadFunctionsGithub <-function(urlFolder, urlRaw){
+  if (!require(httr)) {
+    stop("httr not installed")
+  } 
+  else if (!require(RCurl)){
+    stop("RCurl not installed") 
+  }
+  else {
+    print('----loading. Please wait----')
+  };
+  httr::GET(urlFolder)-> req
+  stop_for_status(req)
+  filelist <- unlist(lapply(content(req)$tree, "[", "path"), use.names = F)
+  urlFunctions <- grep("docs/tools/", filelist, value = TRUE, fixed = TRUE)
+  gsub("docs/tools/", "", urlFunctions) -> functions
+  for (i in 1:length(functions)){
+    RCurl::getURL(paste0(urlRaw, functions[i]), ssl.verifypeer = FALSE)-> temp
+    eval(parse(text = temp), envir = .GlobalEnv)
+  };
+}
 
 loadFunctionsGithub(urlFolder = urlFolder, urlRaw = urlRaw);
 rm(urlFolder, urlRaw)
@@ -1903,7 +1922,7 @@ genTask <- lizCenter(genTask, list("learning" , "frequency", "task"))
 ## The model
 
 ```{r}
-genTask_model <- glmer(acc ~  frequency.ct*learning.ct + task + (frequency.ct|subjID) , 
+genTask_model <- glmer(acc ~  frequency.ct*learning.ct + task.ct + (frequency.ct|subjID) , 
          data = genTask, 
          family="binomial",
          control=glmerControl(optimizer = "bobyqa"))
@@ -1943,14 +1962,14 @@ genTask_bf = data.frame(
       round(summary(genTask_model)$coefficients["frequency.ct:learning.ct", "Estimate"],3),
        round(summary(genTask_model)$coefficients["learning.ct", "Estimate"],3),
        round(summary(genTask_model)$coefficients["frequency.ct", "Estimate"],3),
-       round(summary(genTask_model)$coefficients["taskgeneralizationPL", "Estimate"],3)
+       round(summary(genTask_model)$coefficients["task.ct", "Estimate"],3)
        ),
     
-    sd = c(
+    se = c(
       round(summary(genTask_model)$coefficients["frequency.ct:learning.ct", "Std. Error"],3),
        round(summary(genTask_model)$coefficients["learning.ct", "Std. Error"],3),
        round(summary(genTask_model)$coefficients["frequency.ct", "Std. Error"],3),
-       round(summary(genTask_model)$coefficients["taskgeneralizationPL", "Std. Error"],3)
+       round(summary(genTask_model)$coefficients["task.ct", "Std. Error"],3)
        )
 )
 
@@ -1959,7 +1978,7 @@ genTask_bf
 
 ## BF for Frequency:
 ```{r}
-Bf(sd = genTask_bf[genTask_bf$condition=='frequency',]$sd, 
+Bf(sd = genTask_bf[genTask_bf$condition=='frequency',]$se, 
    obtained = genTask_bf[genTask_bf$condition=='frequency',]$meandiff, 
    uniform = 0, 
    sdtheory = highfreq_sd, 
@@ -1969,7 +1988,7 @@ Bf(sd = genTask_bf[genTask_bf$condition=='frequency',]$sd,
 
 ## BF for learning:
 ```{r}
-Bf(sd = genTask_bf[genTask_bf$condition=='learning',]$sd, 
+Bf(sd = genTask_bf[genTask_bf$condition=='learning',]$se, 
    obtained = genTask_bf[genTask_bf$condition=='learning',]$meandiff, 
    uniform = 0, 
    sdtheory = LF_sd, 
@@ -1979,7 +1998,7 @@ Bf(sd = genTask_bf[genTask_bf$condition=='learning',]$sd,
 
 ## BF for the interaction frequency by learning 
 ```{r}
-Bf(sd = genTask_bf[genTask_bf$condition=='frequency by learning',]$sd, 
+Bf(sd = genTask_bf[genTask_bf$condition=='frequency by learning',]$se, 
    obtained = genTask_bf[genTask_bf$condition=='frequency by learning',]$meandiff, 
    uniform = 0, 
    sdtheory = LF_sd, #don't know how to compute sd of the interaction
