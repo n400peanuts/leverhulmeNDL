@@ -228,6 +228,7 @@ prepare_data <- function(myexp, condition){
 
 
 ```{r Plotting barcharts, include=FALSE}
+
 #This function plots the equilibrium association weight between a cue/outcome pair as barchart. It calls my_rescorlawagner. 
 
 plot.bar <- function(mystims, saliency, condition){
@@ -236,12 +237,12 @@ plot.bar <- function(mystims, saliency, condition){
     mybar <- my_rescorlawagner_suffix(mystims, saliency, type_plot = "bar")
     
     round(mybar$Equilibriums,2)->mybar$Equilibriums
-  ggbarplot(mybar, "SingleCues", "Equilibriums",
-          fill = "SingleCues",
-          label = TRUE) +
+    ggbarplot(mybar, "SingleCues", "Equilibriums",
+              fill = "SingleCues",
+              label = TRUE) +
       scale_fill_manual(values = c("red" = "#e41a1c", "blue" = "#377eb8",
-                                    "d1" = "#4daf4a", "d2" = "#999999", 
-                                    "d3" = "#ef8a62", "d4" = "#998ec3")) +
+                                   "d1" = "#4daf4a", "d2" = "#999999", 
+                                   "d3" = "#ef8a62", "d4" = "#998ec3")) +
       ylim((min(mybar$Equilibriums)-.1),1) +
       labs(x="", y="Associative strength")+
       theme(
@@ -255,12 +256,12 @@ plot.bar <- function(mystims, saliency, condition){
     print('prefix condition') 
     mybar <- my_rescorlawagner_prefix(mystims, saliency, type_plot = "bar")
     round(mybar$Equilibriums,2)->mybar$Equilibriums
-  ggbarplot(mybar, "unique.CueOutcome.", "Equilibriums",
-          fill = "unique.CueOutcome.",
-          label = TRUE) +
+    ggbarplot(mybar, "unique.CueOutcome.", "Equilibriums",
+              fill = "unique.CueOutcome.",
+              label = TRUE) +
       scale_fill_manual(values = c("red" = "#e41a1c", "blue" = "#377eb8",
-                                    "d1" = "#4daf4a", "d2" = "#999999", 
-                                    "d3" = "#ef8a62", "d4" = "#998ec3")) +
+                                   "d1" = "#4daf4a", "d2" = "#999999", 
+                                   "d3" = "#ef8a62", "d4" = "#998ec3")) +
       ylim((min(mybar$Equilibriums)-.1),1) +
       labs(x="", y="Associative strength")+
       theme(
@@ -274,7 +275,6 @@ plot.bar <- function(mystims, saliency, condition){
   
   
 }
-
 
 
 ```
@@ -314,7 +314,7 @@ plot_line <- function(mystims, saliency, condition){
 # 1) Strand 1 - experiment 2
 Masa created a dataframe containing 8 set of stimuli for the affix 'ge' and 'ma' with the following frequencies of occurrence.
 ```{r load dataset}
-myexp = read.csv(paste(localGitDir,"input/exponential_s1_1.csv", sep = ''));
+myexp = read.csv(paste(localGitDir,"inputs/exponential_s1_1.csv", sep = ''));
 summary(myexp);
 ```
 
