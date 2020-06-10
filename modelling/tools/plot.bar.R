@@ -3,7 +3,7 @@
 plot.bar <- function(mystims, saliency, condition){
   if(condition == "suffix"){
     print('suffix condition')
-    mybar <- rescorlawagner_FL(mystims, saliency, type_plot = "bar")
+    mybar <- my_rescorlawagner_suffix(mystims, saliency, type_plot = "bar")
     
     round(mybar$Equilibriums,2)->mybar$Equilibriums
     ggbarplot(mybar, "SingleCues", "Equilibriums",
@@ -23,14 +23,11 @@ plot.bar <- function(mystims, saliency, condition){
     
   } else {
     print('prefix condition') 
-    mybar <- rescorlawagner_LF(mystims, saliency, type_plot = "bar")
+    mybar <- my_rescorlawagner_prefix(mystims, saliency, type_plot = "bar")
     round(mybar$Equilibriums,2)->mybar$Equilibriums
     ggbarplot(mybar, "unique.CueOutcome.", "Equilibriums",
               fill = "unique.CueOutcome.",
-              label = TRUE) +
-      scale_fill_manual(values = c("red" = "#e41a1c", "blue" = "#377eb8",
-                                   "d1" = "#4daf4a", "d2" = "#999999", 
-                                   "d3" = "#ef8a62", "d4" = "#998ec3")) +
+              label = TRUE)  +
       ylim((min(mybar$Equilibriums)-.1),1) +
       labs(x="", y="Associative strength")+
       theme(
@@ -44,4 +41,3 @@ plot.bar <- function(mystims, saliency, condition){
   
   
 }
-

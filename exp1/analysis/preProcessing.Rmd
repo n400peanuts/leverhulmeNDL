@@ -3,12 +3,12 @@ title: "FLO replication - Preprocessing + analysis + results summary"
 author: "Eva"
 date: "4/3/2020"
 output:
-  pdf_document:
-    toc: yes
-    toc_depth: 3
   html_document:
     toc: yes
     toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: 3
 ---
 
 
@@ -24,6 +24,8 @@ library(gridExtra);
 library(ggExtra);
 library(lmerTest);
 library(emmeans);
+library(ndl);
+library(wesanderson);
 ```
 
 # clean WS, set WD 
@@ -76,6 +78,90 @@ loadFunctionsGithub <-function(urlFolder, urlRaw){
 
 loadFunctionsGithub(urlFolder = urlFolder, urlRaw = urlRaw);
 rm(urlFolder, urlRaw)
+```
+
+
+```{r Load local functions, echo=FALSE}
+source(paste(localGitDir, "/modelling/tools/my_rescorlawagner_suffix.R", sep = ""))
+source(paste(localGitDir, "/modelling/tools/my_rescorlawagner_prefix.R", sep = ""))
+source(paste(localGitDir, "/modelling/tools/prepare_data.R", sep = ""))
+```
+
+
+```{r personalised functions, echo=FALSE}
+plot.bar <- function(mystims, saliency, condition){
+  if(condition == "suffix"){
+    print('FL learning')
+    mybar <- my_rescorlawagner_suffix(mystims, saliency, type_plot = "bar")
+    
+    round(mybar$Equilibriums,2)->mybar$Equilibriums
+    ggbarplot(mybar, "SingleCues", "Equilibriums",
+              fill = "SingleCues",
+              label = TRUE) +
+      scale_fill_manual(values = c("red" = "#e41a1c", "blue" = "#377eb8",
+                                   "purple"="#9400D3",
+                                   "d1" = "#4daf4a", "d2" = "#999999", 
+                                   "d3" = "#ef8a62", "d4" = "#998ec3",
+                                   "d5" = "#000000", "d6" = "#FFA500")) +
+      ylim((min(mybar$Equilibriums)-.1),1) +
+      labs(x="", y="Associative strength")+
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "none"); 
+    
+  } else {
+    print('LF learning') 
+    mybar <- my_rescorlawagner_prefix(mystims, saliency, type_plot = "bar")
+    round(mybar$Equilibriums,2)->mybar$Equilibriums
+    ggbarplot(mybar, "unique.CueOutcome.", "Equilibriums",
+              fill = "unique.CueOutcome.",
+              label = TRUE) +
+      scale_fill_manual(values = c("red" = "#e41a1c", "blue" = "#377eb8",
+                                   "purple"="#9400D3",
+                                   "d1" = "#4daf4a", "d2" = "#999999", 
+                                   "d3" = "#ef8a62", "d4" = "#998ec3",
+                                   "d5" = "#000000", "d6" = "#FFA500")) +
+      ylim((min(mybar$Equilibriums)-.1),1) +
+      labs(x="", y="Associative strength")+
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "none"); 
+    
+  }
+}
+  
+  plot_line <- function(mystims, saliency, condition){
+    if(condition == "suffix"){
+      print('FL learning')
+      myline = my_rescorlawagner_suffix(mystims, saliency, type_plot = "line")
+    }else{
+      print('LF learning');
+      myline = my_rescorlawagner_prefix(mystims, saliency, type_plot = "line")
+    }
+    
+    p <- ggplot(data=myline, aes(x = Time, y = Weight, colour = CueOutcome)) + 
+      geom_line() + 
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) + 
+      #ylim(-0.4,1) +
+      labs(x="Trial", y="Associative strength", colour="Feature") +
+      scale_color_manual(values = c("red" = "#e41a1c", "blue" = "#377eb8",
+                                    "purple"="#9400D3",
+                                    "d1" = "#4daf4a", "d2" = "#999999", 
+                                    "d3" = "#ef8a62", "d4" = "#998ec3",
+                                    "d5" = "#000000", "d6" = "#FFA500"));
+    return(p)
+   }
+
 ```
 
 
@@ -1809,10 +1895,25 @@ subjmissed<- setdiff(totsubjs, subjs);
 
 badsubjs <- c(badsubjs, subjmissed)
 badsubjs <- unique(badsubjs)
+
+(nrow(contingencyJudgement[contingencyJudgement$learning=='LF',])) - (nrow(conjudge[conjudge$learning=='LF',]))
+
 ```
-We have `r n` participants in this task, so -`r length(subjmissed)`, and we have missed `r nrows` over the total `r nrow(generalizationLP)`, that is `r nrows/nrow(generalizationLP)*100`. The subject(s) that missed completely the task is/are: `r subjmissed`.
+We have `r n` participants in this task, so -`r length(subjmissed)`, and we have missed `r nrows` over the total `r nrow(contingencyJudgement)`, that is `r round(nrows/nrow(contingencyJudgement)*100,2)`%. The subject(s) that missed completely the task is/are: `r subjmissed`.
 
+Distribution of the missing data across condition:
 
+- LF learning, `r round(((nrow(contingencyJudgement[contingencyJudgement$learning=='LF',])) - (nrow(conjudge[conjudge$learning=='LF',])))/nrow(contingencyJudgement[contingencyJudgement$learning=='LF',])*100,3)`%
+
+  - LF learning, Low freq: `r round(((nrow(contingencyJudgement[contingencyJudgement$learning=='LF' & contingencyJudgement$frequency==25,])) - (nrow(conjudge[conjudge$learning=='LF' & conjudge$frequency==25,])))/nrow(contingencyJudgement[contingencyJudgement$learning=='LF' & contingencyJudgement$frequency==25,])*100,3)`%
+  
+  - LF learning, High freq: `r round(((nrow(contingencyJudgement[contingencyJudgement$learning=='LF' & contingencyJudgement$frequency==75,])) - (nrow(conjudge[conjudge$learning=='LF' & conjudge$frequency==75,])))/nrow(contingencyJudgement[contingencyJudgement$learning=='LF' & contingencyJudgement$frequency==75,])*100,3)`%
+
+- FL learning, `r round(((nrow(contingencyJudgement[contingencyJudgement$learning=='FL',])) - (nrow(conjudge[conjudge$learning=='FL',])))/nrow(contingencyJudgement[contingencyJudgement$learning=='FL',])*100,3) `%
+
+  - FL learning, Low freq: `r round(((nrow(contingencyJudgement[contingencyJudgement$learning=='FL' & contingencyJudgement$frequency==25,])) - (nrow(conjudge[conjudge$learning=='FL' & conjudge$frequency==25,])))/nrow(contingencyJudgement[contingencyJudgement$learning=='FL' & contingencyJudgement$frequency==25,])*100,3)`%
+  
+  - FL learning, High freq: `r round(((nrow(contingencyJudgement[contingencyJudgement$learning=='FL' & contingencyJudgement$frequency==75,])) - (nrow(conjudge[conjudge$learning=='FL' & conjudge$frequency==75,])))/nrow(contingencyJudgement[contingencyJudgement$learning=='FL' & contingencyJudgement$frequency==75,])*100,3)`%
 
 ```{r }
 par(mfrow=c(1,2))
@@ -1853,15 +1954,17 @@ mean(conjudge[!(conjudge$subjID %in% badsubjs),]$acc)
 
 Quite there, everything good.
 
+## plot mean responses
 ```{r}
-respDistr<-summarySEwithin(data = conjudge[!(conjudge$subjID %in% badsubjs),], measurevar = "resp", betweenvars = "learning", withinvars = c("frequency", "category", "label"), idvar = "subjID", conf.interval = .95)
-respDistr
+respDistr<- aggregate(resp ~ learning + frequency + category + label, data = conjudge[!(conjudge$subjID %in% badsubjs),], mean)
+  
 ```
 
-## plot mean responses
+
 ```{r, fig.height = 5, fig.width = 8, fig.align= "center"}
-plyr::revalue(respDistr$frequency, c("25"="low"))-> respDistr$frequency;
-plyr::revalue(respDistr$frequency, c("75"="high"))-> respDistr$frequency;
+plyr::revalue(as.factor(respDistr$frequency), c("25"="low"))-> respDistr$frequency;
+plyr::revalue(as.factor(respDistr$frequency), c("75"="high"))-> respDistr$frequency;
+respDistr$category <- as.factor(respDistr$category)
 
 lollipop<-ggdotchart(respDistr, x = "label", y = "resp",
            color = "category",                                # Color by groups
@@ -1927,9 +2030,10 @@ rbind(highFreqFL, highFreqLF)-> highFreq
 rm(highFreqFL, highFreqLF)
 ```
 
-Okay, let's fill each row:
 
-```{r}
+
+```{r, echo=FALSE}
+#Okay, let's fill each row:
 resp <- c(
 #-----------------------------------------FL LEARNING
   # ROW 1                                              #MATCH
@@ -2046,11 +2150,7 @@ highFreq$resp <- resp
 
 ```
 
-```{r}
-highFreq
-```
-          
-          
+
 Low frequency:
 ```{r low freq schema}
 lowFreqFL<-data.frame(
@@ -2084,7 +2184,7 @@ lowFreq<- rbind(lowFreqFL, lowFreqLF)
 rm(lowFreqFL, lowFreqLF)
 ```
 
-```{r}
+```{r, echo=FALSE}
 resp <- c(
 #-----------------------------------------FL LEARNING
   # ROW 1                                              #MATCH
@@ -2212,12 +2312,11 @@ summary(humansWeights)
 
 ```{r}
 dataWeight <- aggregate(resp ~ learning + frequency + type, data = humansWeights,FUN = mean)
-dataWeight
 ```
 
+Plot of human responses considered as summed weights of the label-feature association.
 
-
-```{r}
+```{r lollipopWeight of human responses, fig.cap = "Summed weights of the label-feature association by frequency by learning", fig.align= "center"}
 lollipopWeight<-ggdotchart(dataWeight, x = "type", y = "resp",
            #color = "learning",                                # Color by groups
            palette = c("#00AFBB", "#E7B800", "#FC4E07"), # Custom color palette
@@ -2229,23 +2328,834 @@ lollipopWeight<-ggdotchart(dataWeight, x = "type", y = "resp",
            label = round(dataWeight$resp,1),                        # Add mpg values as dot labels
            font.label = list(color = "white", size = 9, 
                              vjust = 0.5),               # Adjust label parameters
-           ggtheme = theme_pubr()                        # ggplot2 theme
+           ggtheme = theme_pubr(),                        # ggplot2 theme
+           title = "human performance",
+           ylab = "average response",
+           xlab = " "
            )+ facet_grid( learning ~ frequency) +
   geom_hline(yintercept = 0, linetype = 2, color = "lightgray") 
 
 lollipopWeight
 ```
-           
-Raw means
-           
-```{r}
-respShape<- summarySEwithin(data = conjudge[!(conjudge$subjID %in% badsubjs) & conjudge$acc==1,], measurevar = "resp", betweenvars = "learning", withinvars = c("frequency", "bodyShape"), idvar = "subjID", conf.interval = .95)
-respShape
+
+```{r z-score of the human performance}
+dataWeight$respZ.score <- as.vector(scale(dataWeight$resp))
+dataWeight
 ```
-Let's clean the global environment:
+
+
+```{r lollipopWeight of human responses Z scores, fig.cap = "Z-score of the Summed weights of the label-feature association by frequency by learning", fig.align= "center"}
+lollipopWeightZ<-ggdotchart(dataWeight, x = "type", y = "respZ.score",
+           #color = "learning",                                # Color by groups
+           palette = c("#00AFBB", "#E7B800", "#FC4E07"), # Custom color palette
+           add = "segments",                             # Add segments from y = 0 to dots
+           rotate = T,
+           add.params = list(color = "lightgray", size = 2), # Change segment color and size
+           #group = "learning",                                # Order by groups
+           dot.size = 10,                                 # Large dot size
+           label = round(dataWeight$respZ.score,1),                        # Add mpg values as dot labels
+           font.label = list(color = "white", size = 9, 
+                             vjust = 0.5),               # Adjust label parameters
+           ggtheme = theme_pubr(),                        # ggplot2 theme
+           title = "human performance",
+           ylab = "average response",
+           xlab = " "
+           )+ facet_grid( learning ~ frequency) +
+  geom_hline(yintercept = 0, linetype = 2, color = "lightgray") 
+
+lollipopWeightZ
+```
+
+What about having the same info by subject instead of the grand average?
 
 ```{r}
-rm(n_bins, rt_range, problematicPeople, frequency, dumbPeople, break_seq, task, temp, timeslice_range, p, ms, n, nrows, subjs, totsubjs ,genTask, fribbleSet, count_range, alltasks, subjmissed, df)
+listSubj <-unique(conjudge[conjudge$learning=="FL" & !(conjudge$subjID %in% badsubjs),]$subjID)
+
+```
+
+For loop across participants for FL learning:
+
+
+```{r, echo=FALSE}
+temp <- NULL
+
+for (i in 1:length(listSubj)){
+  subj <- as.character(listSubj[i])
+  humansWeightsbyppts <-data.frame(
+           subjID = as.factor(c(subj)),
+           learning = as.factor(rep("FL",9)),
+           frequency = as.factor(rep("low",9)),
+           type = as.factor(c(rep("match",3), 
+                    rep("mismatch-type1",3), 
+                    rep("mismatch-type2",3))),
+           label = as.factor(c("dep_cat1", "bim_cat2", "tob_cat3")),
+           fribble = c(1.2,2.2,3.2,
+                       2.2,3.2,1.2,
+                       3.2,1.2,2.2),
+           fribbleCategory = as.factor(c("cat1", "cat2", "cat3", #match
+                               "cat2", "cat3", "cat1", #mis-type1
+                               "cat3", "cat1", "cat2")),
+           resp = c(0)) #mis-type2
+  #-----------------------------------------FL LEARNING
+  # ROW 1                                              #MATCH
+  
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[1] <- 
+    mean(conjudge[conjudge$subjID==subj &        
+           conjudge$frequency=="low" & 
+           conjudge$label=='dep' & 
+           conjudge$category==1 ,]$resp)
+  # ROW 2
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[2] <-
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='bim' & 
+           conjudge$category==2 ,]$resp)
+  # ROW 3
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[3] <-
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='tob' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 4                                              #MISMATCH -TYPE1
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[4] <-
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='dep' & 
+           conjudge$category==2 ,]$resp)
+  # ROW 5
+   humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[5] <-
+     mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='bim' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 6
+   humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[6] <-
+     mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='tob' & 
+           conjudge$category==1 ,]$resp)
+  # ROW 7                                              #MISMATCH -TYPE2
+   humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[7] <-
+     mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='dep' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 8
+   humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[8] <-
+     mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='bim' & 
+           conjudge$category==1 ,]$resp)
+  # ROW 9
+   humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[9] <-
+     mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='tob' & 
+           conjudge$category==2 ,]$resp)
+   
+   temp<-rbind(temp,humansWeightsbyppts)
+}
+
+lowFreqFL <- temp
+
+```
+
+
+```{r, echo=FALSE}
+temp <- NULL;
+
+for (i in 1:length(listSubj)){
+subj <- as.character(listSubj[i])
+humansWeightsbyppts<- data.frame(
+           subjID = as.factor(c(subj)),
+           learning = rep("FL",9),
+           frequency = rep("high",9),
+           type = as.factor(c(rep("match",3), 
+                    rep("mismatch-type1",3), 
+                    rep("mismatch-type2",3))),
+           label = c("dep_cat1", "bim_cat2", "tob_cat3"),
+           fribble = c(1.1,2.1,3.1,
+                       3.1,1.1,2.1,
+                       2.1,3.1,1.1),
+           fribbleCategory = c("cat1", "cat2", "cat3", #match
+                        "cat3", "cat1", "cat2", #mis-type1
+                        "cat2", "cat3", "cat1"),
+           resp = c(0)) #mis-type2
+
+# ROW 1                                              #MATCH
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[1] <-
+    mean(conjudge[conjudge$subjID==subj & 
+           conjudge$frequency=="high" & 
+           conjudge$label=='dep' & 
+           conjudge$category==1 ,]$resp)
+  # ROW 2
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[2] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='bim' & 
+           conjudge$category==2 ,]$resp)
+  # ROW 3
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[3] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='tob' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 4                                              #MISMATCH -TYPE1
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[4] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='dep' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 5
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[5] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='bim' & 
+           conjudge$category==1 ,]$resp)
+  # ROW 6
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[6] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='tob' & 
+           conjudge$category==2 ,]$resp)
+  # ROW 7                                              #MISMATCH -TYPE2
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[7] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='dep' & 
+           conjudge$category==2 ,]$resp)
+  # ROW 8
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[8] <-
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='bim' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 9
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[9] <-
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='tob' & 
+           conjudge$category==1 ,]$resp)
+  
+  temp<-rbind(temp,humansWeightsbyppts)
+}
+
+highFreqFL <- temp
+```
+
+```{r}
+rbind(lowFreqFL, highFreqFL)->humansWeights_FL
+```
+
+For loop across participants for LF learning:
+
+```{r}
+listSubj <-unique(conjudge[conjudge$learning=="LF" & !(conjudge$subjID %in% badsubjs),]$subjID)
+
+```
+
+
+
+```{r, echo=FALSE}
+temp <- NULL
+
+for (i in 1:length(listSubj)){
+  subj <- as.character(listSubj[i])
+  humansWeightsbyppts <-data.frame(
+           subjID = as.factor(c(subj)),
+           learning = as.factor(rep("LF",9)),
+           frequency = as.factor(rep("low",9)),
+           type = as.factor(c(rep("match",3), 
+                    rep("mismatch-type1",3), 
+                    rep("mismatch-type2",3))),
+           label = as.factor(c("dep_cat1", "bim_cat2", "tob_cat3")),
+           fribble = c(1.2,2.2,3.2,
+                       2.2,3.2,1.2,
+                       3.2,1.2,2.2),
+           fribbleCategory = as.factor(c("cat1", "cat2", "cat3", #match
+                               "cat2", "cat3", "cat1", #mis-type1
+                               "cat3", "cat1", "cat2")),
+           resp = c(0)) #mis-type2
+  #-----------------------------------------LF LEARNING
+  # ROW 1                                              #MATCH
+  
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[1] <- 
+    mean(conjudge[conjudge$subjID==subj &        
+           conjudge$frequency=="low" & 
+           conjudge$label=='dep' & 
+           conjudge$category==1 ,]$resp)
+  # ROW 2
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[2] <-
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='bim' & 
+           conjudge$category==2 ,]$resp)
+  # ROW 3
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[3] <-
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='tob' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 4                                              #MISMATCH -TYPE1
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[4] <-
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='dep' & 
+           conjudge$category==2 ,]$resp)
+  # ROW 5
+   humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[5] <-
+     mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='bim' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 6
+   humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[6] <-
+     mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='tob' & 
+           conjudge$category==1 ,]$resp)
+  # ROW 7                                              #MISMATCH -TYPE2
+   humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[7] <-
+     mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='dep' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 8
+   humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[8] <-
+     mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='bim' & 
+           conjudge$category==1 ,]$resp)
+  # ROW 9
+   humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[9] <-
+     mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="low" & 
+           conjudge$label=='tob' & 
+           conjudge$category==2 ,]$resp)
+   
+   temp<-rbind(temp,humansWeightsbyppts)
+}
+
+lowFreqLF <- temp
+
+```
+
+
+```{r, echo=FALSE}
+temp <- NULL;
+
+for (i in 1:length(listSubj)){
+subj <- as.character(listSubj[i])
+humansWeightsbyppts<- data.frame(
+           subjID = as.factor(c(subj)),
+           learning = rep("LF",9),
+           frequency = rep("high",9),
+           type = as.factor(c(rep("match",3), 
+                    rep("mismatch-type1",3), 
+                    rep("mismatch-type2",3))),
+           label = c("dep_cat1", "bim_cat2", "tob_cat3"),
+           fribble = c(1.1,2.1,3.1,
+                       3.1,1.1,2.1,
+                       2.1,3.1,1.1),
+           fribbleCategory = c("cat1", "cat2", "cat3", #match
+                        "cat3", "cat1", "cat2", #mis-type1
+                        "cat2", "cat3", "cat1"),
+           resp = c(0)) #mis-type2
+
+# ROW 1                                              #MATCH
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[1] <-
+    mean(conjudge[conjudge$subjID==subj & 
+           conjudge$frequency=="high" & 
+           conjudge$label=='dep' & 
+           conjudge$category==1 ,]$resp)
+  # ROW 2
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[2] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='bim' & 
+           conjudge$category==2 ,]$resp)
+  # ROW 3
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[3] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='tob' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 4                                              #MISMATCH -TYPE1
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[4] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='dep' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 5
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[5] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='bim' & 
+           conjudge$category==1 ,]$resp)
+  # ROW 6
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[6] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='tob' & 
+           conjudge$category==2 ,]$resp)
+  # ROW 7                                              #MISMATCH -TYPE2
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[7] <- 
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='dep' & 
+           conjudge$category==2 ,]$resp)
+  # ROW 8
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[8] <-
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='bim' & 
+           conjudge$category==3 ,]$resp)
+  # ROW 9
+  humansWeightsbyppts[humansWeightsbyppts$subjID==subj,]$resp[9] <-
+    mean(conjudge[conjudge$subjID==subj &
+           conjudge$frequency=="high" & 
+           conjudge$label=='tob' & 
+           conjudge$category==1 ,]$resp)
+  
+  temp<-rbind(temp,humansWeightsbyppts)
+}
+
+highFreqLF <- temp
+```
+
+
+```{r}
+rbind(lowFreqLF, highFreqLF)->humansWeights_LF
+rm(lowFreqLF, highFreqLF, lowFreqFL, highFreqFL)
+```
+
+```{r}
+humansTypeWeigths<-rbind(humansWeights_FL, humansWeights_LF)
+rm(humansWeights_FL, humansWeights_LF)
+```
+
+
+## RW comparison           
+How do we compare these measures with the RW?
+
+```{r load and run RW, echo=FALSE, message=FALSE}
+myexp = read.csv(paste(localGitDir,"/modelling/input/exp1b.csv", sep = '')); #load data
+
+# - FL
+mystims <- prepare_data(myexp, condition = "suffix")
+traceOutcomes=c("dep")
+traceCues=c("blue", "red", "purple", "d1", "d2", "d3","d4", "d5","d6")
+saliency <- rep(0.1, length(traceCues));
+
+FL_learningCurve<- plot_line(mystims, saliency, "suffix")
+FL_asymptote<- plot.bar(mystims, saliency, "suffix")
+
+# - LF
+mystims <- prepare_data(myexp, condition = "prefix")
+traceOutcomes=c("blue", "red", "purple", "d1", "d2", "d3","d4","d5","d6")
+traceCues=c("dep")
+saliency <- rep(0.1, length(traceOutcomes));
+
+LF_learningCurve<-plot_line(mystims, saliency, "prefix")
+LF_asymptote<- plot.bar(mystims, saliency, "prefix")
+```
+In the FLO paper there were 15 high freq exemplars, and 5 low frequency exemplar per category (proportion: 1/3).
+This is approximated here in this input where for every category/label, there are 3 high freq exemplars and 1 low freq exemplar. Frequency of presentation kept constant: 250.
+
+
+```{r input file}
+myexp
+```
+
+
+For the label "dep" - category 1:
+```{r RW predictions, fig.cap = "Predictions from the FLO paper for the label DEP-Cat 1", fig.height = 7, fig.width = 10, fig.align= "center", echo=FALSE}
+ggarrange(FL_learningCurve, FL_asymptote,
+          LF_learningCurve, LF_asymptote,
+          labels = c("FL learning", " ", "LF learning", " "), ncol=2, nrow=2,
+          legend="right",
+          hjust = -1,
+          common.legend = TRUE); 
+```
+
+Let's store the equilibrium weigths from the RW
+```{r equilibriums dataframe creation}
+# label dep
+equilibriumsFL<-data.frame(
+  learning="FL",
+  label=c(rep("dep",9),rep("bim",9),rep("tob",9)),
+  singleCues=c("blue","red","purple","d1","d2","d3","d4","d5","d6"),
+  Equilibriums=c(.33,.22,0,.5,.39,0,-.17,-.17,0,
+                 .22,0,.33,-.17,0,.5,.39,0,-.17,
+                 0,.33,.22,0,-.17,-.17,0,.5,.39)
+)
+
+equilibriumsLF<-data.frame(
+  learning="LF",
+  label=c(rep("dep",9),rep("bim",9),rep("tob",9)),
+  singleCues=c("blue","red","purple","d1","d2","d3","d4","d5","d6"),
+  Equilibriums=c(.75,.25,0,.75,.25,0,0,0,0,
+                 .25,0,.75,0,0,.75,.25,0,0,
+                 0,.75,.25,0,0,0,0,.75,.25)
+)
+```
+
+Now let's build a dataframe that looks like humans weights
+```{r high frequency model weights}
+highFreqFL_modelWeights <-data.frame(
+  learning = rep("FL",9),
+  frequency = rep("high",9),
+  type = c(rep("match",3), 
+           rep("mismatch-type1",3), 
+           rep("mismatch-type2",3)),
+  label = c("dep_cat1", "bim_cat2", "tob_cat3"),
+  fribble = c(1.1,2.1,3.1,
+              3.1,1.1,2.1,
+              2.1,3.1,1.1),
+  fribbleCategory = c("cat1", "cat2", "cat3", #match
+                      "cat3", "cat1", "cat2", #mis-type1
+                      "cat2", "cat3", "cat1")) #mis-type2
+
+highFreqLF_modelWeights<-data.frame(
+           learning = rep("LF",9),
+           frequency = rep("high",9),
+           type = c(rep("match",3), 
+                    rep("mismatch-type1",3), 
+                    rep("mismatch-type2",3)),
+           label = c("dep_cat1", "bim_cat2", "tob_cat3"),
+           fribble = c(1.1,2.1,3.1,
+                       3.1,1.1,2.1,
+                       2.1,3.1,1.1),
+           fribbleCategory = c("cat1", "cat2", "cat3", #match
+                        "cat3", "cat1", "cat2", #mis-type1
+                        "cat2", "cat3", "cat1")) #mis-type2
+
+  
+```
+
+
+```{r equilibrium fill, echo=FALSE}
+#Let's fill the dataframe with the equilibrium weights:
+#High frequency:
+
+FL_high_equilibriumsWeights= c(
+  #                                         MATCH 
+  sum(equilibriumsFL[equilibriumsFL$label=='dep'& 
+                   (equilibriumsFL$singleCues=="blue" | 
+                   equilibriumsFL$singleCues=="d1"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='bim'& 
+                   (equilibriumsFL$singleCues=="purple" | 
+                   equilibriumsFL$singleCues=="d3"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='tob'& 
+                   (equilibriumsFL$singleCues=="red" | 
+                   equilibriumsFL$singleCues=="d5"),]$Equilibriums),
+  
+  #                                         MISMATCH - TYPE 1 
+  sum(equilibriumsFL[equilibriumsFL$label=='dep'& 
+                   (equilibriumsFL$singleCues=="red" | 
+                   equilibriumsFL$singleCues=="d5"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='bim'& 
+                   (equilibriumsFL$singleCues=="blue" | 
+                   equilibriumsFL$singleCues=="d1"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='tob'& 
+                   (equilibriumsFL$singleCues=="purple" | 
+                   equilibriumsFL$singleCues=="d3"),]$Equilibriums),
+  
+    #                                         MISMATCH - TYPE 2 
+  sum(equilibriumsFL[equilibriumsFL$label=='dep'& 
+                   (equilibriumsFL$singleCues=="purple" | 
+                   equilibriumsFL$singleCues=="d3"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='bim'& 
+                   (equilibriumsFL$singleCues=="red" | 
+                   equilibriumsFL$singleCues=="d5"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='tob'& 
+                   (equilibriumsFL$singleCues=="blue" | 
+                   equilibriumsFL$singleCues=="d1"),]$Equilibriums)
+)
+
+LF_high_equilibriumsWeights= c(
+  #                                         MATCH 
+  sum(equilibriumsLF[equilibriumsLF$label=='dep'& 
+                   (equilibriumsLF$singleCues=="blue" | 
+                   equilibriumsLF$singleCues=="d1"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='bim'& 
+                   (equilibriumsLF$singleCues=="purple" | 
+                   equilibriumsLF$singleCues=="d3"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='tob'& 
+                   (equilibriumsLF$singleCues=="red" | 
+                   equilibriumsLF$singleCues=="d5"),]$Equilibriums),
+  
+  #                                         MISMATCH - TYPE 1 
+  sum(equilibriumsLF[equilibriumsLF$label=='dep'& 
+                   (equilibriumsLF$singleCues=="red" | 
+                   equilibriumsLF$singleCues=="d5"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='bim'& 
+                   (equilibriumsLF$singleCues=="blue" | 
+                   equilibriumsLF$singleCues=="d1"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='tob'& 
+                   (equilibriumsLF$singleCues=="purple" | 
+                   equilibriumsLF$singleCues=="d3"),]$Equilibriums),
+  
+    #                                         MISMATCH - TYPE 2 
+  sum(equilibriumsLF[equilibriumsLF$label=='dep'& 
+                   (equilibriumsLF$singleCues=="purple" | 
+                   equilibriumsLF$singleCues=="d3"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='bim'& 
+                   (equilibriumsLF$singleCues=="red" | 
+                   equilibriumsLF$singleCues=="d5"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='tob'& 
+                   (equilibriumsLF$singleCues=="blue" | 
+                   equilibriumsLF$singleCues=="d1"),]$Equilibriums)
+)
+
+highFreqFL_modelWeights$equilibriumWeigths <- FL_high_equilibriumsWeights
+highFreqLF_modelWeights$equilibriumWeigths <- LF_high_equilibriumsWeights
+highFreq_model<- rbind(highFreqFL_modelWeights, highFreqLF_modelWeights)
+rm(highFreqFL_modelWeights,highFreqLF_modelWeights)
+```
+
+
+```{r low frequency model weights}
+
+lowFreqFL_modelWeights<-data.frame(
+           learning = rep("FL",9),
+           frequency = rep("low",9),
+           type = c(rep("match",3), 
+                    rep("mismatch-type1",3), 
+                    rep("mismatch-type2",3)),
+           label = c("dep_cat1", "bim_cat2", "tob_cat3"),
+           fribble = c(1.2,2.2,3.2,
+                       2.2,3.2,1.2,
+                       3.2,1.2,2.2),
+           fribbleCategory = c("cat1", "cat2", "cat3", #match
+                               "cat2", "cat3", "cat1", #mis-type1
+                               "cat3", "cat1", "cat2")) #mis-type2
+
+lowFreqLF_modelWeights<-data.frame(
+           learning = rep("LF",9),
+           frequency = rep("low",9),
+           type = c(rep("match",3), 
+                    rep("mismatch-type1",3), 
+                    rep("mismatch-type2",3)),
+           label = c("dep_cat1", "bim_cat2", "tob_cat3"),
+           fribble = c(1.2,2.2,3.2,
+                       2.2,3.2,1.2,
+                       3.2,1.2,2.2),
+           fribbleCategory = c("cat1", "cat2", "cat3", #match
+                               "cat2", "cat3", "cat1", #mis-type1
+                               "cat3", "cat1", "cat2")) #mis-type2
+
+```
+
+```{r, echo=FALSE}
+#Low frequency:
+FL_low_equilibriumsWeights= c(
+  #                                         MATCH 
+  sum(equilibriumsFL[equilibriumsFL$label=='dep'& 
+                   (equilibriumsFL$singleCues=="red" | 
+                   equilibriumsFL$singleCues=="d2"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='bim'& 
+                   (equilibriumsFL$singleCues=="blue" | 
+                   equilibriumsFL$singleCues=="d4"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='tob'& 
+                   (equilibriumsFL$singleCues=="purple" | 
+                   equilibriumsFL$singleCues=="d6"),]$Equilibriums),
+  
+  #                                         MISMATCH - TYPE 1 
+  sum(equilibriumsFL[equilibriumsFL$label=='dep'& 
+                   (equilibriumsFL$singleCues=="blue" | 
+                   equilibriumsFL$singleCues=="d4"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='bim'& 
+                   (equilibriumsFL$singleCues=="purple" | 
+                   equilibriumsFL$singleCues=="d6"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='tob'& 
+                   (equilibriumsFL$singleCues=="red" | 
+                   equilibriumsFL$singleCues=="d2"),]$Equilibriums),
+  
+    #                                         MISMATCH - TYPE 2 
+  sum(equilibriumsFL[equilibriumsFL$label=='dep'& 
+                   (equilibriumsFL$singleCues=="purple" | 
+                   equilibriumsFL$singleCues=="d6"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='bim'& 
+                   (equilibriumsFL$singleCues=="red" | 
+                   equilibriumsFL$singleCues=="d2"),]$Equilibriums),
+  sum(equilibriumsFL[equilibriumsFL$label=='tob'& 
+                   (equilibriumsFL$singleCues=="blue" | 
+                   equilibriumsFL$singleCues=="d4"),]$Equilibriums)
+)
+
+LF_low_equilibriumsWeights= c(
+  #                                         MATCH 
+  sum(equilibriumsLF[equilibriumsLF$label=='dep'& 
+                   (equilibriumsLF$singleCues=="red" | 
+                   equilibriumsLF$singleCues=="d2"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='bim'& 
+                   (equilibriumsLF$singleCues=="blue" | 
+                   equilibriumsLF$singleCues=="d4"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='tob'& 
+                   (equilibriumsLF$singleCues=="purple" | 
+                   equilibriumsLF$singleCues=="d6"),]$Equilibriums),
+  
+  #                                         MISMATCH - TYPE 1 
+  sum(equilibriumsLF[equilibriumsLF$label=='dep'& 
+                   (equilibriumsLF$singleCues=="blue" | 
+                   equilibriumsLF$singleCues=="d4"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='bim'& 
+                   (equilibriumsLF$singleCues=="purple" | 
+                   equilibriumsLF$singleCues=="d6"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='tob'& 
+                   (equilibriumsLF$singleCues=="red" | 
+                   equilibriumsLF$singleCues=="d2"),]$Equilibriums),
+  
+    #                                         MISMATCH - TYPE 2 
+  sum(equilibriumsLF[equilibriumsLF$label=='dep'& 
+                   (equilibriumsLF$singleCues=="purple" | 
+                   equilibriumsLF$singleCues=="d6"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='bim'& 
+                   (equilibriumsLF$singleCues=="red" | 
+                   equilibriumsLF$singleCues=="d2"),]$Equilibriums),
+  sum(equilibriumsLF[equilibriumsLF$label=='tob'& 
+                   (equilibriumsLF$singleCues=="blue" | 
+                   equilibriumsLF$singleCues=="d4"),]$Equilibriums)
+)
+
+lowFreqFL_modelWeights$equilibriumWeigths <- FL_low_equilibriumsWeights
+lowFreqLF_modelWeights$equilibriumWeigths <- LF_low_equilibriumsWeights
+lowFreq_model<- rbind(lowFreqFL_modelWeights, lowFreqLF_modelWeights)
+rm(lowFreqFL_modelWeights,lowFreqLF_modelWeights)
+
+rbind(highFreq_model, lowFreq_model)->modelWeights
+rm(highFreq_model, lowFreq_model)
+modelWeights$learning <- as.factor(modelWeights$learning); modelWeights$frequency <- as.factor(modelWeights$frequency);
+modelWeights$type <- as.factor(modelWeights$type); modelWeights$fribble <- as.factor(modelWeights$fribble);
+modelWeights$fribbleCategory <- as.factor(modelWeights$fribbleCategory)
+
+head(modelWeights)
+
+```
+
+```{r}
+modelWeight <- aggregate(equilibriumWeigths ~ learning + frequency + type, data = modelWeights,FUN = mean)
+head(modelWeight)
+```
+
+okay, in order to compare human with model performance, the equilibrium weigths *I think* should be normalised over a 0 that is the average of the weights.
+
+```{r}
+modelWeight$equilibriumWeigthsZ.score <- as.vector(scale(modelWeight$equilibriumWeigths))
+```
+
+
+Plot of human and model responses considered as summed weights of the label-feature association.
+
+```{r model responses plot, fig.cap = "Summed weights of the label-feature association by frequency by learning", fig.align= "center"}
+lollipop_modelWeight<-ggdotchart(modelWeight, x = "type", y = "equilibriumWeigths",
+           #color = "learning",                                # Color by groups
+           palette = c("#00AFBB", "#E7B800", "#FC4E07"), # Custom color palette
+           add = "segments",                             # Add segments from y = 0 to dots
+           rotate = T,
+           add.params = list(color = "lightgray", size = 2), # Change segment color and size
+           #group = "learning",                                # Order by groups
+           dot.size = 10,                                 # Large dot size
+           label = round(modelWeight$equilibriumWeigths,1),                        # Add mpg values as dot labels
+           font.label = list(color = "white", size = 9, 
+                             vjust = 0.5),               # Adjust label parameters
+           ggtheme = theme_pubr(),                        # ggplot2 theme
+           title = "model predictions",
+           ylab = "association strength",
+           xlab = " "
+           )+ facet_grid( learning ~ frequency) +
+  geom_hline(yintercept = 0, linetype = 2, color = "lightgray") 
+lollipop_modelWeight
+```
+
+```{r model responses plot z-scored, fig.cap = "Summed weights of the label-feature association by frequency by learning", fig.align= "center"}
+lollipop_modelWeightZ<-ggdotchart(modelWeight, x = "type", y = "equilibriumWeigthsZ.score",
+           #color = "learning",                                # Color by groups
+           palette = c("#00AFBB", "#E7B800", "#FC4E07"), # Custom color palette
+           add = "segments",                             # Add segments from y = 0 to dots
+           rotate = T,
+           add.params = list(color = "lightgray", size = 2), # Change segment color and size
+           #group = "learning",                                # Order by groups
+           dot.size = 10,                                 # Large dot size
+           label = round(modelWeight$equilibriumWeigthsZ.score,1),                        # Add mpg values as dot labels
+           font.label = list(color = "white", size = 9, 
+                             vjust = 0.5),               # Adjust label parameters
+           ggtheme = theme_pubr(),                        # ggplot2 theme
+           title = "model predictions",
+           ylab = "association strength Z-scored",
+           xlab = " "
+           )+ facet_grid( learning ~ frequency) +
+  geom_hline(yintercept = 0, linetype = 2, color = "lightgray") 
+lollipop_modelWeightZ
+```
+### Human and model performance
+
+Raw data for humans and the model:
+```{r human and model responses plot, fig.height = 5, fig.width = 14, fig.align= "center"}
+ggarrange(lollipopWeight, lollipop_modelWeight)
+
+```
+
+Transformation in Z-scores for both humans and model performance:
+
+```{r plot z-score, fig.height = 5, fig.width = 14, fig.align= "center"}
+ggarrange(lollipopWeightZ, lollipop_modelWeightZ)
+```
+
+```{r}
+humansWeights$equilibriumWeigthsZ.score <- as.vector(scale(humansWeights$resp))
+humansWeights$what <- as.factor(c("humans"))
+
+modelWeights$equilibriumWeigthsZ.score <- as.vector(scale(modelWeights$equilibriumWeigths))
+modelWeights$what <- as.factor(c("model"))
+
+associationStrengths <- rbind(
+  modelWeights[,c("learning","frequency","type","label","fribble",
+                  "fribbleCategory","equilibriumWeigthsZ.score","what")],
+  humansWeights[,c("learning","frequency","type","label","fribble",
+                  "fribbleCategory","equilibriumWeigthsZ.score","what")])
+
+summary(associationStrengths)
+```
+
+Barplot
+```{r humans + model side by side,  fig.height = 6, fig.width = 9, fig.align= "center", echo=FALSE}
+ggbarplot(associationStrengths, x = "type",
+      color = "black",
+      fill = "what",
+      y = "equilibriumWeigthsZ.score",
+      facet.by = c("learning","frequency"),
+      ylab = "association strength Zscored",
+      add = c("mean_se"),
+      position = position_dodge(.8),
+      palette = c("#bdbdbd","#636363"),
+      title = "predictions of the simulation plotted against the performance of participants"
+      ) +
+  geom_hline(yintercept = 0, col='black', lwd=.6, linetype="dashed")+
+  theme(legend.position="bottom", legend.title = element_blank())
+```
+
+## LMMS
+
+```{r}
+relevel(humansTypeWeigths$type, ref = "mismatch-type1")->humansTypeWeigths$type
+lm1<-lmer(resp ~  type  * frequency * learning +(frequency|subjID), data = humansTypeWeigths)
+car::Anova(lm1)
+summary(lm1)
+```
+
+
+```{r}
+lm1.emm <- emmeans(lm1 , ~ type *frequency* learning )
+contrast(lm1.emm, "consec",  simple = "each", combine = T, adjust = "bonferroni")
+
+```
+
+Clean the global environment:
+
+```{r clean environment, message=FALSE}
+rm( problematicPeople, frequency, dumbPeople,  task, temp,  p, ms, n, nrows, subjs, totsubjs ,genTask, fribbleSet, alltasks, subjmissed, df)
 ```
 
 
@@ -2606,3 +3516,8 @@ This means that the effect of frequency (high vs low) was super robust, and this
 - Michael suggested that participants in his original experiment did only one of the two tasks, and not both. Exposition to both tasks might cause greater noise, especially in the labelPicture task where participants see 72 different fribbles. This might cause super confusion in the participants. Indeed, I found that from the folder Mike has shared with me (later on during this experiment) the number of stimuli didn't match with the number of test trials reported in the paper. 
 
 **What we're going to do next:** We're goint to re-do the replication! This time for real: by checking for the right amount of test trials, same fribbles used by Michael and same modality. 
+
+```{r}
+rm(adjusted.genTask_model, adjusted.labpic_model, adjusted.piclab_model, pl, pl_violin, lp, lp_violin, mystims, resp, saliency, FL_high_equilibriumsWeights, FL_low_equilibriumsWeights, freqBylearning_beta, frequency_beta, learning_beta, traceCues, traceOutcomes, LF_low_equilibriumsWeights, LF_high_equilibriumsWeights, conjudge_model, conjudge_model.emm, labpic_model, labpic_model.emm, LF_learningCurve, LF_asymptote, FL_learningCurve, FL_asymptote, summaryLP, summaryPL, respDistr)
+```
+

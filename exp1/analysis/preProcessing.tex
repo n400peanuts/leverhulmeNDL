@@ -4304,6 +4304,9 @@ Low frequency:
 ## 12       LF       low mismatch-type2 -34.874315
 \end{verbatim}
 
+Plot of human responses considered as summed weights of the
+label-feature association.
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{lollipopWeight<-}\KeywordTok{ggdotchart}\NormalTok{(dataWeight, }\DataTypeTok{x =} \StringTok{"type"}\NormalTok{, }\DataTypeTok{y =} \StringTok{"resp"}\NormalTok{,}
@@ -4325,78 +4328,110 @@ Low frequency:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-100-1.pdf}
+\begin{figure}
 
-Raw means
+{\centering \includegraphics{preProcessing_files/figure-latex/lollipopWeight of human responses-1} 
+
+}
+
+\caption{Summed weights of the label-feature association by frequency by learning}\label{fig:lollipopWeight of human responses}
+\end{figure}
+
+\hypertarget{rw-comparison}{%
+\subsection{RW comparison}\label{rw-comparison}}
+
+How do we compare these measures with the RW?
+
+\begin{verbatim}
+## [1] "FL learning"
+## [1] 0.3335453
+## [1] 0.2218817
+## [1] 0.4996706
+## [1] 0.3878946
+## [1] 0
+## [1] -0.1660591
+## [1] -0.1660664
+\end{verbatim}
+
+\begin{verbatim}
+## [1] "FL learning"
+## [1] 0.3337451
+## [1] 0.2218333
+## [1] 0.4997183
+## [1] 0.3879358
+## [1] 0
+## [1] -0.1659932
+## [1] -0.1660574
+\end{verbatim}
+
+\begin{verbatim}
+## [1] "LF learning"
+## [1] 0.751511
+## [1] 0.2382185
+## [1] 0.7798541
+## [1] 0.2521943
+## [1] 0
+## [1] 0
+## [1] 0
+\end{verbatim}
+
+\begin{verbatim}
+## [1] "LF learning"
+## [1] 0.7436819
+## [1] 0.2178194
+## [1] 0.7560272
+## [1] 0.2674515
+## [1] 0
+## [1] 0
+## [1] 0
+\end{verbatim}
+
+In the FLO paper there were 15 high freq exemplars, and 5 low frequency
+exemplar per category (proportion: 1/3). This is approximated here in
+this input where for every category/label, there are 3 high freq
+exemplars and 1 low freq exemplar. Frequency of presentation kept
+constant: 250.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{respShape<-}\StringTok{ }\KeywordTok{summarySEwithin}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ conjudge[}\OperatorTok{!}\NormalTok{(conjudge}\OperatorTok{$}\NormalTok{subjID }\OperatorTok{%in%}\StringTok{ }\NormalTok{badsubjs) }\OperatorTok{&}\StringTok{ }\NormalTok{conjudge}\OperatorTok{$}\NormalTok{acc}\OperatorTok{==}\DecValTok{1}\NormalTok{,], }\DataTypeTok{measurevar =} \StringTok{"resp"}\NormalTok{, }\DataTypeTok{betweenvars =} \StringTok{"learning"}\NormalTok{, }\DataTypeTok{withinvars =} \KeywordTok{c}\NormalTok{(}\StringTok{"frequency"}\NormalTok{, }\StringTok{"bodyShape"}\NormalTok{), }\DataTypeTok{idvar =} \StringTok{"subjID"}\NormalTok{, }\DataTypeTok{conf.interval =} \FloatTok{.95}\NormalTok{)}
-\NormalTok{respShape}
+\NormalTok{myexp}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-##    learning frequency bodyShape  N      resp resp_norm       sd       se
-## 1        FL      high    barrel 70 63.185714 67.863381 51.73751 6.183815
-## 2        FL      high       jar 47 24.808511 32.653574 58.90257 8.591823
-## 3        FL      high     trunk 70 66.314286 56.459166 55.08613 6.584052
-## 4        FL       low    barrel 45  2.333333  9.495814 51.64421 7.698665
-## 5        FL       low       jar 67 28.253731 19.320010 57.25256 6.994513
-## 6        FL       low     trunk 66 14.984848 19.362189 57.67604 7.099430
-## 7        LF      high    barrel 60 57.783333 60.207209 58.92314 7.606945
-## 8        LF      high       jar 56 69.303571 66.621438 55.93900 7.475163
-## 9        LF      high     trunk 57 66.947368 62.365961 56.85924 7.531191
-## 10       LF       low    barrel 56  5.285714  5.962281 63.37117 8.468328
-## 11       LF       low       jar 56 10.071429  8.621142 50.85262 6.795468
-## 12       LF       low     trunk 54  5.351852 10.727451 63.93947 8.701059
-##          ci
-## 1  12.33637
-## 2  17.29444
-## 3  13.13482
-## 4  15.51564
-## 5  13.96500
-## 6  14.17854
-## 7  15.22146
-## 8  14.98056
-## 9  15.08679
-## 10 16.97091
-## 11 13.61842
-## 12 17.45211
+##            Cues Outcomes Frequency
+## 1    blue_d1_i1      dep       250
+## 2    blue_d1_i2      dep       250
+## 3    blue_d1_i3      dep       250
+## 4     red_d2_j1      dep       250
+## 5  purple_d3_k1      bim       250
+## 6  purple_d3_k2      bim       250
+## 7  purple_d3_k3      bim       250
+## 8    blue_d4_l1      bim       250
+## 9     red_d5_x1      tob       250
+## 10    red_d5_x2      tob       250
+## 11    red_d5_x3      tob       250
+## 12 purple_d6_y1      tob       250
 \end{verbatim}
 
-Let's clean the global environment:
+For the label ``dep'' - category 1:
+
+\begin{figure}
+
+{\centering \includegraphics{preProcessing_files/figure-latex/RW predictions-1} 
+
+}
+
+\caption{Predictions from the FLO paper for the label DEP-Cat 1}\label{fig:RW predictions}
+\end{figure}
+
+Clean the global environment:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{rm}\NormalTok{(n_bins, rt_range, problematicPeople, frequency, dumbPeople, break_seq, task, temp, timeslice_range, p, ms, n, nrows, subjs, totsubjs ,genTask, fribbleSet, count_range, alltasks, subjmissed, df)}
+\KeywordTok{rm}\NormalTok{( problematicPeople, frequency, dumbPeople,  task, temp,  p, ms, n, nrows, subjs, totsubjs ,genTask, fribbleSet, alltasks, subjmissed, df)}
 \end{Highlighting}
 \end{Shaded}
-
-\begin{verbatim}
-## Warning in rm(n_bins, rt_range, problematicPeople, frequency, dumbPeople, :
-## object 'n_bins' not found
-\end{verbatim}
-
-\begin{verbatim}
-## Warning in rm(n_bins, rt_range, problematicPeople, frequency, dumbPeople, :
-## object 'rt_range' not found
-\end{verbatim}
-
-\begin{verbatim}
-## Warning in rm(n_bins, rt_range, problematicPeople, frequency, dumbPeople, :
-## object 'break_seq' not found
-\end{verbatim}
-
-\begin{verbatim}
-## Warning in rm(n_bins, rt_range, problematicPeople, frequency, dumbPeople, :
-## object 'timeslice_range' not found
-\end{verbatim}
-
-\begin{verbatim}
-## Warning in rm(n_bins, rt_range, problematicPeople, frequency, dumbPeople, :
-## object 'count_range' not found
-\end{verbatim}
 
 \hypertarget{bayes-factor-calculation-with-glmms}{%
 \section{Bayes factor calculation with
@@ -5025,7 +5060,7 @@ Picture Label:
 
 Data Visualization:
 
-\begin{center}\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-132-1} \end{center}
+\begin{center}\includegraphics{preProcessing_files/figure-latex/unnamed-chunk-129-1} \end{center}
 
 GLMMs models:
 

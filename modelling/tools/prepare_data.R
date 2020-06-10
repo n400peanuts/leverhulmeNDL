@@ -22,8 +22,9 @@ prepare_data <- function(myexp, condition){
   mystims = data.frame(Cues, Outcomes, Frequency)
   i <- sapply(mystims, is.factor)
   mystims[i] <- lapply(mystims[i], as.character)
-  kable(mystims)
+  knitr::kable(mystims)
   
   return(mystims)
   
 }
+

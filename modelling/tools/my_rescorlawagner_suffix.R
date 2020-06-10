@@ -1,4 +1,4 @@
-rescorlawagner_FL <- function(mystims, saliency, type_plot){
+my_rescorlawagner_suffix <- function(mystims, saliency, type_plot){
   
   Time <- c()
   Weight <- c()
@@ -6,15 +6,15 @@ rescorlawagner_FL <- function(mystims, saliency, type_plot){
   Equilibriums <- c()
   SingleCues <- c() 
   
-  for (i in 1:length(traceOutcomes)){
-    traceCue <- traceCues[1]
+  for (i in 1:length(traceCues)){
+    traceCue <- traceCues[i]
     SingleCues <- append(SingleCues, traceCue, after=length(SingleCues))
-    traceOutcome <- traceOutcomes[i]
+    traceOutcome <- traceOutcomes[1]
     
     # RESCORLA-WAGNER MODEL HAPPENS HERE
     my_rw = RescorlaWagner(mystims, nruns=1,
-                           traceCue = traceCues[1],
-                           traceOutcome = traceOutcomes[i], 
+                           traceCue = traceCues[i],
+                           traceOutcome = traceOutcomes[1], 
                            beta1 = saliency[i])
     
     # For each cue, get equilibrium weight (to be plotted)
@@ -29,7 +29,7 @@ rescorlawagner_FL <- function(mystims, saliency, type_plot){
     # For each trial, write a string saying which cue it was (for plotting)
     cue_outcome <- c()
     for (x in 1:length(weights)){
-      cue_outcome <- append(cue_outcome, paste(traceOutcome))
+      cue_outcome <- append(cue_outcome, paste(traceCue))
     }
     CueOutcome <- append(CueOutcome, cue_outcome)
     
@@ -42,7 +42,7 @@ rescorlawagner_FL <- function(mystims, saliency, type_plot){
   }
   
   myline <- data.frame(CueOutcome, Time, Weight)
-  mybar <- data.frame(SingleCues, Equilibriums, unique(CueOutcome))
+  mybar <- data.frame(SingleCues, Equilibriums)
   
   if (type_plot == "line")
     
