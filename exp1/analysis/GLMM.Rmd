@@ -1,0 +1,269 @@
+---
+title: "FLO replications - GLMMs"
+author: "Eva"
+date: "6/15/2020"
+output: html_document
+---
+```{r}
+rm(list = ls())
+```
+
+Set your local working directory. This should be (and is assumed to be in the rest of the code) the highest point in your local folder:
+```{r}
+localGitDir <- 'C:/Users/eva_v/Documents/GitHub/leverhulmeNDL'
+```
+
+```{r}
+library(lmerTest)
+```
+
+
+# load preprocessed files
+
+```{r}
+pictureLabel <-read.table(paste(localGitDir, "/exp1/data/pictureLabel.txt", sep = ""), header = T, stringsAsFactors = T)
+
+labelPicture <-read.table(paste(localGitDir, "/exp1/data/labelPicture.txt", sep = ""), header = T, stringsAsFactors = T)
+
+humansTypeWeigths <-read.table(paste(localGitDir, "/exp1/data/humansTypeWeigths.txt", sep = ""), header = T, stringsAsFactors = T) #this is the contingency judgement task with the type of match/mismatch trials
+
+```
+
+Subjects that scored <=.7 and/or had >3 timeouts in the random dot task (attention check)
+```{r}
+badsubjs<-c("1414932", "1422463", "1431981", "1458997", "1459696", "1422470", "1422475", "1422689", "1431942", "1431944", "1431956", "1432003", "1459001", "1459009", "1459036", "1459057", "1459078", "1459703", "1420171", "1422680", "1432009", "1420199", "1431960", "1431997", "1459020")
+```
+
+# Load functions from the lab repo
+
+```{r}
+urlFolder <- 'https://api.github.com/repos/n400peanuts/languagelearninglab/git/trees/master?recursive=1'
+urlRaw <- 'https://raw.githubusercontent.com/n400peanuts/languagelearninglab/master/tools/'
+
+loadFunctionsGithub <-function(urlFolder, urlRaw){
+  if (!require(httr)) {
+    stop("httr not installed")
+  } 
+  else if (!require(RCurl)){
+    stop("RCurl not installed") 
+  }
+  else {
+    print('----loading. Please wait----')
+  };
+  httr::GET(urlFolder)-> req
+  stop_for_status(req)
+  filelist <- unlist(lapply(content(req)$tree, "[", "path"), use.names = F)
+  urlFunctions <- grep("docs/tools/", filelist, value = TRUE, fixed = TRUE)
+  gsub("docs/tools/", "", urlFunctions) -> functions
+  for (i in 1:length(functions)){
+    RCurl::getURL(paste0(urlRaw, functions[i]), ssl.verifypeer = FALSE)-> temp
+    eval(parse(text = temp), envir = .GlobalEnv)
+  };
+}
+
+loadFunctionsGithub(urlFolder = urlFolder, urlRaw = urlRaw);
+rm(urlFolder, urlRaw, loadFunctionsGithub)
+```
+# GLMMs - picture label
+```{r}
+pictureLabel$frequency <- as.factor(pictureLabel$frequency)
+
+pictureLabel$learning = relevel(pictureLabel$learning, ref = "LF")
+pictureLabel$frequency = relevel(pictureLabel$frequency, ref = "low")
+pictureLabel <- lizCenter(pictureLabel, list("learning" , "frequency", "task"))
+
+```
+
+```{r}
+piclab_model <- glmer(acc ~  frequency.ct*learning.ct + (frequency.ct|subjID), 
+         data = pictureLabel[pictureLabel$rt > 100 & !(pictureLabel$subjID %in% badsubjs),], 
+         family="binomial",
+         control=glmerControl(optimizer = "bobyqa"))
+
+adjusted.piclab_model = adjust_intercept_model(piclab_model, chance = log(0.33/(1-0.33)))
+round(adjusted.piclab_model,5)
+
+```
+
+# GLMMs - Label picture
+
+```{r}
+labelPicture$frequency <- as.factor(labelPicture$frequency)
+plyr::revalue(labelPicture$frequency, c("25"="low"))-> labelPicture$frequency;
+plyr::revalue(labelPicture$frequency, c("75"="high"))-> labelPicture$frequency;
+
+labelPicture$learning = relevel(labelPicture$learning, ref = "LF")
+labelPicture$frequency = relevel(labelPicture$frequency, ref = "low")
+labelPicture <- lizCenter(labelPicture, list("learning" , "frequency"))
+
+```
+
+```{r}
+labpic_model <- glmer(acc ~  frequency.ct*learning.ct + (frequency.ct|subjID), 
+         data = labelPicture[labelPicture$rt > 100 & labelPicture$rt <=2500 & !(labelPicture$subjID %in% badsubjs),], 
+         family="binomial",
+         control=glmerControl(optimizer = "bobyqa"))
+
+adjusted.labpic_model = adjust_intercept_model(labpic_model, chance = log(0.33/(1-0.33)))
+round(adjusted.labpic_model,5)
+
+```
+
+# LMMs Contingency Judgement task:
+```{r}
+humansTypeWeigths$learning = relevel(humansTypeWeigths$learning, ref = "FL")
+humansTypeWeigths$frequency = relevel(humansTypeWeigths$frequency, ref = "low")
+
+```
+
+
+```{r}
+#Match
+humansTypeWeigths<-lizCenter(humansTypeWeigths, list("frequency", "learning"))
+
+lm1<-lmer(resp ~ frequency.ct * learning.ct  +(frequency.ct|subjID), data = humansTypeWeigths[humansTypeWeigths$type=="match",])
+
+round(summary(lm1)$coefficients,5)
+```
+```{r}
+#Mismatch-type1
+
+lm2<-lmer(resp ~ frequency.ct * learning.ct  +(frequency.ct|subjID), data = humansTypeWeigths[humansTypeWeigths$type=="mismatch-type1",])
+
+round(summary(lm2)$coefficients,5)
+```
+
+# Combine both generalization tasks in one dataset
+
+I'm going to combine both generalization tasks in one single dataset called genTask because this is the dataset that needs to be compared with Mike's data.
+
+Reload the data:
+
+```{r}
+pictureLabel <-read.table(paste(localGitDir, "/exp1/data/pictureLabel.txt", sep = ""), header = T, stringsAsFactors = T)
+labelPicture <-read.table(paste(localGitDir, "/exp1/data/labelPicture.txt", sep = ""), header = T, stringsAsFactors = T)
+```
+
+```{r}
+genTask <- rbind(labelPicture[labelPicture$rt > 100 & !(labelPicture$subjID %in% badsubjs),], 
+                 pictureLabel[pictureLabel$rt > 100 & !(pictureLabel$subjID %in% badsubjs),])
+
+genTask$frequency <- as.factor(genTask$frequency)
+plyr::revalue(genTask$frequency, c("25"="low"))-> genTask$frequency;
+plyr::revalue(genTask$frequency, c("75"="high"))-> genTask$frequency;
+```
+
+```{r}
+genTask$learning = relevel(genTask$learning, ref = "LF")
+genTask$frequency = relevel(genTask$frequency, ref = "low")
+genTask <- lizCenter(genTask, list("learning" , "frequency", "task"))
+```
+
+```{r model generalization tasks together}
+genTask_model <- glmer(acc ~  frequency.ct*learning.ct + task.ct + (frequency.ct|subjID) , 
+         data = genTask, 
+         family="binomial",
+         control=glmerControl(optimizer = "bobyqa"))
+
+adjusted.genTask_model = adjust_intercept_model(genTask_model, chance = log(0.33/(1-0.33)))
+round(summary(genTask_model)$coefficients,5)
+```
+
+# BF based on the fmri data
+
+```{r}
+fmri<-read.table(paste(localGitDir, "/prereg/fmri.txt", sep = ""), header = T)
+```
+
+From Mike's excel about bad subjects:
+```{r}
+fmriClean<-fmri[!(fmri$subjID==1  & fmri$learning=="sx") &
+                  !(fmri$subjID==14 & fmri$learning=="sx") &
+                  !(fmri$subjID==22 & fmri$learning=="sx") &
+                  !(fmri$subjID==3 & fmri$learning=="sx") &
+                  !(fmri$subjID==4 & fmri$learning=="xs") &
+                  !(fmri$subjID==7 & fmri$learning=="xs") &
+                  !(fmri$subjID==10 & fmri$learning=="xs")&
+                  !(fmri$subjID==12 & fmri$learning=="xs"),]
+
+```
+
+```{r}
+#let's center the variables. 
+fmriClean$frequency <- as.factor(fmriClean$frequency)
+fmriClean$learning<-as.factor(fmriClean$learning)
+fmriClean$testing<-as.factor(fmriClean$testing)
+fmriClean$trialType<-as.factor(fmriClean$trialType)
+
+#relevel
+fmriClean$learning <- relevel(fmriClean$learning, ref = "sx")
+fmriClean$frequency <- relevel(fmriClean$frequency, ref = "l")
+fmriClean<-lizCenter(fmriClean, listfname = list("learning" , "frequency"))
+```
+
+```{r}
+fmriglmer1<-glmer(acc ~  frequency.ct*learning.ct + (frequency.ct|subjID), 
+      data = fmriClean[!(fmriClean$trialType=="control"),], # "control" are blue fribbles, so we need to remove it.
+      family="binomial",
+      control=glmerControl(optimizer = "bobyqa"))
+round(summary(fmriglmer1)$coefficients,4)
+```
+## Frequency
+
+```{r}
+#main effect of frequency from Mike's data:
+round(summary(fmriglmer1)$coefficients[2,],4)
+```
+
+```{r}
+#main effect of frequency from our pilot data:
+round(summary(genTask_model)$coefficients[2,],4)
+```
+```{r}
+Bf(sd = .2612, 
+   obtained = 1.6818, 
+   uniform = 0, 
+   sdtheory = 0.2483, 
+   meanoftheory = 1.7025, 
+   tail = 1)
+```
+## learning
+
+```{r}
+#main effect of learning from Mike's data:
+round(summary(fmriglmer1)$coefficients[3,],4)
+```
+
+```{r}
+#main effect of learning from our pilot data:
+round(summary(genTask_model)$coefficients[3,],4)
+```
+```{r}
+Bf(sd = 0.2708, 
+   obtained = 0.4785, 
+   uniform = 0, 
+   sdtheory = 0.1427, 
+   meanoftheory = 0.5893, 
+   tail = 1)
+```
+## frequency by learning interaction
+
+```{r}
+#interaction between frequency and learning from Mike's data:
+round(summary(fmriglmer1)$coefficients[4,],4)
+
+```
+
+```{r}
+#interaction between frequency and learning from our pilot data:
+round(summary(genTask_model)$coefficients[5,],4)
+
+```
+```{r}
+Bf(sd = 0.5204, 
+   obtained = 0.2826, 
+   uniform = 0, 
+   sdtheory = 0.2615, 
+   meanoftheory = 1.0265, 
+   tail = 1)
+```

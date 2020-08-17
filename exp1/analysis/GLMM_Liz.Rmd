@@ -1,0 +1,476 @@
+---
+title: "FLO replications - GLMMs and BFs"
+author: "Eva"
+date: "6/15/2020"
+output: html_document
+---
+```{r}
+rm(list = ls())
+```
+
+Set your local working directory. This should be (and is assumed to be in the rest of the code) the highest point in your local folder:
+```{r}
+localGitDir <- 'C:/Users/eva_v/Documents/GitHub/leverhulmeNDL'
+#localGitDir <- 'C:/Users/liz/OneDrive - University College London/Eva_Liz_Leverhulme/leverhulmeNDL'
+```
+
+```{r}
+library(lmerTest)
+library(kableExtra)
+```
+
+
+# load preprocessed files
+
+```{r}
+pictureLabel <-read.table(paste(localGitDir, "/exp1/data/pictureLabel.txt", sep = ""), header = T, stringsAsFactors = T)
+
+labelPicture <-read.table(paste(localGitDir, "/exp1/data/labelPicture.txt", sep = ""), header = T, stringsAsFactors = T)
+
+humansTypeWeigths <-read.table(paste(localGitDir, "/exp1/data/humansTypeWeigths.txt", sep = ""), header = T, stringsAsFactors = T) #this is the contingency judgement task with the type of match/mismatch trials
+
+```
+
+Subjects that scored <=.7 and/or had >3 timeouts in the random dot task (attention check)
+```{r}
+badsubjs<-c("1414932", "1422463", "1431981", "1458997", "1459696", "1422470", "1422475", "1422689", "1431942", "1431944", "1431956", "1432003", "1459001", "1459009", "1459036", "1459057", "1459078", "1459703", "1420171", "1422680", "1432009", "1420199", "1431960", "1431997", "1459020")
+```
+
+# Load functions from the lab repo
+
+```{r}
+urlFolder <- 'https://api.github.com/repos/n400peanuts/languagelearninglab/git/trees/master?recursive=1'
+urlRaw <- 'https://raw.githubusercontent.com/n400peanuts/languagelearninglab/master/tools/'
+
+# add here the functions you want to download. If you want all of them
+# just leave it empty, i.e., listFunctions <- NULL
+
+listFunctions <- c("Bf_model.R", "lizCenter.R", "Bf_model.R", "round_df.R", "Bf_range.R", "addBf_ranges3.R", "num.decimals.R", "BfClassify.R", "myCenter.R", "adjust_intercept_model.R", "Bf.R") 
+
+loadFunctionsGithub <-function(urlFolder, urlRaw, listFunctions){
+  if (!require(httr)) {
+    stop("httr not installed")
+  } 
+  else if (!require(RCurl)){
+    stop("RCurl not installed") 
+  }
+  else {
+    print('----loading. Please wait----')
+  };
+  httr::GET(urlFolder)-> req
+  stop_for_status(req)
+  filelist <- unlist(lapply(content(req)$tree, "[", "path"), use.names = F)
+  urlFunctions <- grep("docs/tools/", filelist, value = TRUE, fixed = TRUE)
+  gsub("docs/tools/", "", urlFunctions) -> functions
+  if (length(listFunctions) == 0){ #load all
+    for (i in 1:length(functions)){
+      RCurl::getURL(paste0(urlRaw, functions[i]), ssl.verifypeer = FALSE)-> temp
+      eval(parse(text = temp), envir = .GlobalEnv)
+    } 
+  } else {
+      functions[functions %in% listFunctions]-> functionsIlike
+      for (i in 1:length(functionsIlike)){
+      RCurl::getURL(paste0(urlRaw, functionsIlike[i]), ssl.verifypeer = FALSE)-> temp
+      eval(parse(text = temp), envir = .GlobalEnv)
+    }
+  };
+}
+
+loadFunctionsGithub(urlFolder = urlFolder, urlRaw = urlRaw, listFunctions);
+rm(urlFolder, urlRaw, loadFunctionsGithub)
+
+```
+
+
+
+# Get values from fmri data which will be used to inform H1 in bayes factors
+
+THis is the behavioral data accompanying an FMRI experiment. We use values from this data to inform H1.
+
+```{r}
+fmri<-read.table(paste(localGitDir, "/prereg/fmri.txt", sep = ""), header = T)
+```
+
+From Mike's excel about bad subjects:
+```{r}
+fmriClean<-fmri[!(fmri$subjID==1  & fmri$learning=="sx") &
+                  !(fmri$subjID==14 & fmri$learning=="sx") &
+                  !(fmri$subjID==22 & fmri$learning=="sx") &
+                  !(fmri$subjID==3 & fmri$learning=="sx") &
+                  !(fmri$subjID==4 & fmri$learning=="xs") &
+                  !(fmri$subjID==7 & fmri$learning=="xs") &
+                  !(fmri$subjID==10 & fmri$learning=="xs")&
+                  !(fmri$subjID==12 & fmri$learning=="xs"),]
+
+```
+
+```{r}
+
+# remove the control condition
+fmriClean = fmriClean[!(fmriClean$trialType=="control"),]
+
+#let's center the variables. 
+fmriClean$frequency <- as.factor(fmriClean$frequency)
+fmriClean$learning<-as.factor(fmriClean$learning)
+fmriClean$testing<-as.factor(fmriClean$testing)
+fmriClean$trialType<-as.factor(fmriClean$trialType)
+
+#relevel
+fmriClean$learning <- relevel(fmriClean$learning, ref = "sx")
+fmriClean$frequency <- relevel(fmriClean$frequency, ref = "l")
+fmriClean<-lizCenter(fmriClean, listfname = list("learning" , "frequency"))
+
+round(tapply(fmriClean$acc, list(fmriClean$learning,fmriClean$frequency), mean, na.rm=T),3)  
+```
+
+
+We run two versions of the model one which allows us to get at interaction and main effects, one which lets us see separate effect of learning-condition for each of low and high frequency. This method of looking at these effects is discussed further below (the use of the anova command below is to establish that it is another version of the same model)
+
+```{r}
+fmriglmer1<-glmer(acc ~  frequency.ct*learning.ct + (frequency.ct|subjID), 
+      data = fmriClean , 
+      family="binomial",
+      control=glmerControl(optimizer = "bobyqa"))
+round(summary(fmriglmer1)$coefficients,4)
+
+
+fmriglmer1_V2 <-glmer(acc ~frequency.ct + frequency:learning.ct + (frequency.ct|subjID), 
+      data = fmriClean , 
+      family="binomial",
+      control=glmerControl(optimizer = "bobyqa"))
+
+anova(fmriglmer1,fmriglmer1_V2)
+round(summary(fmriglmer1)$coefficients,4)
+round(summary(fmriglmer1_V2)$coefficients,4)
+
+```
+
+
+# Picture label task
+
+Key predictions are:
+1) interaction between frequency and condition
+2) FL > LF for low frequency 
+
+Secondary predictions:
+3) main effect of frequency (note- will almost certainly find this, but it isn't key to our hypotheses)
+4) (a) main effect of FL> LF and/or (b)  FL>LF for high (note that these effects were clear in Ramscr 2010, but less clear in FMRI replication but will still predict them)
+
+Get the means:
+```{r}
+pictureLabel.filt = pictureLabel[pictureLabel$rt > 100 & !(pictureLabel$subjID %in% badsubjs),]
+round(tapply(pictureLabel.filt$acc, list(pictureLabel.filt$learning, pictureLabel.filt$frequency), na.rm=T, mean ),2)
+```
+
+Numerically all in right direction:
+1) (.67 -.38)-(0.71-0.49) = 0.07 
+2) 0.49-0.38 = 0.11
+3) (0.67+0.71)/2-(0.38+0.67)/2= 0.165
+4) a) (0.49+0.71)/2 - (0.38+0.67)/2= 0.075
+b) 0.71-0.67 = 0.4
+
+Now get relevant contrasts using gmler model.
+
+```{r}
+
+pictureLabel.filt$frequency <- as.factor(pictureLabel.filt$frequency)
+plyr::revalue(pictureLabel.filt$frequency, c("25"="low"))-> pictureLabel.filt$frequency;
+plyr::revalue(pictureLabel.filt$frequency, c("75"="high"))-> pictureLabel.filt$frequency;
+
+pictureLabel.filt$learning = relevel(pictureLabel.filt$learning, ref = "LF")
+pictureLabel.filt$frequency = relevel(pictureLabel.filt$frequency, ref = "low")
+pictureLabel.filt <- lizCenter(pictureLabel.filt, list("learning" , "frequency", "task"))
+
+
+piclab_model <- glmer(acc ~  frequency.ct*learning.ct + (frequency.ct|subjID), 
+         data = pictureLabel.filt, 
+         family="binomial",
+         control=glmerControl(optimizer = "bobyqa"))
+
+adjusted.piclab_model = adjust_intercept_model(piclab_model, chance = log(0.33/(1-0.33)))
+round(adjusted.piclab_model,5)
+
+
+
+```
+
+Note that the above  gives us the contrasts for (1)frequency.ct:learning.ct [need to change the sign] (3) frequency.ct and 4b)learning.ct. 
+
+We can get at 2) and 4b) by rerunning the model but removing the interaction and main effect of learning and replacing with separate slopes for the effect of learning at each level of frequency. To get at this, I use syntax which involves combining use of the centered and factor versions of the variable - this is a trick I was taught by a colleague, I don't think it is documented anywhere.
+
+(Note - I think it  should be equivlaent of getting simple effects with emeans, but you might like to check the numbers work out). 
+
+Note that the use of ANOVA function eblow is to establish that the two versions of the model are the same - we are using fitting the slopes different
+
+
+```{r}
+piclab_model_V2 <- glmer(acc ~  frequency.ct + frequency:learning.ct + (frequency.ct|subjID), 
+         data = pictureLabel.filt, 
+         family="binomial",
+         control=glmerControl(optimizer = "bobyqa"))
+
+
+anova(piclab_model_V2,piclab_model)
+adjusted.piclab_model_V2 = adjust_intercept_model(piclab_model_V2, chance = log(0.33/(1-0.33)))
+round(adjusted.piclab_model_V2,5)
+
+
+```
+
+Now we have (2)frequencylow:learning.ct and (4b)frequencyhigh:learning.ct
+
+
+We are going to use BFs to to the inference. The values to inform H1 are taken from the behavioural data from the FMIR study and are extracted from the output of the glmers run on that  data above. Here I am using some functions which I wrote as wrappers around the Bayes Factor function. It allows you to run BF for multiple coeefificents given the summary coefficients of a  model, specifying what h1 want to use and the tails. I also wrote something that adds the ranges that shows the range of values of h1 we could have chosen which would lead to a BF of the same classifcation. 
+
+```{r}
+
+
+coeff_summary1 =adjusted.piclab_model
+coeff_list1 = c("frequency.ct:learning.ct","frequency.ct", "learning.ct")
+
+
+h1_list1 = c(summary(fmriglmer1)$coefficients["frequency.ct:learning.ct", "Estimate"],
+             summary(fmriglmer1)$coefficients["frequency.ct", "Estimate"],
+             summary(fmriglmer1)$coefficients["learning.ct", "Estimate"])
+            
+h1_motivation1 = rep("equiv. coefficient from FMRI Study",3)
+
+coeff_summary2 =adjusted.piclab_model_V2
+coeff_list2 = c("frequencylow:learning.ct","frequencyhigh:learning.ct")
+
+h1_list2 = c(summary(fmriglmer1_V2)$coefficients["frequencyl:learning.ct", "Estimate"],
+             summary(fmriglmer1_V2)$coefficients["frequencyh:learning.ct", "Estimate"])
+             
+h1_motivation2 = rep("equiv. coefficient from Mike Data",2)
+
+piclab_modelBfTable = rbind(Bf_model(coeff_summary1, coeff_list1, h1_list1,h1_motivation1, tail_list=c(1,1,1), digits = 3), Bf_model(coeff_summary2, coeff_list2, h1_list2,h1_motivation2, tail_list=c(1,1), digits = 3))
+
+piclab_modelBfTable.withRanges = addBf_ranges3(Bf_df=piclab_modelBfTable, maxs=rep(4.5,5), stepsizes= rep(4.5,5)/1000)
+
+kable(piclab_modelBfTable.withRanges)%>% kable_styling(bootstrap_options = "striped") 
+
+```
+
+Summarising in terms of evidence for each prediction:
+
+
+1) interaction between frequency and condition- AMBIGUOUS
+2) FL > LF for low frequency - AMBIGUOUS
+
+Secondary predictions:
+3) main effect of frequency (note- will almost certainly find this, but it isn't key to our hypotheses)- VERY STRONG EVIDENCE FOR H1 (AND NOTE WOULD HOLD FOR ALL POSSIBLE VALUES OF  H1 GIVEN THE SCALE)
+4) (a) main effect of FL> LF and/or - SUBSTANTIAL EVIDENCE FOR H1
+
+(b)  FL>LF for high - AMBIGUOUS
+
+
+# Label Picture task
+
+Key predictions are:
+1) interaction between frequency and condition
+2) FL > LF for low frequency 
+
+Secondary predictions:
+3) main effect of frequency (note- will almost certainly find this, but it isn't key to our hypotheses)
+4) (a) main effect of FL> LF and/or (b)  FL>LF for high - these  was found in Ramscar 2010 but not in the Ramscar replication so it isn't as strong a prediction
+
+Get the means:
+```{r}
+labelPicture.filt = labelPicture[labelPicture$rt > 100 & !(labelPicture$subjID %in% badsubjs),]
+round(tapply(labelPicture.filt$acc, list(labelPicture.filt$learning, labelPicture.filt$frequency), na.rm=T, mean ),2)
+```
+
+NOT numerically all in right direction:
+1) (.65 -.43)-(0.74-0.45) = -0.07  WRONG DIRECTION
+2) 0.45-0.43 = 0.02
+3) (0.67+0.74)/2-(0.43+0.45)/2= 0.265
+4) a) (0.45+0.74)/2 - (0.43+0.65)/2= 0.055
+b) 0.74-0.65 = 0.09
+
+Now get relevant contrasts using gmler model.
+
+```{r}
+
+labelPicture.filt$frequency <- as.factor(labelPicture.filt$frequency)
+plyr::revalue(labelPicture.filt$frequency, c("25"="low"))-> labelPicture.filt$frequency;
+plyr::revalue(labelPicture.filt$frequency, c("75"="high"))-> labelPicture.filt$frequency;
+
+labelPicture.filt$learning = relevel(labelPicture.filt$learning, ref = "LF")
+labelPicture.filt$frequency = relevel(labelPicture.filt$frequency, ref = "low")
+labelPicture.filt <- lizCenter(labelPicture.filt, list("learning" , "frequency", "task"))
+
+
+labpic_model <- glmer(acc ~  frequency.ct*learning.ct + (frequency.ct|subjID), 
+         data = labelPicture.filt, 
+         family="binomial",
+         control=glmerControl(optimizer = "bobyqa"))
+
+adjusted.labpic_model = adjust_intercept_model(labpic_model, chance = log(0.33/(1-0.33)))
+round(adjusted.labpic_model,5)
+
+```
+
+Note that the above  gives us the contrasts for (1)frequency.ct:learning.ct [need to change the sign] (3) frequency.ct and 4b)learning.ct. 
+
+We can get at 2) and 4b) by rerunning the model but removing the interaction and main effect of learning and replacing with separate slopes for the effect of learning at each level of frequency. To get at this, I use syntax which involves combining use of the centered and factor versions ofthe variable - this is a trick I was taught by a colleague, I don't think it is documented anywhere.
+
+(Note - I think it  should be equivlaent of getting simple effects with emeans, but you might like to check the numbers work out). 
+
+Note that the use of ANOVA function eblow is to establish that the two versions of the model are the same - we are using fitting the slopes different
+
+
+```{r}
+labpic_model_V2 <- glmer(acc ~  frequency.ct + frequency:learning.ct + (frequency.ct|subjID), 
+         data = labelPicture.filt, 
+         family="binomial",
+         control=glmerControl(optimizer = "bobyqa"))
+
+
+anova(labpic_model_V2,labpic_model)
+adjusted.labpic_model_V2 = adjust_intercept_model(labpic_model_V2, chance = log(0.33/(1-0.33)))
+round(adjusted.labpic_model_V2,5)
+
+
+```
+
+
+We are going to use BFs to to the inference. The values to inform H1 are taken from the behavioural data from the FMIR study and are extracted from the output of the glmers run on that  data above. Here I am using some functions which I wrote as wrappers around the Bayes Factor function. It allows you to run BF for multiple coeefificents given the summary coefficients of a  model, specifying what h1 want to use and the tails. I also wrote something that adds the ranges that shows the range of values of h1 we could have chosen which would lead to a BF of the same classifcation. 
+
+```{r}
+
+
+coeff_summary1 =adjusted.labpic_model
+coeff_list1 = c("frequency.ct:learning.ct","frequency.ct", "learning.ct")
+
+
+h1_list1 = c(summary(fmriglmer1)$coefficients["frequency.ct:learning.ct", "Estimate"],
+             summary(fmriglmer1)$coefficients["frequency.ct", "Estimate"],
+             summary(fmriglmer1)$coefficients["learning.ct", "Estimate"])
+            
+h1_motivation1 = rep("equiv. coefficient from FMRI Study",3)
+
+coeff_summary2 =adjusted.labpic_model_V2
+coeff_list2 = c("frequencylow:learning.ct","frequencyhigh:learning.ct")
+
+h1_list2 = c(summary(fmriglmer1_V2)$coefficients["frequencyl:learning.ct", "Estimate"],
+             summary(fmriglmer1_V2)$coefficients["frequencyh:learning.ct", "Estimate"])
+             
+h1_motivation2 = rep("equiv. coefficient from Mike Data",2)
+
+labpic_modelBfTable = rbind(Bf_model(coeff_summary1, coeff_list1, h1_list1,h1_motivation1, tail_list=c(1,1,1), digits = 3), Bf_model(coeff_summary2, coeff_list2, h1_list2,h1_motivation2, tail_list=c(1,1), digits = 3))
+
+labpic_modelBfTable.withRanges = addBf_ranges3(Bf_df=labpic_modelBfTable, maxs=rep(4.5,5), stepsizes= rep(4.5,5)/1000)
+
+kable(labpic_modelBfTable.withRanges)%>% kable_styling(bootstrap_options = "striped") 
+
+```
+
+Summarising in terms of evidence for each prediction:
+
+
+1) interaction between frequency and condition- AMBIGUOUS
+2) FL > LF for low frequency - AMBIGUOUS
+
+Secondary predictions:
+3) main effect of frequency (note- will almost certainly find this, but it isn't key to our hypotheses)- VERY STRONG EVIDENCE FOR H1 (AND NOTE WOULD HOLD FOR ALL POSSIBLE VALUES OF  H1 GIVEN THE SCALE)
+4) (a) main effect of FL> LF and/or - AMBIGUOUS 
+
+(b)  FL>LF for high - AMBIGUOUS
+
+# LMMs Contingency Judgement task:
+
+For this task we are interested in just the match + mismatch_type1 data, and the following predictions:
+
+The predictions are 
+
+1) high: match: higher positive weight in LF (+ve coefficient) [LARGER EFFECT]
+2) low match: higher positive weight in FL (-ve coeffficient) [SMALLER EFFECT]
+
+3) high mismatch type 1: FL larger negative weight than LF (+ve coefficient)
+4) low mismatch type 2: FL larger negative weight, LF positive (+ve coefficient) [LARGER EFFECT]
+
+All of these are predicted from the computational model - however it is most likley that we will see the effects in (1) and (4) since these are largest. I think we could take the human data as confirming the model if we saw these.
+
+
+First look at the means
+
+
+```{r}
+humansTypeWeigths.noMismatch2 = droplevels(subset(humansTypeWeigths, type != "mismatch-type2")) 
+
+tapply(humansTypeWeigths.noMismatch2$resp, list(humansTypeWeigths.noMismatch2$frequency, humansTypeWeigths.noMismatch2$learning, humansTypeWeigths.noMismatch2$type), mean, na.rm=T)
+```
+
+All in predicted direction
+
+1) high: match: 61.863475-52.51144= 9.352035
+2) low match: 15.46429 -8.272569= 7.191721
+3) high mismatch-type1: -24.0833333--45.87107= 21.78774
+4) low  mistmach-type2:  -0.9558824- -13.97101= 13.01513
+
+3) high mismatch type 1: FL larger negative weight than LF (+ve coefficient)
+4) low mismatch type 2: FL larger negative weight, LF positive (+ve coefficient) [LARGER EFFECT]
+
+
+To get at these effects, we could run subset the data and run separate models but again there is a trick whereby we can run a model with all the data and then instead of have frequency, type and learning and all the interacitons,
+
+I do this in the code below- also using anova comand to showing how it is the same model as one with the three factors and all the interactions.
+
+```{r}
+humansTypeWeigths$learning = relevel(humansTypeWeigths$learning, ref = "FL")
+humansTypeWeigths$frequency = relevel(humansTypeWeigths$frequency, ref = "high")
+
+
+humansTypeWeigths.noMismatch2 = droplevels(subset(humansTypeWeigths, type != "mismatch-type2")) 
+humansTypeWeigths.noMismatch2<-lizCenter(humansTypeWeigths.noMismatch2, list("frequency", "learning", "type"))
+
+table(humansTypeWeigths.noMismatch2$type)
+
+lm<-lmer(resp ~  frequency :type :learning.ct + frequency.ct * type.ct  +(frequency.ct|subjID), data = humansTypeWeigths.noMismatch2)
+
+## note model with full slopes didn't converge- the || syntax removes correlations between slopes
+
+
+lmV1<-lmer(resp ~  frequency.ct *  type.ct *learning.ct  + (frequency.ct|subjID), data = humansTypeWeigths.noMismatch2)
+# note we aren't actually interested in this version, but demonstrates it is the same model
+
+anova(lm, lmV1)
+
+round(summary(lm)$coefficients,3)
+
+```
+The last four coefficients match predictions 1-> 4 respectively and all coffiecients are in the  predicted direction.  (Note the estimates don't  match the mean differences above, I think this is to do with some participants contributing more data that others because when I re-ran the model without the random effects (and using lm rather than lmer) the mean difference above did approx match those in the model )
+
+Now run BF in the absense of other data I have gone with the mean of the (absolute) differences between conditions overall. (Note ideal since the data itself contributes)
+
+mean(10.713	,19.274 , 14.033,10.254)= 10.713
+
+
+```{r}
+
+#type = abs(summary(lm)$coefficients["type.ct", "Estimate"])
+coeff_summary1 =summary(lm)$coefficients
+coeff_list1 = c("frequencyhigh:typematch:learning.ct","frequencylow:typematch:learning.ct",  "frequencyhigh:typemismatch-type1:learning.ct", "frequencylow:typemismatch-type1:learning.ct")     
+
+h1_list1 = c(11, 11*-1, 11, 11) # note low-match coefficient in other direction
+
+h1_motivation="mean effect size across conditions"
+
+lmBfTable = Bf_model(coeff_summary1, coeff_list1, h1_list1,h1_motivation, tail_list=c(1,1,1,1), digits = 3)
+
+lmBfTable.withRanges = addBf_ranges3(Bf_df=lmBfTable, maxs=rep(200,5), stepsizes= rep(200,5)/1000)
+
+kable(lmBfTable.withRanges)%>% kable_styling(bootstrap_options = "striped") 
+
+```
+
+For the new replication - I think we should use this average estimate (i.e. 11) as predicted difference size in each cell (the estimates cell by cell are likely too imprecise given the data loss etc?)
+
+1) high: match: higher positive weight in LF (+ve coefficient)- AMBIGUOUS
+2) low match: higher positive weight in FL (-ve coeffficient) - AMBIGUOUS
+
+3) high mismatch type 1: FL larger negative weight than LF (+ve coefficient) - AMBIGUOUS
+4) low mismatch type 2: FL larger negative weight, LF positive (+ve coefficient) - - AMBIGUOUS
+
+Note in every case, the data say that the Bfs would be ambiguous up to very large predicted balues of H1 e.g. 100 points difference between conditions
+
