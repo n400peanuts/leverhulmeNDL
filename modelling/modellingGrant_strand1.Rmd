@@ -314,7 +314,7 @@ plot_line <- function(mystims, saliency, condition){
 # 1) Strand 1 - experiment 2
 Masa created a dataframe containing 8 set of stimuli for the affix 'ge' and 'ma' with the following frequencies of occurrence.
 ```{r load dataset}
-myexp = read.csv(paste(localGitDir,"inputs/exponential_s1_1.csv", sep = ''));
+myexp = read.csv(paste(localGitDir,"input/exponential_s1_1.csv", sep = ''));
 summary(myexp);
 ```
 
