@@ -1,0 +1,929 @@
+---
+title: "Experiment 3"
+author: "Eva Viviani"
+date: "2/5/2021"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+  word_document:
+    toc: yes
+    toc_depth: '3'
+---
+```{r load libraries and clean the environment, echo=FALSE, include=FALSE}
+library(tidyverse);
+library(ggplot2)
+library(ggpubr)
+library(lme4)
+library(lmerTest)
+library(flextable)
+rm(list = ls())
+
+```
+
+```{r set local directory, echo=FALSE, include=FALSE}
+localGitDir <- 'C:/Users/eva_v/Nexus365/Elizabeth Wonnacott - Eva_Liz_Leverhulme/leverhulmeNDL/fribbles'
+
+```
+
+```{r load functions from the lab repo, echo=FALSE, include=FALSE}
+source(paste(localGitDir, "/tools/loadFunctionsGithub.R", sep = "")) 
+urlFolder <- 'https://api.github.com/repos/n400peanuts/languagelearninglab/git/trees/master?recursive=1'
+urlRaw <- 'https://raw.githubusercontent.com/n400peanuts/languagelearninglab/master/tools/'
+
+listFunctions <- c( "inverse_log_odd.R", "myCenter.R", "lizCenter.R", "getmode.R", "lizCenter2.R", "deleteRandomRows.R", "Bf.R", "adjust_intercept_model.R")
+
+loadFunctionsGithub(urlFolder, urlRaw, listFunctions)
+```
+
+## beta estimates from Ramscar's pilot
+
+Our predicted effect sizes for the 2AFC tasks are based on data from an unpublished study that replicates Ramscar et al., (2010) effects. For the contingency judgment task instead we use our own pilot data.
+
+We use for further analysis of the Bayes Factor the betas extracted from the model.
+
+These are the betas of the models ran on Ramscar’s pilot data that we specify as theory in our Bayes Factor function:
+
+```{r, load mike_s data, include=FALSE}
+read.table(paste(localGitDir, "/exp2/preReg/fmri.txt", sep = ""), header = T, stringsAsFactors = T)-> fmri
+fmri<-fmri[!(fmri$subjID==1  & fmri$learning=="sx") &
+             !(fmri$subjID==14 & fmri$learning=="sx") &
+             !(fmri$subjID==22 & fmri$learning=="sx") &
+             !(fmri$subjID==3 & fmri$learning=="sx") &
+             !(fmri$subjID==4 & fmri$learning=="xs") &
+             !(fmri$subjID==7 & fmri$learning=="xs") &
+             !(fmri$subjID==10 & fmri$learning=="xs")&
+             !(fmri$subjID==12 & fmri$learning=="xs"),]
+
+fmri <- fmri[(fmri$trialType!="control"),]
+```
+
+```{r, analysis of mike_s data, include=FALSE}
+#center variables, we don't have NAs so I'm using lizCenter
+fmri<-lizCenter(fmri, listfname = list("learning", "frequency"))
+
+## --------------------------------- original model ------------------------------------##
+fmriglmer1_V1<-glmer(acc ~  frequency.ct*learning.ct + (frequency.ct|subjID), 
+                     data = fmri, 
+                     family="binomial",
+                     control=glmerControl(optimizer = "bobyqa"))
+fmriglmer1_V2<-glmer(acc ~  frequency.ct+ frequency: learning.ct + (frequency.ct|subjID), 
+                     data = fmri, 
+                     family="binomial",
+                     control=glmerControl(optimizer = "bobyqa"))
+
+```
+
+```{r, include=FALSE}
+beta1 = summary(fmriglmer1_V1)$coeff["frequency.ct", "Estimate"]
+beta2 = summary(fmriglmer1_V1)$coeff["learning.ct", "Estimate"]
+beta3 = summary(fmriglmer1_V1)$coeff["frequency.ct:learning.ct", "Estimate"]
+simple_effect = summary(fmriglmer1_V2)$coeff["frequencyl:learning.ct", "Estimate"]
+simple_effecth = summary(fmriglmer1_V2)$coeff["frequencyh:learning.ct", "Estimate"]
+
+beta1 # note this is negative, FREQUENCY
+beta2 # LEARNING
+beta3 #INTERACTION
+simple_effect #LOW FREQUENCY
+simple_effecth #HIGH FREQUENCY
+```
+
+```{r, include=FALSE}
+# contingency judgment task
+main_effect_type <- 53.78
+main_effect_freq_by_type <- 83.618
+simple_effect_learn_by_freq_high_match <- 16
+simple_effect_learn_by_freq_low_match <- - 16
+simple_effect_learn_by_freq_high_mismatch <- 16
+simple_effect_learn_by_freq_low_mismatch <- 16
+
+```
+
+- frequency: $\beta$ =`r round(beta1,2)` Note that this is negative.
+- learning: $\beta$ =`r round(beta2,2)` 
+- interaction between learning and frequency: $\beta$ =`r round(beta3,2)` 
+- simple effect of low frequency: $\beta$ =`r round(simple_effect,2) `
+- simple effect of high frequency: $\beta$ =`r round(simple_effecth,2)` 
+
+These instead are the betas of the models ran on our pilot data of the contingency judgment task:
+From our pilot data:
+
+- main effect of type: $\beta$ =`r main_effect_type`
+- main effect of frequency by type: $\beta$ =`r  main_effect_freq_by_type`
+- simple effect of learning by frequency - high match: $\beta$ =`r simple_effect_learn_by_freq_high_match`
+- simple effect of learning by frequency - low match: $\beta$ =`r simple_effect_learn_by_freq_low_match`
+- simple effect of learning by frequency - high mismatch: $\beta$ =`r simple_effect_learn_by_freq_high_mismatch`
+- simple effect of learning by frequency - low mismatch: $\beta$ =`r simple_effect_learn_by_freq_low_mismatch`
+
+
+## Experiment 3
+
+```{r load data expe 3, echo=FALSE}
+df <- list.files(paste(localGitDir, "/exp3_tubingen/preProcessed_data/", sep = "")); 
+df<- c(df[df=="contingency.csv"], df[df=="labPic.csv"], df[df=="picLab.csv"])
+
+for (i in 1:length(df)){
+  gsub(".csv$", "", df[i]) -> id #remove .csv
+  assign(id, data.frame()) #load into the environment
+  read.csv(paste(localGitDir, "/exp3_tubingen/preProcessed_data/", df[i], sep = ""),
+           na.strings=c("","NA"),
+           stringsAsFactors = T,
+           colClasses=c("label"="factor",
+                        "correctLabel"="factor",
+                        "learning"="factor"
+           ))-> temp
+  assign(paste0(id), temp)
+}; rm(temp, df, i, id);
+```
+
+We exclude participants that score less than 80% in the control category (blue bims)
+
+
+```{r exclude participants expe 3, echo=FALSE}
+#Exclude participants that score less than 80% in the control category (blue bims)
+listSubj.labPic <-aggregate(acc ~ subjID, labPic[labPic$label=='bim',] ,mean)
+badSubj <-unique(listSubj.labPic[listSubj.labPic$acc<.8,]$subjID); 
+
+listSubj.picLab <-aggregate(acc ~ subjID, picLab[picLab$trialType=='control',] ,mean)
+badSubj2 <-unique(listSubj.picLab[listSubj.picLab$acc<.8,]$subjID); 
+
+propBadSubjs<-round((length(badSubj)+length(badSubj2)) / (nrow(listSubj.labPic)+nrow(listSubj.picLab)) *100, 1)
+
+
+labPic_expe3_clean <- labPic[!(labPic$subjID %in% badSubj),]; 
+picLab_expe3_clean <- picLab[!(picLab$subjID %in% badSubj2),]; 
+contingency_expe3_clean <- contingency[!(contingency$subjID %in% badSubj2),]; 
+contingency_expe3_clean <- contingency_expe3_clean[!(contingency_expe3_clean$subjID %in% badSubj),]; 
+
+#remove control trials
+labPic_expe3_clean <- labPic_expe3_clean[labPic_expe3_clean$label!='bim',]
+picLab_expe3_clean <- picLab_expe3_clean[picLab_expe3_clean$trialType!='control',]
+
+totSubjs<-length(unique(labPic_expe3_clean$subjID)) + length(unique(picLab_expe3_clean$subjID))
+
+#group1
+fl1<-length(unique(labPic_expe3_clean[labPic_expe3_clean$learning=="FL",]$subjID))
+#group2
+lf1<-length(unique(labPic_expe3_clean[labPic_expe3_clean$learning=="LF",]$subjID))
+#group3
+fl2<-length(unique(picLab_expe3_clean[picLab_expe3_clean$learning=="FL",]$subjID))
+#group4
+lf2<-length(unique(picLab_expe3_clean[picLab_expe3_clean$learning=="LF",]$subjID))
+```
+
+```{r add which subjects did which task in contingency task expe 3,echo=FALSE}
+contingency_expe3_clean$generalizationTest <- as.character("not identified")
+for (i in unique(contingency_expe3_clean$subjID)){
+  if (i %in% unique(labPic_expe3_clean$subjID)){
+    contingency_expe3_clean$generalizationTest[contingency_expe3_clean$subjID==i] <- c("labPic")
+  } else if (i %in% unique(picLab_expe3_clean$subjID)) {
+  contingency_expe3_clean$generalizationTest[contingency_expe3_clean$subjID==i] <- c("picLab")
+  }
+} 
+
+contingency_expe3_clean$generalizationTest <- as.factor(contingency_expe3_clean$generalizationTest)
+
+```
+
+
+
+### raw means
+
+How many participants do we have at the net of the exclusion criterion?
+
+We have `r totSubjs` participants in total. `r (fl1+fl2)` for feature-label learning, and `r (lf1+lf2)` for label-feature learning. We have excluded the `r propBadSubjs` of the total.
+
+### 2AFC- 4 labels task
+In this task participants see one picture and have to choose the correct label among 4 candidates (dep,tob,wug,bim).
+
+Key predictions are: 
+
+1) interaction between frequency and condition
+
+2) FL > LF for low frequency
+
+Secondary predictions: 
+
+3) main effect of frequency (note- will almost certainly find this, but it isn’t key to our hypotheses) 
+
+4) main effect of FL> LF
+
+```{r expe 3 piclab main model}
+picLab_expe3_clean$learning<- relevel(picLab_expe3_clean$learning, ref = "LF")
+picLab_expe3_clean$correctFrequency<- relevel(picLab_expe3_clean$correctFrequency, ref = "high")
+
+picLab_expe3_clean<-lizCenter(picLab_expe3_clean, listfname = list("learning", "correctFrequency"))
+
+repFLO<-glmer(acc ~  correctFrequency.ct*learning.ct + (correctFrequency.ct|subjID), 
+              data = picLab_expe3_clean, 
+              family="binomial",
+              control=glmerControl(optimizer = "bobyqa"))
+
+output <- round(summary(repFLO)$coefficients,4)
+output
+```
+
+- hypothesis D) **Higher accuracy in the high vs low frequency condition as evidenced by a main effect of frequency.**
+
+- beta of the theory: 1.7
+
+- beta of the current model: -1.86 (std.error = .20)
+
+BF for frequency:
+
+```{r piclab expe 3 BF for frequency, echo=FALSE}
+main_effect <- output["correctFrequency.ct", "Estimate"] #that is negative
+main_se <- output["correctFrequency.ct", "Std. Error"]
+
+Bf(main_se, (main_effect*-1), 
+   likelihood = "normal",  
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(beta1,2), 
+   tail = 1)
+```
+
+- hypothesis C) **higher accuracy in the feature-label learning condition, compared to label-feature learning-condition, as evidenced by a main effect of learning-condition.**
+
+- beta of the theory: .66
+
+- beta of the current model: -0.03 (std.error = .44) #note opposite direction
+
+BF for learning:
+
+```{r piclab expe 3 BF for leaerning, echo=FALSE}
+main_effect <- output["learning.ct", "Estimate"] #that is negative
+main_se <- output["learning.ct", "Std. Error"]
+
+Bf(main_se, (main_effect), 
+   likelihood = "normal",  
+   modeloftheory = "normal", 
+   modeoftheory = 0, 
+   scaleoftheory = round(beta2,2), 
+   tail = 1)
+```
+- hypothesis B) **A greater benefit of feature-label over label-feature for low frequency than for high frequency items, as evidenced by an interaction between frequency and learning-condition.**
+
+- beta of the theory: 1.02
+
+- beta of the current model: 0.09 (std.error = .38)
+
+BF for the interaction between frequency and learning:
+
+```{r piclab expe 3 BF for interaction, echo=FALSE}
+main_effect <- output["correctFrequency.ct:learning.ct", "Estimate"] #that is negative
+main_se <- output["correctFrequency.ct:learning.ct", "Std. Error"]
+
+Bf(main_se, (main_effect), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(beta3,2), 
+   tail = 1)
+```
+
+MODEL 2 FOR SIMPLE EFFECTS:
+
+```{r simple effect expe 3 piclab}
+repFLO_V2<-glmer(acc ~  correctFrequency.ct+ correctFrequency: learning.ct + (correctFrequency.ct|subjID), 
+                 data = picLab_expe3_clean, 
+                 family="binomial",
+                 control=glmerControl(optimizer = "bobyqa"))
+
+output_simpleEffect <- round(summary(repFLO_V2)$coefficients,4)
+output_simpleEffect
+
+```
+
+- hypothesis A.1) **Higher accuracy in the low frequency condition for the feature-label learning group compared to label-feature learning group, as evidenced by an effect of training-conditions for low-frequency test items.**
+
+- beta of the theory: 1.17
+
+- beta of the current model: 0.06 (std.error = .48)
+
+
+BF for the simple effect of low frequency by learning:
+
+```{r simple effect expe 3 piclab low frequency, echo=FALSE}
+main_effect <- output_simpleEffect["correctFrequencylow:learning.ct", "Estimate"] #that is negative
+main_se <- output_simpleEffect["correctFrequencylow:learning.ct", "Std. Error"]
+
+
+Bf(main_se, (main_effect), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(simple_effect,2), 
+   tail = 1)
+
+```
+
+- hypothesis A.2) **Related to the hypothesis above, we test also whether there is an effect of training-conditions for high-frequency test items.**
+
+- beta of the theory: .14
+
+- beta of the current model: -0.12 (std.error = .67)
+
+BF for the simple effect of high frequency by learning:
+
+```{r simple effect expe 3 piclab high frequency, echo=FALSE}
+main_effect <- output_simpleEffect["correctFrequencyhigh:learning.ct", "Estimate"] #that is negative
+main_se <- output_simpleEffect["correctFrequencyhigh:learning.ct", "Std. Error"]
+
+Bf(main_se, (main_effect), 
+   likelihood = "normal",  
+   modeloftheory = "normal", 
+   modeoftheory = 0, 
+   scaleoftheory = round(simple_effecth,2), 
+   tail = 1)
+```
+
+### 2AFC- 4pictures task
+
+In this task participants had to choose the correct picture among 4 candidates for one label presented.
+
+Key predictions are: 
+
+1) interaction between frequency and condition 
+
+2) FL > LF for low frequency
+
+Secondary predictions: 
+
+3) main effect of frequency (note- will almost certainly find this, but it isn’t key to our hypotheses) 
+
+4) main effect of FL> LF
+
+```{r labpic expe 3 main model }
+labPic_expe3_clean$learning<- relevel(labPic_expe3_clean$learning, ref = "LF")
+labPic_expe3_clean$correctFrequency<- relevel(labPic_expe3_clean$correctFrequency, ref = "high")
+
+labPic_expe3_clean<-lizCenter(labPic_expe3_clean, listfname = list("learning", "correctFrequency"))
+
+repFLO<-glmer(acc ~  correctFrequency.ct*learning.ct + (correctFrequency.ct|subjID), 
+              data = labPic_expe3_clean, 
+              family="binomial",
+              control=glmerControl(optimizer = "bobyqa"))
+
+output <- round(summary(repFLO)$coefficients,4)
+output 
+```
+
+- hypothesis D) **Higher accuracy in the high vs low frequency condition as evidenced by a main effect of frequency.**
+
+- beta of the theory: 1.7
+
+- beta of the current model: -4.42 (std.error = .49)
+
+BF for frequency:
+
+```{r labpic expe 3 frequency BF, echo=FALSE}
+main_effect <- output["correctFrequency.ct", "Estimate"] #that is negative
+main_se <- output["correctFrequency.ct", "Std. Error"]
+
+Bf(main_se, (main_effect*-1), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(beta1,2), 
+   tail = 1)
+```
+
+- hypothesis C) **higher accuracy in the feature-label learning condition, compared to label-feature learning-condition, as evidenced by a main effect of learning-condition.**
+
+- beta of the theory: .66
+
+- beta of the current model: 1.08 (std.error = .43)
+
+
+BF for learning:
+
+```{r labpic expe 3 learning BF, echo=FALSE}
+main_effect <- output["learning.ct", "Estimate"] #that is negative
+main_se <- output["learning.ct", "Std. Error"]
+
+Bf(main_se, (main_effect), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(beta2,2), 
+   tail = 1)
+```
+
+- hypothesis B) **A greater benefit of feature-label over label-feature for low frequency than for high frequency items, as evidenced by an interaction between frequency and learning-condition.**
+
+- beta of the theory: 1.02
+
+- beta of the current model: .90 (std.error = .96) 
+
+
+BF for the interaction between learning and frequency:
+
+```{r labpic expe 3 BF interaction, echo=FALSE}
+main_effect <- output["correctFrequency.ct:learning.ct", "Estimate"] #that is negative
+main_se <- output["correctFrequency.ct:learning.ct", "Std. Error"]
+
+Bf(main_se, (main_effect), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(beta3,2), 
+   tail = 1)
+```
+MODEL 2 FOR SIMPLE EFFECTS:
+
+```{r labpic expe3 simple effect}
+repFLO_V2<-glmer(acc ~  correctFrequency.ct+ correctFrequency: learning.ct  + (correctFrequency.ct|subjID), 
+                 data = labPic_expe3_clean, 
+                 family="binomial",
+                 control=glmerControl(optimizer = "bobyqa"))
+
+output_simpleEffect <- round(summary(repFLO_V2)$coefficients,4)
+output_simpleEffect
+```
+
+- hypothesis A.1) **Higher accuracy in the low frequency condition for the feature-label learning group compared to label-feature learning group, as evidenced by an effect of training-conditions for low-frequency test items.**
+
+- beta of the theory: 1.17
+
+- beta of the current model: 1.53 (std.error = .70)
+
+BF for the simple effect of learning for low frequency items:
+
+```{r labpic expe3 simple effect of learning for low frequency items, echo=FALSE}
+main_effect <- output_simpleEffect["correctFrequencylow:learning.ct", "Estimate"] #that is negative
+main_se <- output_simpleEffect["correctFrequencylow:learning.ct", "Std. Error"]
+
+
+Bf(main_se, (main_effect), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(simple_effect,2), 
+   tail = 1)
+```
+
+- hypothesis A.2) **Related to the hypothesis above, we test also whether there is an effect of training-conditions for high-frequency test items.**
+
+- beta of the theory: .14
+
+- beta of the current model: 0.63 (std.error = .58)
+
+BF for the simple effect of learning for high frequency items:
+
+```{r labpic expe3 simple effect of learning for high frequency items, echo=FALSE}
+main_effect <- output_simpleEffect["correctFrequencyhigh:learning.ct", "Estimate"] #that is negative
+main_se <- output_simpleEffect["correctFrequencyhigh:learning.ct", "Std. Error"]
+
+
+Bf(main_se, (main_effect), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(simple_effecth,2), 
+   tail = 1)
+```
+
+### Both 2AFC tasks together
+
+```{r merge expe3 flo tasks,  echo=FALSE, message=FALSE}
+minimal_labpic_expe3_clean <- labPic_expe3_clean[,c("subjID","acc","correctFrequency", "learning",
+                                                    "learning.ct", "correctFrequency.ct", "task"),]
+minimal_picLab_expe3_clean <- picLab_expe3_clean[,c("subjID","acc","correctFrequency", "learning",
+                                                    "learning.ct", "correctFrequency.ct", "task"),]
+
+rbind(minimal_labpic_expe3_clean, minimal_picLab_expe3_clean)->FLO_tasks_expe3
+
+```
+
+```{r}
+FLO_tasks_expe3$learning<- relevel(FLO_tasks_expe3$learning, ref = "LF")
+FLO_tasks_expe3$correctFrequency<- relevel(FLO_tasks_expe3$correctFrequency, ref = "high")
+
+FLO_tasks_expe3<-lizCenter(FLO_tasks_expe3, listfname = list("learning", "correctFrequency"))
+
+repFLO<-glmer(acc ~  correctFrequency.ct*learning.ct + (correctFrequency.ct|subjID), 
+              data = FLO_tasks_expe3, 
+              family="binomial",
+              control=glmerControl(optimizer = "bobyqa"))
+
+output <- round(summary(repFLO)$coefficients,4)
+output 
+```
+
+- hypothesis D) **Higher accuracy in the high vs low frequency condition as evidenced by a main effect of frequency.**
+
+- beta of the theory: 1.7
+
+- beta of the current model: -3.97 (std.error = .31)
+
+BF for frequency:
+
+```{r flo tasks expe 3 BF for frequency, echo=FALSE}
+main_effect <- output["correctFrequency.ct", "Estimate"] #that is negative
+main_se <- output["correctFrequency.ct", "Std. Error"]
+
+Bf(main_se, (main_effect*-1), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(beta1,2), 
+   tail = 1)
+```
+
+- hypothesis C) **higher accuracy in the feature-label learning condition, compared to label-feature learning-condition, as evidenced by a main effect of learning-condition.**
+
+- beta of the theory: .66
+
+- beta of the current model: .42 (std.error = .31)
+
+BF for learning:
+
+```{r flo tasks expe 3 BF for learning, echo=FALSE}
+main_effect <- output["learning.ct", "Estimate"] #that is negative
+main_se <- output["learning.ct", "Std. Error"]
+
+Bf(main_se, (main_effect), 
+   likelihood = "normal",  
+   modeloftheory = "normal", 
+   modeoftheory = 0, 
+   scaleoftheory = round(beta2,2), 
+   tail = 1)
+```
+
+- hypothesis B) **A greater benefit of feature-label over label-feature for low frequency than for high frequency items, as evidenced by an interaction between frequency and learning-condition.**
+
+- beta of the theory: 1.02
+
+- beta of the current model: .47 (std.error = .59) 
+
+
+BF for the interaction between learning and frequency:
+
+```{r expe 3 flo tasks BF for interaction, echo=FALSE}
+main_effect <- output["correctFrequency.ct:learning.ct", "Estimate"] #that is negative
+main_se <- output["correctFrequency.ct:learning.ct", "Std. Error"]
+
+Bf(main_se, (main_effect), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(beta3,2), 
+   tail = 1)
+```
+
+MODEL 2 FOR SIMPLE EFFECTS:
+
+
+```{r expe 3 flo tasks together simple effect}
+repFLO_V2<-glmer(acc ~  correctFrequency.ct+ correctFrequency: learning.ct  + (correctFrequency.ct|subjID), 
+                 data = FLO_tasks_expe3, 
+                 family="binomial",
+                 control=glmerControl(optimizer = "bobyqa"))
+
+output_simpleEffect <- round(summary(repFLO_V2)$coefficients,4)
+output_simpleEffect
+```
+
+- hypothesis A.1) **Higher accuracy in the low frequency condition for the feature-label learning group compared to label-feature learning group, as evidenced by an effect of training-conditions for low-frequency test items.**
+
+- beta of the theory: 1.17
+
+- beta of the current model: 0.66 (std.error = .41)
+
+BF of the simple effect of low frequency by learning:
+
+```{r simple effect low freq by learning expe 3 flo tasks, echo=FALSE}
+main_effect <- output_simpleEffect["correctFrequencylow:learning.ct", "Estimate"] #that is negative
+main_se <- output_simpleEffect["correctFrequencylow:learning.ct", "Std. Error"]
+
+Bf(main_se, (main_effect), 
+   likelihood = "normal",  
+   modeloftheory = "normal",
+   modeoftheory = 0, 
+   scaleoftheory = round(simple_effect,2), 
+   tail = 1)
+```
+
+- hypothesis A.2) **Related to the hypothesis above, we test also whether there is an effect of training-conditions for high-frequency test items.**
+
+- beta of the theory: .14
+
+- beta of the current model: 0.18 (std.error = .45)
+
+BF of the simple effect of high frequency by learning:
+
+```{r, echo=FALSE}
+main_effect <- output_simpleEffect["correctFrequencyhigh:learning.ct", "Estimate"] #that is negative
+main_se <- output_simpleEffect["correctFrequencyhigh:learning.ct", "Std. Error"]
+
+
+Bf(main_se, (main_effect), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(simple_effecth,2), 
+   tail = 1)
+```
+
+### contingency task
+
+The possible label-fribble combinations are of two types:
+
+- match: label-fribble pair presented is 100% correct for both high and low frequency conditions.
+
+- mismatch: Items label is incorrect for this fribble type but the fribble has a high salience feature (shape) which is with the label.
+
+For this task we are interested in just the match + mismatch data, and the following predictions:
+
+The predictions are:
+
+1) high: match: higher positive weight in LF (+ve coefficient) [LARGER EFFECT]
+
+2) low match: higher positive weight in FL (-ve coeffficient) [SMALLER EFFECT]
+
+3) high mismatch: FL larger negative weight than LF (+ve coefficient)
+
+4) low mismatch: FL larger negative weight, LF positive (+ve coefficient) [LARGER EFFECT]
+
+All of these are predicted from the computational model - however it is most likely that we will see the effects in (1) and (4) since these are largest.
+
+
+```{r}
+contingency_expe3_clean$trialType<- as.factor(contingency_expe3_clean$trialType)
+contingency_expe3_clean$frequency<- as.factor(contingency_expe3_clean$frequency)
+contingency_expe3_clean$subjID<- as.factor(contingency_expe3_clean$subjID)
+contingency_expe3_clean$fribbleID<- as.factor(contingency_expe3_clean$fribbleID)
+
+relevel(contingency_expe3_clean$trialType, ref = "mismatch-type1")->contingency_expe3_clean$trialType
+relevel(contingency_expe3_clean$learning, ref = "LF")->contingency_expe3_clean$learning
+relevel(contingency_expe3_clean$frequency, ref = "l")->contingency_expe3_clean$frequency
+
+contingency_expe3_clean<-lizCenter(contingency_expe3_clean, listfname = list("learning", "frequency", "trialType"))
+
+lm1<- lmerTest::lmer(resp ~  frequency:trialType:learning + frequency.ct * trialType.ct  + (frequency.ct|subjID), data = contingency_expe3_clean)
+car::Anova(lm1)
+output<-round(summary(lm1)$coefficients,4) 
+kableExtra::kable(output)
+
+```
+
+
+- Hypothesis D) **Higher ratings for match compared to the mismatch trials.**
+
+beta of the theory: 53.78
+
+beta of the current model: 73.58 (std.error = 2.43)
+
+BF for main effect of type:
+
+```{r main effect of type contingency expe3 , echo=FALSE}
+main_effect <- output["trialType.ct", "Estimate"] 
+main_se <- output["trialType.ct", "Std. Error"] 
+
+Bf(main_se, (main_effect), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(main_effect_type,2), 
+   tail = 1)
+```
+
+- Hypothesis E) **Higher ratings for high frequency match- than low frequency match trials, but lower ratings for high frequency mismatch than low frequency mismatch, as evidenced by an interaction between frequency condition and type.**
+
+- beta of the theory: 83.61 #note here I reverse the sign with *-1
+
+- beta of the current model: 159.98 (std.error = 4.87)
+
+BF for interaction frequency by type:
+
+
+```{r frequency by type,echo=FALSE}
+main_effect <- output["frequency.ct:trialType.ct", "Estimate"] 
+main_se <- output["frequency.ct:trialType.ct", "Std. Error"] 
+
+Bf(main_se, (main_effect), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(main_effect_freq_by_type,2), 
+   tail = 1)
+```
+- Hypothesis C.1) **High frequency – match: stronger learning- in label-feature (evidenced by positive effect of learning-condition i.e. higher ratings in label feature than feature label))**
+
+- beta of the theory: 16
+
+- beta of the current model: .51 (std.error = 3.74) 
+
+BF for Simple effect of learning for frequency high - match:
+
+```{r Simple effect of learning for frequency high - match expe 3, echo=FALSE}
+main_effect <- output["frequencyh:trialTypematch:learningLF", "Estimate"] 
+main_se <- output["frequencyh:trialTypematch:learningLF", "Std. Error"] 
+
+Bf(main_se, (main_effect), 
+   likelihood = "normal",  
+   modeloftheory = "normal", 
+   modeoftheory = 0, 
+   scaleoftheory = round(simple_effect_learn_by_freq_high_match,2), 
+   tail = 1)
+```
+
+- hypothesis C.2) **Low frequency – match: stronger learning in feature-label (evidenced by negative effect of learning-condition i.e. higher ratings in feature-label feature).**
+
+- beta of the theory: -16 (note negative sign)
+
+- beta of the current model: -18.52 (std.error = 4.23)
+
+BF Simple effect of learning for frequency low - match:
+
+```{r Simple effect of learning for frequency low - match expe3, echo=FALSE}
+main_effect <- output["frequencyl:trialTypematch:learningLF", "Estimate"] 
+main_se <- output["frequencyl:trialTypematch:learningLF", "Std. Error"] 
+
+Bf(main_se, (main_effect*-1), 
+   likelihood = "normal",  
+   modeloftheory = "normal", 
+   modeoftheory = 0, 
+   scaleoftheory = round(simple_effect_learn_by_freq_low_match,2)*-1, 
+   tail = 1)
+```
+- Hypothesis C.3) **High frequency – mismatch-type: stronger learning in feature-label (evidenced by positive effect of learning-condition i.e. higher ratings in label-feature than feature-label).**
+
+- beta of the theory: 16
+
+- beta of the current model: 0.12 (std.error = 3.74) 
+
+BF  Simple effect of learning for frequency high - mismatch:
+
+```{r Simple effect of learning for frequency high - mismatch expe3, echo=FALSE}
+main_effect <- output["frequencyh:trialTypemismatch-type1:learningLF", "Estimate"] 
+main_se <- output["frequencyh:trialTypemismatch-type1:learningLF", "Std. Error"] 
+
+Bf(main_se, (main_effect), 
+   likelihood = "normal",  
+   modeloftheory = "normal", 
+   modeoftheory = 0, 
+   scaleoftheory = round(simple_effect_learn_by_freq_high_mismatch,2), 
+   tail = 1)
+```
+- Hypothesis C.4) **Low frequency – mismatch-type: stronger learning in feature-label (evidenced by positive effect of learning-condition i.e. higher ratings in label-feature than feature-label).**
+
+- beta of the theory: 16
+
+- beta of the current model: 18.55 (std.error = 4.23) #don’t change sign in the formula
+
+BF Simple effect of learning for frequency low - mismatch:
+
+```{r Simple effect of learning for frequency low - mismatch expe3, echo=FALSE}
+main_effect <- output["frequencyl:trialTypemismatch-type1:learningLF", "Estimate"] 
+main_se <- output["frequencyl:trialTypemismatch-type1:learningLF", "Std. Error"] 
+
+Bf(main_se, (main_effect), #main effect - note that if you want to compute BF for frequency that is negative
+   likelihood = "normal",  #you need to have (maineffect*-1) to revert it to positive otherwise the function
+   modeloftheory = "normal", #throws an error
+   modeoftheory = 0, 
+   scaleoftheory = round(simple_effect_learn_by_freq_low_mismatch,2), 
+   tail = 1)
+```
+
+### Plot experiment 3
+```{r barplot_humanWeights contingency expe 3, echo=FALSE}
+barplot_humanWeights_expe3<-ggbarplot(contingency_expe3_clean, x = "learning",
+          color = "black",
+          add = "mean_ci", 
+          y = "resp",
+          facet.by = c("frequency","trialType"),
+          ylab = "association strength",
+          position = position_dodge(.8),
+          palette = c("#bdbdbd","#636363"),
+          title = "contingency task - all subjs") +
+  theme(legend.position = "none")+ 
+  geom_hline(yintercept = 0, col='black', lwd=.6, linetype="dashed")
+
+
+
+barplot_humanWeights_expe3_picLab<-ggbarplot(contingency_expe3_clean[contingency_expe3_clean$generalizationTest=="picLab",], x = "learning",
+          color = "black",
+          add = "mean_ci", 
+          y = "resp",
+          facet.by = c("frequency","trialType"),
+          ylab = "association strength",
+          position = position_dodge(.8),
+          palette = c("#bdbdbd","#636363"),
+          title = "contingency task - 4 labels subjs") +
+  theme(legend.position = "none")+ 
+  geom_hline(yintercept = 0, col='black', lwd=.6, linetype="dashed")
+
+
+barplot_humanWeights_expe3_labPic<-ggbarplot(contingency_expe3_clean[contingency_expe3_clean$generalizationTest=="labPic",], x = "learning",
+          color = "black",
+          add = "mean_ci", 
+          y = "resp",
+          facet.by = c("frequency","trialType"),
+          ylab = "association strength",
+          position = position_dodge(.8),
+          palette = c("#bdbdbd","#636363"),
+          title = "contingency task - 4 pictures subjs") +
+  theme(legend.position = "none")+ 
+  geom_hline(yintercept = 0, col='black', lwd=.6, linetype="dashed")
+```
+
+```{r plots expe 3, echo=FALSE}
+df <- aggregate(acc ~ subjID+correctFrequency+learning, 
+                data = labPic_expe3_clean, mean)
+
+p1<-ggplot(df, aes(x=correctFrequency, y=acc, fill = learning)) + 
+   geom_boxplot()+
+   geom_point(aes(fill = learning), colour = "black", shape = 21, size = 2.5,
+              position = position_jitterdodge(), alpha=0.6)  +
+    xlab("frequency")+
+   geom_hline(yintercept = .25, linetype=2)+
+   ggtitle('2AFC - 4 pictures')+
+   coord_cartesian(ylim = c(0, 1))+
+    theme_classic()
+
+pf <- aggregate(acc ~ subjID+correctFrequency+learning, 
+                data = picLab_expe3_clean, mean)
+
+p2<-ggplot(pf, aes(x=correctFrequency, y=acc, fill = learning)) + 
+   geom_boxplot()+
+   geom_point(aes(fill = learning), colour = "black", shape = 21,  size = 2.5,
+position = position_jitterdodge(), alpha=0.6)  +
+  xlab("frequency")+
+   geom_hline(yintercept = .25, linetype=2)+
+   ggtitle('2AFC - 4 labels')+
+   coord_cartesian(ylim = c(0, 1))+
+    theme_classic()
+
+pt <- aggregate(acc ~ subjID+correctFrequency+learning, 
+                data = FLO_tasks_expe3, mean)
+
+p3<-ggplot(pt, aes(x=correctFrequency, y=acc, fill = learning)) + 
+   geom_boxplot()+
+   geom_point(aes(fill = learning), colour = "black", shape = 21, size = 2.5,
+              position = position_jitterdodge(), alpha=0.6)  +
+    xlab("frequency")+
+   geom_hline(yintercept = .25, linetype=2)+
+   ggtitle('2AFC - together')+
+   coord_cartesian(ylim = c(0, 1))+
+    theme_classic()
+
+```
+
+```{r, fig.width=10, echo=FALSE}
+ggarrange(p1, p2, p3, ncol = 3, common.legend=TRUE)->p4
+p4
+```
+
+```{r confidence intervals formula, echo=FALSE}
+lower_ci <- function(mean, se, n, conf_level = 0.95){
+  lower_ci <- mean - qt(1 - ((1 - conf_level) / 2), n - 1) * se
+}
+upper_ci <- function(mean, se, n, conf_level = 0.95){
+  upper_ci <- mean + qt(1 - ((1 - conf_level) / 2), n - 1) * se
+}
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+contingency_expe3_clean %>%
+  filter(generalizationTest=="labPic") %>%
+  group_by(learning, frequency, trialType) %>%
+  summarise(mean=mean(resp, na.rm = T), 
+            sd=sd(resp, na.rm = T),
+            count = n()) %>%
+  mutate(se = sd / sqrt(count),
+         lower_ci = lower_ci(mean, se, count),
+         upper_ci = upper_ci(mean, se, count))
+
+```
+```{r barplot_humanWeights_expe3_labPic, message=FALSE, warning=FALSE, echo=FALSE}
+barplot_humanWeights_expe3_labPic
+
+```
+```{r, message=FALSE, warning=FALSE}
+contingency_expe3_clean %>%
+  filter(generalizationTest=="picLab") %>%
+  group_by(learning, frequency, trialType) %>%
+  summarise(mean=mean(resp, na.rm = T), 
+            sd=sd(resp, na.rm = T),
+            count = n()) %>%
+  mutate(se = sd / sqrt(count),
+         lower_ci = lower_ci(mean, se, count),
+         upper_ci = upper_ci(mean, se, count))
+
+```
+
+
+```{r barplot_humanWeights_expe3_picLab, message=FALSE, warning=FALSE, echo=FALSE}
+barplot_humanWeights_expe3_picLab
+
+```
+
+```{r barplot_humanWeights_expe3, message=FALSE, warning=FALSE, echo=FALSE}
+barplot_humanWeights_expe3
+```
+

@@ -2,11 +2,8 @@ loadFunctionsGithub <-function(urlFolder, urlRaw, listFunctions){
   if (!require(httr)) {
     stop("httr not installed")
   } 
-  else if (!require(RCurl)){
-    stop("RCurl not installed") 
-  }
   else {
-    print('----loading. Please wait----')
+    print('----Downloading. Please wait----')
   };
   httr::GET(urlFolder)-> req
   stop_for_status(req)
@@ -15,14 +12,17 @@ loadFunctionsGithub <-function(urlFolder, urlRaw, listFunctions){
   gsub("docs/tools/", "", urlFunctions) -> functions
   if (length(listFunctions) == 0){ #load all
     for (i in 1:length(functions)){
-      RCurl::getURL(paste0(urlRaw, functions[i]), ssl.verifypeer = FALSE)-> temp
-      eval(parse(text = temp), envir = .GlobalEnv)
+      httr::GET(paste0(urlRaw, functions[i]), ssl.verifypeer = FALSE)-> temp
+      content(temp)->p3
+      eval(parse(text = p3), envir = .GlobalEnv)
     } 
   } else {
     functions[functions %in% listFunctions]-> functionsIlike
     for (i in 1:length(functionsIlike)){
-      RCurl::getURL(paste0(urlRaw, functionsIlike[i]), ssl.verifypeer = FALSE)-> temp
-      eval(parse(text = temp), envir = .GlobalEnv)
+      httr::GET(paste0(urlRaw, functionsIlike[i]), ssl.verifypeer = FALSE)-> temp
+      content(temp)->p3
+      eval(parse(text = p3), envir = .GlobalEnv)
     }
   };
+  print('----Download completed----')
 }

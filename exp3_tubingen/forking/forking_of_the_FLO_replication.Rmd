@@ -1,0 +1,59 @@
+---
+title: "Forking of the FLO replication - exp3"
+author: "Eva Viviani, Michael Ramscar, Kathrin Reichmann & Elizabeth Wonnacott"
+date: "11/23/2020"
+output:
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Background
+
+We describe a second attempt to replicate Ramscar et al. (2010) paper about the effect of the order of presentation of feature-label pair association on symbolic learning. We already have conducted [one experiment](https://osf.io/ry82m/) however our key hypothesis concerning a potential difference between learning conditions wasn’t there. We found evidence for the null for an overall benefit of LF over HF (i.e. for the main effect) as well as evidence for the null for same difference for low frequency items only (where our prediction is strongest). Evidence for an interaction between frequency and learning conditions was also ambiguous. 
+
+One challenge for conducting experiments online is that the resolution and size of the display are unknown, prohibiting control of the size of stimuli presented to participants. We acknowledge that this issue  might be one potential explanation for these pattern of results. In addition to this, we have realised that the stimuli presented were not of the same dimension as in the original Ramscar et al., 2010 paper -- Stimuli in this experiment were smaller. We hypothesize that these factors in combination with the brief presentation (around 175ms) might have impacted our participants ability to visually detect the fribble's inner features and therefore making it impossible to isolate the predictive from irrelevant features which is a prerequite of seeing the predicted effects. 
+
+
+All the details of this second replication attempt will be exactly  as pre-registered as [OSF](https://osf.io/ry82m/) except for three changes:
+
+## Fixed stimuli size
+Rationale: Ensuring that stimuli appear the same fixed size for all participants.
+
+In this new version **we control stimuli size by introducing a scaling factor that causes the stimuli that follow to have a known size, independent of monitor resolution and size.**. Prior to the start of the experiment for each participant we estimate the screen resolution by calculating the pixel density (in pixels per mm) of a display using a card task. We use the JsPsych -resize- plugin (De Leeuw., 2015) implemented to help people measure items on the screen: we ask participants to place a real-world object (in our case a credit card or a card of equal size, which are standardized in size and widely available) in the center of the screen. Participants can adjust a slider until the size of a container draw on the screen matches the real-world object. We then calculate the ratio between the card image width in pixels and the physical card width in mm to obtain the pixel density (in pixel per mm). Knowing the pixel density, the experiment program then presents the participants with stimuli of a precise size in mm (160x160) independent of their individual display sizes and resolutions. 
+
+
+The only other change from the previous experiment concern the optional stopping criteria and data collection procedure. 
+
+All other details of methods for this experiment are exactly as pre-registered in [OSF](https://osf.io/ry82m/).
+
+## Stopping rule
+Rationale: Our changes here are to increase efficiency and avoid testing a larger number of participants than necessary to test our KEY hypothesis.
+
+We will first run 50 participants then will add data in batches of 20. We’re going to inspect the data and run the analysis we outlined in the analysis plan not earlier than having collected 50 participants (net of the exclusion criterion), and then after adding each batch of 20. We’re going to stop data collection before getting the estimated sample size (200 participants) only if we can find substantial evidence for accepting either H1 or H0 that is, if BF>3 for H1, or BF<1/3 for H0, for **the interaction between learning and frequency, that is, hypothesis B when running analysis with data of both 2AFC tasks**.
+
+## Data collection procedures
+Rational: Our change here is largely for practical purposes since we have access to to a particular population at this time. 
+
+The experiment will be hosted on [Pavlovia](https://pavlovia.org/). **Participants are students of the University of Tübingen recruited via university-internal round mail and during the lecture of the second author (Michael Ramscar).** Participants will complete the experiment online independently.
+
+
+In the case we do not recruit a sufficiently large sample via this method we may return to data collection via Prolific.  
+
+
+
+
+
+
+
+
