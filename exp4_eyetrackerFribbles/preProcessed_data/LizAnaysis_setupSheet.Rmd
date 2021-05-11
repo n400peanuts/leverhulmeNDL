@@ -1,0 +1,526 @@
+---
+title: "liz Analysis"
+output: html_notebook
+---
+
+This code takes and merges data sheets in "pre-processed" folder and adds various columns used for plotting and analysis, including looks to targets and different types of foils as well as separate columns indicating whether these are left/right/center, columns for blocks (indicating how far into the experiment they are) and a column giving relative time after the offset of the fribble.  
+
+It creates three versions which have different levels of filtering. The first is (eyedata) is unfiltered. The second is filtered to remove trials where eyedata wasn't collected from at least one of key screens (including if whole trial missing). The third is filtered to further remove trials where the timing is messed up (one of screens 2 or 3 are 100 too short or 100 too long)
+
+
+```{r}
+#rm(list=ls())
+library(plyr) # used for "round_any" fuctnion
+library(dplyr) 
+library(tidyverse)
+library(lme4)
+
+```
+
+# Read in and merge files
+
+Note that add columns indicating what "subGroup" it is. These are the groups the data was collected in. We also add in a column which is the combination of subjID and trial as this is useful in various filtering and later analyses.
+```{r}
+
+setwd("C:/Users/liz/OneDrive - Nexus365/Eva_Liz_Leverhulme/leverhulmeNDL/eyetracker - fribbles/preProcessed_data")
+pilot1 = read.csv("pilot1/eyeTracker_intersections.csv")
+pilot2 = read.csv("pilot2/eyeTracker_intersections.csv")
+pilot1$subGroup = "pilot1"
+pilot2$subGroup = "pilot2"
+pilot1$list = 1 # there is no column for this in the original sheet (are in subsequent sheets)
+eyedata= rbind(pilot1,pilot2)
+eyedata$subjID.trial = as.factor(paste(eyedata$subjID, eyedata$trial))
+
+
+```
+
+# Create unfiltered data frame 
+
+## add columns indicating target and foil position
+
+Note for the experimental trials these are read from a table depending on particpant list; for foils, we randomly assign a foil to be left/right/center.
+
+```{r}
+# Add in information about looks to target and different foil types
+#Using a table, add in 3 columns columns  $targetLocation $ mismatch1Location $mismatch2Location - which give the poistion (r/l/c) where the targets two #different foil types are respective (for control trials, the last two columns are NA)
+
+listsTable = read.csv("listsTable.csv")
+eyedata = merge(eyedata,listsTable, by =c("list","frequency","labelPresented"))
+# note: the column position codes where the target is for the foil in both pilot data sets 
+eyedata$targetLocation[eyedata$frequency == "control"]=eyedata$position[eyedata$frequency == "control"]  
+#table(eyedata$position==eyedata$targetLocation) # a double check -  one of the data sets (pilot 2) already contained target location in the position column, this is now redundant 
+eyedata$position=NULL
+
+eyedata = as.data.frame(unclass(eyedata), stringsAsFactors= TRUE)# turn all character columns into factors 
+eyedata$list = as.factor(eyedata$list)
+eyedata$subjID = as.factor(eyedata$subjID)
+
+
+# for control trials, randomly assign those on left/right/center as foil1/foil2
+## first create randomizer table with ranomdly 1/2 for every participant/trial combination
+randomizerTable = data.frame(cbind(levels(eyedata$subjID.trial), sample(1:2, length(levels(eyedata$subjID.trial)), replace=T)))
+colnames(randomizerTable) = c("subjID.trial","randomizer" )
+randomizerTable$subjID.trial= as.factor(randomizerTable$subjID.trial)
+randomizerTable$randomizer= as.numeric(randomizerTable$randomizer)
+## merge info from randomizer table into dataframe so have a column called randomizer and use it to assign positions for foil1 and foil2 
+#dim(eyedata)
+eyedata = merge(eyedata, randomizerTable)
+#dim(eyedata) # look at this to see if have lost any trials
+eyedata$Foil1Location = NA
+eyedata$Foil2Location = NA
+
+eyedata$Foil1Location[eyedata$frequency=="control" & eyedata$targetLocation=="r" & eyedata$randomizer==1] = "l"
+eyedata$Foil1Location[eyedata$frequency=="control" & eyedata$targetLocation=="r" & eyedata$randomizer==2] = "c"
+eyedata$Foil1Location[eyedata$frequency=="control" & eyedata$targetLocation=="l" & eyedata$randomizer==1] = "c"
+eyedata$Foil1Location[eyedata$frequency=="control" & eyedata$targetLocation=="l" & eyedata$randomizer==2] = "r"
+eyedata$Foil1Location[eyedata$frequency=="control" & eyedata$targetLocation=="c" & eyedata$randomizer==1] = "r"
+eyedata$Foil1Location[eyedata$frequency=="control" & eyedata$targetLocation=="c" & eyedata$randomizer==2] = "l"
+
+eyedata$Foil2Location[eyedata$frequency=="control" & eyedata$targetLocation=="r" & eyedata$randomizer==1] = "c"
+eyedata$Foil2Location[eyedata$frequency=="control" & eyedata$targetLocation=="r" & eyedata$randomizer==2] = "l"
+eyedata$Foil2Location[eyedata$frequency=="control" & eyedata$targetLocation=="l" & eyedata$randomizer==1] = "r"
+eyedata$Foil2Location[eyedata$frequency=="control" & eyedata$targetLocation=="l" & eyedata$randomizer==2] = "c"
+eyedata$Foil2Location[eyedata$frequency=="control" & eyedata$targetLocation=="c" & eyedata$randomizer==1] = "l"
+eyedata$Foil2Location[eyedata$frequency=="control" & eyedata$targetLocation=="c" & eyedata$randomizer==2] = "r"
+
+
+
+```
+
+
+## add looking time columns
+
+Add the key columns  $targetLabelLk $mismatch1LabelLk $mismatch2LabelLk $rControlFoilLk
+$lControlFoilLk $cControlFoilLk which are using in plotting/analyses of looking time  
+
+```{r}
+#set up empty columns
+eyedata$targetLabelLk= NA
+eyedata$mismatch1LabelLk= NA
+eyedata$mismatch2LabelLk= NA
+eyedata$ControlFoil1Lk= NA
+eyedata$ControlFoil2Lk= NA
+eyedata$ControlBothFoilLk= NA
+
+# add columns with looks to target
+eyedata$targetLabelLk[eyedata$targetLocation=="r"] = eyedata$rLabel[eyedata$targetLocation=="r"]
+eyedata$targetLabelLk[eyedata$targetLocation=="l"] = eyedata$lLabel[eyedata$targetLocation=="l"]
+eyedata$targetLabelLk[eyedata$targetLocation=="c"] = eyedata$cLabel[eyedata$targetLocation=="c"]
+
+# add columns with looks to mismatch type 1 (this will only match for non control trials)
+f=eyedata$mismatch1Location=="r" & eyedata$frequency != "control"
+eyedata$mismatch1LabelLk[f] = eyedata$rLabel[f]
+f=eyedata$mismatch1Location=="l" & eyedata$frequency != "control"
+eyedata$mismatch1LabelLk[f] = eyedata$lLabel[f]
+f=eyedata$mismatch1Location=="c" & eyedata$frequency != "control"
+eyedata$mismatch1LabelLk[f] = eyedata$cLabel[f]
+# add columns with looks to mismatch type 2 (this will only match for non control trials)
+f=eyedata$mismatch2Location=="r" & eyedata$frequency != "control"
+eyedata$mismatch2LabelLk[f] = eyedata$rLabel[f]
+f=eyedata$mismatch2Location=="l" & eyedata$frequency != "control"
+eyedata$mismatch2LabelLk[f] = eyedata$lLabel[f]
+f=eyedata$mismatch2Location=="c" & eyedata$frequency != "control"
+eyedata$mismatch2LabelLk[f] = eyedata$cLabel[f]
+
+# add columns with looks to control1 (this will only match for  control trials)
+f=eyedata$Foil1Location=="r" & eyedata$frequency == "control"
+eyedata$ControlFoil1Lk[f] = eyedata$rLabel[f]
+f=eyedata$Foil1Location=="l" & eyedata$frequency == "control"
+eyedata$ControlFoil1Lk[f] = eyedata$lLabel[f]
+f=eyedata$Foil1Location=="c" & eyedata$frequency == "control"
+eyedata$ControlFoil1Lk[f] = eyedata$cLabel[f]
+
+# add columns with looks to control2 (this will only match for  control trials)
+f=eyedata$Foil2Location=="r" & eyedata$frequency == "control"
+eyedata$ControlFoil2Lk[f] = eyedata$rLabel[f]
+f=eyedata$Foil2Location=="l" & eyedata$frequency == "control"
+eyedata$ControlFoil2Lk[f] = eyedata$lLabel[f]
+f=eyedata$Foil2Location=="c" & eyedata$frequency == "control"
+eyedata$ControlFoil2Lk[f] = eyedata$cLabel[f]
+
+# add column with looks to either foil (this will only match for  control trials)
+f = eyedata$frequency == "control" & eyedata$targetLocation=="r"
+eyedata$ControlBothFoilLk[f] = (eyedata$lLabel[f]+eyedata$cLabel[f])
+f = eyedata$frequency == "control" & eyedata$targetLocation=="l"
+eyedata$ControlBothFoilLk[f] = (eyedata$rLabel[f]+eyedata$cLabel[f])
+f = eyedata$frequency == "control" & eyedata$targetLocation=="c"
+eyedata$ControlBothFoilLk[f] = (eyedata$rLabel[f]+eyedata$lLabel[f])
+
+# line below checks that both controls for foil is the sum of each of the controls- code below shows that it is true that these are same for every row in database
+table(eyedata$ControlBothFoilLk == eyedata$ControlFoil1Lk+eyedata$ControlFoil2Lk )
+
+```
+
+## add in column for block and blockBy3
+```{r}
+eyedata$block = 0
+eyedata$block[eyedata$trial >=10 & eyedata$trial <= 39] = 1
+eyedata$block[eyedata$trial >=41 & eyedata$trial <= 65] = 2
+eyedata$block[eyedata$trial >=67 & eyedata$trial <= 92] = 3
+eyedata$block[eyedata$trial >=94 & eyedata$trial <= 122] = 4
+eyedata$block[eyedata$trial >=124 & eyedata$trial <= 149] = 5
+eyedata$block[eyedata$trial >=151 & eyedata$trial <= 174] = 6
+
+#check the ranges are as expected correct
+range(subset(eyedata, block == 1)$trial)
+range(subset(eyedata, block == 2)$trial)
+range(subset(eyedata, block == 3)$trial)
+range(subset(eyedata, block == 4)$trial)
+range(subset(eyedata, block == 5)$trial)
+range(subset(eyedata, block == 6)$trial)
+
+eyedata$blockBy3 = 1
+eyedata$blockBy3[eyedata$block >2]= 2
+eyedata$blockBy3[eyedata$block >4]= 3
+table(eyedata$block,eyedata$blockBy3)
+```
+## add columns with time bined by 50 ms binned time and the same but relative to fribble offset
+
+note the relative times are binned with a ceiling, so that anything up ot and including 50ms is counted as "50ms" (idea is to
+err on side of thinking fixation times happen later rather than earlier, to be more conservative)
+```{r}
+eyedata$timeRel = NA
+eyedata$timeRel[eyedata$screen_index==3]= eyedata$time[eyedata$screen_index==3]
+eyedata$timeRel[eyedata$screen_index==4]= eyedata$time[eyedata$screen_index==4]+300
+bin = 50 
+eyedata$timeRel.bin = round_any(eyedata$timeRel, bin, f= ceiling)
+
+```
+
+
+
+## checking - coded out 
+### double check coding of columns for looks
+
+
+Code chunk in this section currently commenting out (add back in by highlighting whole chunk and using ctr+shif+c. Note it doesn't add anything, but double checks the column for looks added above is  correct. 
+I basically went through it bit by bit, checking against the  table of values I had. 
+
+Eva - note that I created this before you shared the syntax for filtering and sharing in the package. The following are equivlaent: 
+
+x  = subset(eyedata, list ==1&labelPresented=="dep")
+table(x$targetLocation)
+
+could be written
+
+eyedata%>%
+   filter( list ==1&labelPresented=="dep") %>%
+   count(targetLocation)
+
+I am not sure how to get table(x$targetLabelLk==x$cLabel) using the plr syntax. But what it does is check if, in the filtered data set, counts the number of rows 
+where it is TRUE that  the column targetLabelLk is equivalent to the column cLabel, and the number of rows where it that false. You can see that it is always TRUE. It returns "TRUE 69909"- indicating that only TRUE values are found (69909 of them). I am sure there is a much neater way to do this, but I did find a few errors this way.
+
+
+
+<!-- ```{r} -->
+<!-- ## target coding double check -->
+<!-- # double check coding the target in center ones -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="dep") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="tob") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="wug") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$cLabel) -->
+<!-- # double check coding the target in left ones -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="wug") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="dep") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="tob") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$lLabel) -->
+<!-- # double check coding the target in right ones -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="tob") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="wug") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="dep") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$rLabel) -->
+
+<!-- ## mismatch 1 coding double check -->
+<!-- # double check coding the mm1 in center ones -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- # double check coding the mm1 in left ones -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- # double check coding the mm1 in right ones -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+
+<!-- ## mismatch 2 coding double check -->
+<!-- # double check coding the mm2 in center ones -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- # double check coding the mm2 in left ones -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+
+<!-- # double check coding the mm2 in right ones -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==1&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==2&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+<!-- x  = subset(eyedata, list ==3&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+
+
+<!-- ``` -->
+
+### checking expect trials per block
+
+<!-- ```{r} -->
+<!-- eyedata %>% -->
+<!--   group_by(block, frequency, list) %>% -->
+<!--   summarise(n_distinct(trial))%>% -->
+<!--   pivot_wider(names_from = c(list), values_from = `n_distinct(trial)`) -->
+<!-- ``` -->
+
+
+# Filtering stage1
+
+## Identify and count missing trials/ trials where one of the key screens is missing 
+
+checking for participant trial combinations where whole trials are missing OR one of the key screens (2/3/4) is missing for that participant
+
+```{r}
+table = table(eyedata$trial, eyedata$subjID) # creates a table with trial numbers as rows and participants as columns and number of rows in data which match this criteria - where there is a zero the trial must be missing
+df = data.frame(table) ## turn into a dataframe
+colnames(df) = c("trial","subjID","Freq")
+
+wholeTrial.Missing = subset(df, Freq ==0 ) ## view the participant + trial number with missing data
+wholeTrial.Missing
+100*(nrow(wholeTrial.Missing)/nrow(df)) ## percentage whole trials missing
+
+```
+
+Checking for trials  with no data for key screens index 2,3,4
+
+```{r}
+df.screen2 = data.frame(table(subset(eyedata, screen_index ==2)$trial, subset(eyedata, screen_index ==2)$subjID)) # same logic as above chunk,  for screen 2
+df.screen3 = data.frame(table(subset(eyedata, screen_index ==3)$trial, subset(eyedata, screen_index ==3)$subjID)) # same logic as above chunk,  for screen 3
+df.screen4 = data.frame(table(subset(eyedata, screen_index ==4)$trial, subset(eyedata, screen_index ==4)$subjID)) # same logic as above chunk,  for screen 4
+
+df.screen2$missing = "screen2" 
+df.screen3$missing = "screen3" 
+df.screen4$missing = "screen4" 
+
+d.screen.missing = subset(rbind(df.screen2,df.screen3,df.screen4), Freq ==0 ) 
+colnames(d.screen.missing ) = c("trial","subjID","Freq","whichScreen")
+scene.Missing = subset(d.screen.missing, Freq ==0 ) ## view the participant + trial number with missing data
+
+scene.Missing # view it so that you can see which screens have which missing
+
+scene.Missing =distinct(scene.Missing) ### remove duplicates - i.e. trials where same particiapant + trial has more than one missing scene, will also include whole trial
+
+scene.Missing$whichScreen = NULL
+
+100*(nrow(scene.Missing)/nrow(df)) ## percentage trials where one or more of scenes missing (include those where all missing)
+
+```
+
+## create filtered data with above trials removed
+
+```{r}
+
+scene.Missing$subjID.trial = as.factor(paste(scene.Missing$subjID, scene.Missing$trial))
+#eyedata$subjID.trial = as.factor(paste(eyedata$subjID, eyedata$trial))
+
+eyedata.f1= eyedata
+
+subjTrial= levels(scene.Missing$subjID.trial)[1]
+for (subjTrial in levels(scene.Missing$subjID.trial)){
+  eyedata.f1 = droplevels(subset(eyedata.f1,subjID.trial != subjTrial))
+
+}
+
+dim(eyedata.f1)
+dim(eyedata)
+
+#for checking purposes, see who is removed
+df  = data.frame(table(eyedata.f1$trial, eyedata.f1$subjID))
+df = data.frame(table) ## turn into a dataframe
+colnames(df) = c("trial","subjID","Freq")
+subset(df, Freq ==0 ) ## view the participant + trial number with missing data
+## note it matches what we saw above
+```
+
+# Filtering stage 2 
+
+## Identify and count trials where key timing is inaccurate
+
+```{r}
+
+# add a column with value 1 when is last time point for the current screen
+
+eyedata.f1=eyedata.f1[order(eyedata.f1$subjID,
+                   eyedata.f1$trial,
+                   eyedata.f1$screen_index,
+                   eyedata.f1$time  ),]
+
+
+orginN = length(levels(eyedata$subjID.trial)) 
+newN= length(levels(eyedata.f1$subjID.trial)) 
+
+eyedata.f1$lastTrialInScreen= 0
+#row=3
+for (row in 2:(nrow(eyedata.f1)-1)){
+  if(eyedata.f1$screen_index[row] !=  eyedata.f1$screen_index[row+1] ){eyedata.f1$lastTrialInScreen[row]=1}
+     } 
+sum(subset(eyedata.f1, screen_index ==2)$lastTrialInScreen)==newN ## checking that sums to one trial marked as last in scene per partbytrial- shoule be "TRUE"
+sum(subset(eyedata.f1, screen_index ==3)$lastTrialInScreen)==newN 
+sum(subset(eyedata.f1, screen_index ==4)$lastTrialInScreen)==newN 
+
+
+## using the column created, get lists of trials+participants where the lengths of scenes 2, 3 and 4 are more than more than 100ms too short OR  too long for scenes  2 and 3 (for scene 4 we can cut it off)
+
+screen2_tooshort = droplevels(subset(eyedata.f1, screen_index==2 & lastTrialInScreen==1 & time < 300))
+screen2_toolong = droplevels(subset(eyedata.f1, screen_index==2 & lastTrialInScreen==1 & time > 400))
+screen3_tooshort = droplevels(subset(eyedata.f1, screen_index==3 & lastTrialInScreen==1 & time < 200))
+screen3_toolong = droplevels(subset(eyedata.f1, screen_index==3 & lastTrialInScreen==1 & time > 300))
+screen4_tooshort = droplevels(subset(eyedata.f1, screen_index==4 & lastTrialInScreen==1 & time < 1050))
+                             
+
+list.wrongLength =c(levels(screen2_tooshort$subjID.trial), 
+  levels(screen2_toolong$subjID.trial),
+  levels(screen3_tooshort$subjID.trial), 
+  levels(screen3_toolong$subjID.trial),
+  levels(screen4_tooshort$subjID.trial))
+  
+(length(unique(list.wrongLength))/newN)*100 # percentage of trials to exclude
+
+
+```
+## create filtered data with these trials removed
+```{r}
+
+eyedata.f2= eyedata.f1
+
+for (subjTrial in list.wrongLength){
+  eyedata.f2 = droplevels(subset(eyedata.f2,subjID.trial != subjTrial))
+
+}
+
+#check - these are now correct, except for 4 where we will be cutting them off when we plot 
+range(subset(eyedata.f2, screen_index ==2 & lastTrialInScreen ==1)$time)
+range(subset(eyedata.f2, screen_index ==3 & lastTrialInScreen ==1)$time)
+range(subset(eyedata.f2, screen_index ==4 & lastTrialInScreen ==1)$time)
+
+```
+
+
+
+# Write out data
+```{r}
+write.csv(eyedata, "bothpilot.csv")
+write.csv(eyedata.f1, "bothpilot.f1.csv")
+write.csv(eyedata.f2, "bothpilot.f2.csv")
+
+
+```
+
+
+
+```{r}
+
+```

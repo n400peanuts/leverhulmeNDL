@@ -1,0 +1,1215 @@
+---
+title: "liz Analysis"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+library(plyr) # used for "round_any" fuctnion
+library(dplyr) 
+library(tidyverse)
+library(lme4)
+
+
+
+```
+
+# Create unfiltered data frame 
+
+## read in and merge files
+
+```{r}
+setwd("C:/Users/liz/OneDrive - Nexus365/Eva_Liz_Leverhulme/leverhulmeNDL/eyetracker - fribbles/preProcessed_data")
+pilot1 = read.csv("pilot1/eyeTracker_intersections.csv")
+pilot2 = read.csv("pilot2/eyeTracker_intersections.csv")
+pilot1$pilotgroup = "pilot1"
+pilot2$pilotgroup = "pilot2"
+pilot1$list = 1 # there is no column for this in the original sheet
+bothpilot= rbind(pilot1,pilot2)
+
+# Add in information about looks to target and different foil types
+
+#Using a table, add in 3 columns columns  $targetLocation $ mismatch1Location $mismatch2Location - which give the poistion (r/l/c) where the targets two #different foil types are respective (for control trials, the last two columns are NA)
+
+listsTable = read.csv("listsTable.csv")
+bothpilot = merge(bothpilot,listsTable, by =c("list","frequency","labelPresented"))
+# note: the column position codes where the target is for the foil in both pilot data sets 
+bothpilot$targetLocation[bothpilot$frequency == "control"]=bothpilot$position[bothpilot$frequency == "control"]  
+table(bothpilot$position==bothpilot$targetLocation) # a double check -  pilot 2 already contained target location in the position column, this is now redundant 
+bothpilot$position=NULL
+
+bothpilot = as.data.frame(unclass(bothpilot), stringsAsFactors= TRUE)# turn all character columns into factors 
+bothpilot$list = as.factor(bothpilot$list)
+bothpilot$subjID = as.factor(bothpilot$subjID)
+
+bothpilot$subjID.trial = as.factor(paste(bothpilot$subjID, bothpilot$trial))
+
+# for control trials, randomly assign those on left/right/center as foil1/foil2
+## first create randomizer table with ranomdly 1/2 for every participant/trial combination
+randomizerTable = data.frame(cbind(levels(bothpilot$subjID.trial), sample(1:2, length(levels(bothpilot$subjID.trial)), replace=T)))
+colnames(randomizerTable) = c("subjID.trial","randomizer" )
+randomizerTable$subjID.trial= as.factor(randomizerTable$subjID.trial)
+randomizerTable$randomizer= as.numeric(randomizerTable$randomizer)
+## merge info from randomizer table into dataframe so have a column called randomizer and use it to assign positions for foil1 and foil2 
+dim(bothpilot)
+bothpilot = merge(bothpilot, randomizerTable)
+dim(bothpilot)
+bothpilot$Foil1Location = NA
+bothpilot$Foil2Location = NA
+
+bothpilot$Foil1Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="r" & bothpilot$randomizer==1] = "l"
+bothpilot$Foil1Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="r" & bothpilot$randomizer==2] = "c"
+bothpilot$Foil1Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="l" & bothpilot$randomizer==1] = "c"
+bothpilot$Foil1Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="l" & bothpilot$randomizer==2] = "r"
+bothpilot$Foil1Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="c" & bothpilot$randomizer==1] = "r"
+bothpilot$Foil1Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="c" & bothpilot$randomizer==2] = "l"
+
+bothpilot$Foil2Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="r" & bothpilot$randomizer==1] = "c"
+bothpilot$Foil2Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="r" & bothpilot$randomizer==2] = "l"
+bothpilot$Foil2Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="l" & bothpilot$randomizer==1] = "r"
+bothpilot$Foil2Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="l" & bothpilot$randomizer==2] = "c"
+bothpilot$Foil2Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="c" & bothpilot$randomizer==1] = "l"
+bothpilot$Foil2Location[bothpilot$frequency=="control" & bothpilot$targetLocation=="c" & bothpilot$randomizer==2] = "r"
+
+
+
+#table(bothpilot$targetLocation,bothpilot$randomizer)
+
+#bothpilot$targetLocation
+
+```
+
+
+## add looking time columns
+Add the key columns  $targetLabelLk $mismatch1LabelLk $mismatch2LabelLk $rControlFoilLk
+$lControlFoilLk $cControlFoilLk which are using in plotting/analyses of looking time  
+
+```{r}
+#set up empty columns
+bothpilot$targetLabelLk= NA
+bothpilot$mismatch1LabelLk= NA
+bothpilot$mismatch2LabelLk= NA
+#bothpilot$ControlBothFoilLk= NA
+#bothpilot$ControlOneFoilLk= NA
+bothpilot$ControlFoil1Lk= NA
+bothpilot$ControlFoil2Lk= NA
+
+# add columns with looks to target
+bothpilot$targetLabelLk[bothpilot$targetLocation=="r"] = bothpilot$rLabel[bothpilot$targetLocation=="r"]
+bothpilot$targetLabelLk[bothpilot$targetLocation=="l"] = bothpilot$lLabel[bothpilot$targetLocation=="l"]
+bothpilot$targetLabelLk[bothpilot$targetLocation=="c"] = bothpilot$cLabel[bothpilot$targetLocation=="c"]
+
+# add columns with looks to mismatch type 1 (this will only match for non control trials)
+f=bothpilot$mismatch1Location=="r" & bothpilot$frequency != "control"
+bothpilot$mismatch1LabelLk[f] = bothpilot$rLabel[f]
+f=bothpilot$mismatch1Location=="l" & bothpilot$frequency != "control"
+bothpilot$mismatch1LabelLk[f] = bothpilot$lLabel[f]
+f=bothpilot$mismatch1Location=="c" & bothpilot$frequency != "control"
+bothpilot$mismatch1LabelLk[f] = bothpilot$cLabel[f]
+# add columns with looks to mismatch type 2 (this will only match for non control trials)
+f=bothpilot$mismatch2Location=="r" & bothpilot$frequency != "control"
+bothpilot$mismatch2LabelLk[f] = bothpilot$rLabel[f]
+f=bothpilot$mismatch2Location=="l" & bothpilot$frequency != "control"
+bothpilot$mismatch2LabelLk[f] = bothpilot$lLabel[f]
+f=bothpilot$mismatch2Location=="c" & bothpilot$frequency != "control"
+bothpilot$mismatch2LabelLk[f] = bothpilot$cLabel[f]
+
+# add columns with looks to control1 (this will only match for  control trials)
+f=bothpilot$Foil1Location=="r" & bothpilot$frequency == "control"
+bothpilot$ControlFoil1Lk[f] = bothpilot$rLabel[f]
+f=bothpilot$Foil1Location=="l" & bothpilot$frequency == "control"
+bothpilot$ControlFoil1Lk[f] = bothpilot$lLabel[f]
+f=bothpilot$Foil1Location=="c" & bothpilot$frequency == "control"
+bothpilot$ControlFoil1Lk[f] = bothpilot$cLabel[f]
+# add columns with looks to control2 (this will only match for  control trials)
+f=bothpilot$Foil2Location=="r" & bothpilot$frequency == "control"
+bothpilot$ControlFoil2Lk[f] = bothpilot$rLabel[f]
+f=bothpilot$Foil2Location=="l" & bothpilot$frequency == "control"
+bothpilot$ControlFoil2Lk[f] = bothpilot$lLabel[f]
+f=bothpilot$Foil2Location=="c" & bothpilot$frequency == "control"
+bothpilot$ControlFoil2Lk[f] = bothpilot$cLabel[f]
+
+
+#control foils
+#f = bothpilot$frequency == "control" & bothpilot$targetLocation=="r"
+#bothpilot$ControlBothFoilLk[f] = (bothpilot$lLabel[f]+bothpilot$cLabel[f])
+#bothpilot$lControlFoilLk[f] = bothpilot$lLabel[f]
+#bothpilot$cControlFoilLk[f] = bothpilot$cLabel[f]
+
+# add columns with looks to foils in right position
+#f = bothpilot$frequency == "control" & bothpilot$targetLocation=="l"
+#bothpilot$ControlBothFoilLk[f] = (bothpilot$rLabel[f]+bothpilot$cLabel[f])
+#bothpilot$rControlFoilLk[f] = bothpilot$rLabel[f]
+#bothpilot$cControlFoilLk[f] = bothpilot$cLabel[f]
+# add columns with looks to foils in left position
+#f = bothpilot$frequency == "control" & bothpilot$targetLocation=="c"
+#bothpilot$ControlBothFoilLk[f] = (bothpilot$rLabel[f]+bothpilot$lLabel[f])
+#bothpilot$rControlFoilLk[f] = bothpilot$rLabel[f]
+#bothpilot$lControlFoilLk[f] = bothpilot$lLabel[f]
+
+# add column with 0.5 (rather than 1) if they look at one of the foils - this is used for plotting proportions when comparing against the two conditions where there are two different foils so that chance of looking is average chance fo looking at one of the foils
+
+#bothpilot$ControlOneFoilLk = bothpilot$ControlBothFoilLk/2
+
+```
+
+## add in column for block
+```{r}
+bothpilot$block = 0
+bothpilot$block[bothpilot$trial >=10 & bothpilot$trial <= 39] = 1
+bothpilot$block[bothpilot$trial >=41 & bothpilot$trial <= 65] = 2
+bothpilot$block[bothpilot$trial >=67 & bothpilot$trial <= 92] = 3
+bothpilot$block[bothpilot$trial >=94 & bothpilot$trial <= 122] = 4
+bothpilot$block[bothpilot$trial >=124 & bothpilot$trial <= 149] = 5
+bothpilot$block[bothpilot$trial >=151 & bothpilot$trial <= 174] = 6
+
+#check the ranges are as expected correct
+range(subset(bothpilot, block == 1)$trial)
+range(subset(bothpilot, block == 2)$trial)
+range(subset(bothpilot, block == 3)$trial)
+range(subset(bothpilot, block == 4)$trial)
+range(subset(bothpilot, block == 5)$trial)
+range(subset(bothpilot, block == 6)$trial)
+
+```
+
+## double check coding of columns for looks
+
+
+Code chunk in this section currently commenting out (add back in by highlighting whole chunk and using ctr+shif+c. Note it doesn't add anything, but double checks the column for looks added above is  correct. 
+I basically went through it bit by bit, checking against the  table of values I had. 
+
+Eva - note that I created this before you shared the syntax for filtering and sharing in the package. The following are equivlaent: 
+
+x  = subset(bothpilot, list ==1&labelPresented=="dep")
+table(x$targetLocation)
+
+could be written
+
+bothpilot%>%
+   filter( list ==1&labelPresented=="dep") %>%
+   count(targetLocation)
+
+I am not sure how to get table(x$targetLabelLk==x$cLabel) using the plr syntax. But what it does is check if, in the filtered data set, counts the number of rows 
+where it is TRUE that  the column targetLabelLk is equivalent to the column cLabel, and the number of rows where it that false. You can see that it is always TRUE. It returns "TRUE 69909"- indicating that only TRUE values are found (69909 of them). I am sure there is a much neater way to do this, but I did find a few errors this way.
+
+
+
+<!-- ```{r} -->
+<!-- ## target coding double check -->
+<!-- # double check coding the target in center ones -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="dep") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="tob") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="wug") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$cLabel) -->
+<!-- # double check coding the target in left ones -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="wug") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="dep") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="tob") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$lLabel) -->
+<!-- # double check coding the target in right ones -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="tob") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="wug") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="dep") -->
+<!-- table(x$targetLocation) -->
+<!-- table(x$targetLabelLk==x$rLabel) -->
+
+<!-- ## mismatch 1 coding double check -->
+<!-- # double check coding the mm1 in center ones -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$cLabel) -->
+<!-- # double check coding the mm1 in left ones -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$lLabel) -->
+<!-- # double check coding the mm1 in right ones -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch1Location) -->
+<!-- table(x$mismatch1LabelLk==x$rLabel) -->
+
+<!-- ## mismatch 2 coding double check -->
+<!-- # double check coding the mm2 in center ones -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$cLabel) -->
+<!-- # double check coding the mm2 in left ones -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$lLabel) -->
+
+<!-- # double check coding the mm2 in right ones -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="wug"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="dep"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="tob"& frequency == "l") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==1&labelPresented=="dep"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==2&labelPresented=="tob"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+<!-- x  = subset(bothpilot, list ==3&labelPresented=="wug"& frequency == "h") -->
+<!-- table(x$mismatch2Location) -->
+<!-- table(x$mismatch2LabelLk==x$rLabel) -->
+
+
+<!-- ``` -->
+
+
+# checking for missing data and filtering
+
+check have the expected number of trials per block in each list
+
+```{r}
+bothpilot %>%
+  group_by(block, frequency, list) %>%
+  summarise(n_distinct(trial))%>%
+  pivot_wider(names_from = c(list), values_from = `n_distinct(trial)`)
+```
+
+
+Checking for participant trial combinations where whole trials are missing:
+
+```{r}
+table = table(bothpilot$trial, bothpilot$subjID) # creates a table with trial numbers as rows and participants as columns and number of rows in data which match this criteria - where there is a zero the trial must be missing
+df = data.frame(table) ## turn into a dataframe
+colnames(df) = c("trial","subjID","Freq")
+
+wholeTrial.Missing = subset(df, Freq ==0 ) ## view the participant + trial number with missing data
+wholeTrial.Missing
+100*(nrow(wholeTrial.Missing)/nrow(df)) ## percentage whole trials missing
+
+```
+
+Checking for trials  with no data for screen index 2,3,4
+
+```{r}
+df.screen2 = data.frame(table(subset(bothpilot, screen_index ==2)$trial, subset(bothpilot, screen_index ==2)$subjID)) # same logic as above chunk,  for screen 2
+df.screen3 = data.frame(table(subset(bothpilot, screen_index ==3)$trial, subset(bothpilot, screen_index ==3)$subjID)) # same logic as above chunk,  for screen 3
+df.screen4 = data.frame(table(subset(bothpilot, screen_index ==4)$trial, subset(bothpilot, screen_index ==4)$subjID)) # same logic as above chunk,  for screen 4
+
+df.screen2$missing = "screen2" 
+df.screen3$missing = "screen3" 
+df.screen4$missing = "screen4" 
+
+d.screen.missing = subset(rbind(df.screen2,df.screen3,df.screen4), Freq ==0 ) 
+colnames(d.screen.missing ) = c("trial","subjID","Freq","whichScreen")
+scene.Missing = subset(d.screen.missing, Freq ==0 ) ## view the participant + trial number with missing data
+
+scene.Missing # view it so that you can see which screens have which missing
+
+scene.Missing =distinct(scene.Missing) ### remove duplicates - i.e. trials where same particiapant + trial has more than one missing scene, will also include whole trial
+
+scene.Missing$whichScreen = NULL
+
+100*(nrow(scene.Missing)/nrow(df)) ## percentage trials where one or more of scenes missing (include those where all missing)
+
+```
+#remove participants+ trial combinations where we saw above that data was missing from one of the screens for that trial
+```{r}
+
+scene.Missing$subjID.trial = as.factor(paste(scene.Missing$subjID, scene.Missing$trial))
+#bothpilot$subjID.trial = as.factor(paste(bothpilot$subjID, bothpilot$trial))
+
+bothpilot.f1= bothpilot
+
+subjTrial= levels(scene.Missing$subjID.trial)[1]
+for (subjTrial in levels(scene.Missing$subjID.trial)){
+  bothpilot.f1 = droplevels(subset(bothpilot.f1,subjID.trial != subjTrial))
+
+}
+
+dim(bothpilot.f1)
+dim(bothpilot)
+
+#for checking purposes, see who is removed
+df  = data.frame(table(bothpilot.f1$trial, bothpilot.f1$subjID))
+df = data.frame(table) ## turn into a dataframe
+colnames(df) = c("trial","subjID","Freq")
+subset(df, Freq ==0 ) ## view the participant + trial number with missing data
+## note it matches what we saw above
+```
+
+# find participants+trials where timing isn't accurate
+
+add a column with value 1 when is last time point  for the current screen
+```{r}
+
+bothpilot.f1=bothpilot.f1[order(bothpilot.f1$subjID,
+                   
+                   bothpilot.f1$trial,
+                   bothpilot.f1$screen_index,
+                   bothpilot.f1$time  ),]
+
+
+orginN = length(levels(bothpilot$subjID.trial)) 
+newN= length(levels(bothpilot.f1$subjID.trial)) 
+
+bothpilot.f1$lastTrialInScreen= 0
+#row=3
+for (row in 2:(nrow(bothpilot.f1)-1)){
+  if(bothpilot.f1$screen_index[row] !=  bothpilot.f1$screen_index[row+1] ){bothpilot.f1$lastTrialInScreen[row]=1}
+     } 
+sum(subset(bothpilot.f1, screen_index ==2)$lastTrialInScreen)==newN ## checking that sums to one trial marked as last in scene per partbytrial
+sum(subset(bothpilot.f1, screen_index ==3)$lastTrialInScreen)==newN 
+sum(subset(bothpilot.f1, screen_index ==4)$lastTrialInScreen)==newN 
+
+
+
+```
+
+```{r}
+## get lists of trials+participants where the legnth of scenes 2, 3 and 4 are more than more than 100ms too short OR  too long for scenes  2 and 3 (for scene 4 we can cut it off)
+
+screen2_tooshort = droplevels(subset(bothpilot.f1, screen_index==2 & lastTrialInScreen==1 & time < 300))
+screen2_toolong = droplevels(subset(bothpilot.f1, screen_index==2 & lastTrialInScreen==1 & time > 400))
+screen3_tooshort = droplevels(subset(bothpilot.f1, screen_index==3 & lastTrialInScreen==1 & time < 200))
+screen3_toolong = droplevels(subset(bothpilot.f1, screen_index==3 & lastTrialInScreen==1 & time > 300))
+screen4_tooshort = droplevels(subset(bothpilot.f1, screen_index==4 & lastTrialInScreen==1 & time < 1050))
+                             
+
+list.wrongLength =c(levels(screen2_tooshort$subjID.trial), 
+  levels(screen2_toolong$subjID.trial),
+  levels(screen3_tooshort$subjID.trial), 
+  levels(screen3_toolong$subjID.trial),
+  levels(screen4_tooshort$subjID.trial))
+  
+length(list.wrongLength)
+length(unique(list.wrongLength))/newN # proportion of trials to exclude
+
+
+```
+remove the trials where any  scene was too long/short
+```{r}
+#list.wrongLength = as.factor(list.wrongLength)
+
+bothpilot.f2= bothpilot.f1
+
+#subjTrial= list.wrongLength[1]
+for (subjTrial in list.wrongLength){
+  bothpilot.f2 = droplevels(subset(bothpilot.f2,subjID.trial != subjTrial))
+
+}
+
+#check - these are now correct, except for 4 where we will be cutting them off
+range(subset(bothpilot.f2, screen_index ==2 & lastTrialInScreen ==1)$time)
+range(subset(bothpilot.f2, screen_index ==3 & lastTrialInScreen ==1)$time)
+range(subset(bothpilot.f2, screen_index ==4 & lastTrialInScreen ==1)$time)
+
+```
+
+```{r}
+#write.csv(bothpilot, "bothpilot.csv")
+#write.csv(bothpilot.f1, "bothpilot.f1.csv")
+#write.csv(bothpilot.f2, "bothpilot.f2.csv")
+
+bothpilot = read.csv("bothpilot.csv")
+bothpilot.f1 = read.csv("bothpilot.f1.csv")
+bothpilot.f2 = read.csv("bothpilot.f2.csv")
+
+```
+
+# Additional columns used across  plotting and analyses (binned time relative to fribble offset and 3 blocks)
+
+```{r}
+bothpilot.f2$timeRel = NA
+bothpilot.f2$timeRel[bothpilot.f2$screen_index==3]= bothpilot.f2$time[bothpilot.f2$screen_index==3]
+bothpilot.f2$timeRel[bothpilot.f2$screen_index==4]= bothpilot.f2$time[bothpilot.f2$screen_index==4]+300
+bin = 50 
+bothpilot.f2$timeRel.bin = round_any(bothpilot.f2$timeRel, bin, f= ceiling)
+
+```
+
+
+```{r}
+bothpilot.f2$block3 = 1
+bothpilot.f2$block3[bothpilot.f2$block >2]= 2
+bothpilot.f2$block3[bothpilot.f2$block >4]= 3
+table(bothpilot.f2$block,bothpilot.f2$block3)
+```
+
+# Plots
+Plot 1- plotting proportion of looks to each 
+```{r proporitions-each-type}
+#bothpilot.f2.long = gather(bothpilot.f2, objectLookedAt, proportionLooks, targetLabelLk:mismatch2LabelLk, ControlOneFoilLk )
+
+bothpilot.f2.long = gather(bothpilot.f2, objectLookedAt, proportionLooks, targetLabelLk:mismatch2LabelLk, ControlFoil1Lk,ControlFoil2Lk )
+bothpilot.f2.long$Location=NA
+
+f=bothpilot.f2.long$objectLookedAt=="targetLabelLk"
+bothpilot.f2.long$Location[f]=bothpilot.f2.long$targetLocation[f]
+
+f=bothpilot.f2.long$objectLookedAt=="mismatch1LabelLk"
+bothpilot.f2.long$Location[f]=bothpilot.f2.long$mismatch1Location[f]
+f=bothpilot.f2.long$objectLookedAt=="mismatch2LabelLk"
+bothpilot.f2.long$Location[f]=bothpilot.f2.long$mismatch2Location[f]
+
+f=bothpilot.f2.long$objectLookedAt=="ControlFoil1Lk"
+bothpilot.f2.long$Location[f]=bothpilot.f2.long$Foil1Location[f]
+f=bothpilot.f2.long$objectLookedAt=="ControlFoil2Lk"
+bothpilot.f2.long$Location[f]=bothpilot.f2.long$Foil2Location[f]
+
+agg1= aggregate(data = subset(bothpilot.f2.long, screen_index==3|screen_index==4), 
+                             proportionLooks~ objectLookedAt+timeRel.bin + frequency + subjID +Location , FUN= mean) 
+agg2= aggregate(data = agg1, proportionLooks~ objectLookedAt +timeRel.bin + frequency + subjID, FUN= mean) 
+agg3= aggregate(data = agg2, proportionLooks~ objectLookedAt+timeRel.bin + frequency, FUN= mean) 
+
+
+p2= ggplot(agg3, aes(x=timeRel.bin, y=proportionLooks)) + geom_line(aes(color= objectLookedAt))
+p2= p2 + geom_vline(xintercept= 300)
+p2= p2 + ylim(0,.6)
+p2 = p2 + xlim(0,1450)
+p2= p2+facet_wrap(~frequency)
+p2
+#log_odd<-function(p) {log(p/(1-p))}
+
+
+
+```
+Plotting proportion of looks to each split by blocks:
+```{r proportions-each-type-block}
+
+agg1= aggregate(data = subset(bothpilot.f2.long, screen_index==3|screen_index==4), 
+                             proportionLooks~ objectLookedAt+timeRel.bin + frequency + block3 + subjID +Location, FUN= mean) 
+agg2= aggregate(data = agg1, proportionLooks~ objectLookedAt +timeRel.bin + frequency+ block3  + subjID, FUN= mean) 
+agg3= aggregate(data = agg2, proportionLooks~ objectLookedAt+timeRel.bin + frequency + block3, FUN= mean) 
+
+#write.csv(agg3, "threeLines.csv")
+
+p2= ggplot(agg3, aes(x=timeRel.bin, y=proportionLooks)) + geom_line(aes(color= objectLookedAt))
+p2= p2 + geom_vline(xintercept= 300)
+p2= p2 + ylim(0,.6)
+p2 = p2 + xlim(0,1450)
+p2= p2+facet_wrap(~frequency+block3)
+p2
+#log_odd<-function(p) {log(p/(1-p))}
+
+
+
+```
+
+Special score- across foils 
+
+```{r special-scores-across-foils}
+#set up column with a 1 if they look at either of the two foils coded the same for experimental and control trials
+f= bothpilot.f2$frequency == "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$ControlFoil1Lk[f]+bothpilot.f2$ControlFoil2Lk[f]
+f= bothpilot.f2$frequency != "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$mismatch1LabelLk[f]+bothpilot.f2$mismatch2LabelLk[f]
+
+
+expv <- bothpilot.f2 %>%
+  filter(screen_index == 3 | screen_index == 4 ) %>%
+  group_by(timeRel.bin ,frequency ,subjID,  targetLocation) %>%  ## grouping over just targetLocation Ok here, as combining foils
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil+0.5)/(samples-sum_foil+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()
+
+expv.agg = aggregate(data = expv,     datalgd ~ timeRel.bin + frequency + subjID + targetLocation, FUN = mean)
+expv.agg2= aggregate(data = expv.agg, datalgd ~ timeRel.bin + frequency + subjID, FUN = mean)
+expv.agg3= aggregate(data = expv.agg2, datalgd ~ timeRel.bin + frequency, FUN = mean)
+
+p1= ggplot(expv.agg3, aes(x=timeRel.bin ,y=datalgd))
+p1= p1+ geom_point(aes(color=frequency))
+p1=p1+ geom_line(linetype="dashed", aes(color=frequency))
+p1=p1+ geom_line(aes(color=frequency))
+p1= p1 + geom_vline(xintercept= 300)
+
+#p1= p1 + ylim(0.2,.6)
+p1 = p1 + xlim(0,1450)
+p1
+
+
+```
+
+```{r special-scores-across-foils-blocks}
+
+#set up column with a 1 if they look at either of the two foils
+f= bothpilot.f2$frequency == "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$ControlFoil1Lk[f]+bothpilot.f2$ControlFoil2Lk[f]
+f= bothpilot.f2$frequency != "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$mismatch1LabelLk[f]+bothpilot.f2$mismatch2LabelLk[f]
+
+expv <- bothpilot.f2 %>%
+  filter(screen_index == 3 | screen_index == 4 ) %>%
+  group_by(timeRel.bin ,frequency ,subjID,  targetLocation, block3) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil+0.5)/(samples-sum_foil+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()
+
+expv.agg = aggregate(data = expv,     datalgd ~ timeRel.bin + frequency + block3 + subjID + targetLocation, FUN = mean)
+expv.agg2= aggregate(data = expv.agg, datalgd ~ timeRel.bin + frequency + block3 + subjID, FUN = mean)
+expv.agg3= aggregate(data = expv.agg2, datalgd ~ timeRel.bin + frequency + block3 , FUN = mean)
+
+p1= ggplot(expv.agg3, aes(x=timeRel.bin ,y=datalgd))
+p1= p1+ geom_point(aes(color=frequency))
+p1=p1+ geom_line(linetype="dashed", aes(color=frequency))
+p1=p1+ geom_line(aes(color=frequency))
+p1= p1 + geom_vline(xintercept= 300)
+
+#p1= p1 + ylim(0.2,.6)
+p1 = p1 + xlim(0,1450)
+p1= p1+facet_wrap(~block3)
+
+p1
+
+
+```
+
+
+
+```{r special-score-mistmatch1-foil}
+
+#set up column with 1 if they look at mistmach1 or control foil1
+f= bothpilot.f2$frequency == "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$ControlFoil1Lk[f]
+f= bothpilot.f2$frequency != "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$mismatch1LabelLk[f]
+
+bothpilot.f2$FoilLocation = NA
+bothpilot.f2$FoilLocation[bothpilot.f2$frequency == "control"] =bothpilot.f2$Foil1Location[bothpilot.f2$frequency == "control"] 
+bothpilot.f2$FoilLocation[bothpilot.f2$frequency != "control"] =as.character(bothpilot.f2$mismatch1Location)[bothpilot.f2$frequency != "control"] 
+bothpilot.f2$FoilLocation= as.factor(bothpilot.f2$FoilLocation)
+
+expv <- bothpilot.f2 %>%
+  filter(screen_index == 3 | screen_index == 4 ) %>%
+  group_by(timeRel.bin ,frequency ,subjID,  targetLocation, FoilLocation) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil+0.5)/(samples-sum_foil+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()
+
+expv.agg = aggregate(data = expv,     datalgd ~ timeRel.bin + frequency  + subjID + targetLocation + FoilLocation, FUN = mean)
+expv.agg2= aggregate(data = expv.agg, datalgd ~ timeRel.bin + frequency  + subjID + targetLocation, FUN = mean)
+expv.agg3= aggregate(data = expv.agg2, datalgd ~ timeRel.bin + frequency  + subjID, FUN = mean)
+expv.agg4= aggregate(data = expv.agg3, datalgd ~ timeRel.bin + frequency  , FUN = mean)
+
+p1= ggplot(expv.agg4, aes(x=timeRel.bin ,y=datalgd))
+p1= p1+ geom_point(aes(color=frequency))
+p1=p1+ geom_line(linetype="dashed", aes(color=frequency))
+p1=p1+ geom_line(aes(color=frequency))
+p1= p1 + geom_vline(xintercept= 300)
+#p1= p1 + ylim(0.2,.6)
+p1 = p1 + xlim(0,1450)
+
+p1
+
+
+```
+
+
+```{r special-score-mistmatch1-foil-with-block}
+
+
+expv <- bothpilot.f2 %>%
+  filter(screen_index == 3 | screen_index == 4 ) %>%
+  group_by(timeRel.bin ,frequency ,subjID,  targetLocation, FoilLocation, block3) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil+0.5)/(samples-sum_foil+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()
+
+expv.agg = aggregate(data = expv,     datalgd ~ timeRel.bin + frequency + block3 + subjID + targetLocation + FoilLocation, FUN = mean)
+expv.agg2= aggregate(data = expv.agg, datalgd ~ timeRel.bin + frequency + block3  + subjID + targetLocation, FUN = mean)
+expv.agg3= aggregate(data = expv.agg2, datalgd ~ timeRel.bin + frequency+ block3   + subjID, FUN = mean)
+expv.agg4= aggregate(data = expv.agg3, datalgd ~ timeRel.bin + frequency+ block3   , FUN = mean)
+
+#write.csv(expv.agg3, "onelinemismatch1.csv")
+
+p1= ggplot(expv.agg4, aes(x=timeRel.bin ,y=datalgd))
+p1= p1+ geom_point(aes(color=frequency))
+p1=p1+ geom_line(linetype="dashed", aes(color=frequency))
+p1=p1+ geom_line(aes(color=frequency))
+p1= p1 + geom_vline(xintercept= 300)
+#p1= p1 + ylim(0.2,.6)
+p1 = p1 + xlim(0,1450)
+p1= p1+facet_wrap(~block3)
+
+p1
+
+
+```
+
+# Statistical analyses: 
+
+## DV = preference for target over sum of the other two foils
+
+
+```{r set up column }
+#set up column with a 1 if they look at either of the two foils
+f= bothpilot.f2$frequency == "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$ControlFoil1Lk[f]+bothpilot.f2$ControlFoil2Lk[f]
+f= bothpilot.f2$frequency != "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$mismatch1LabelLk[f]+bothpilot.f2$mismatch2LabelLk[f]
+```
+
+
+```{r run for region 200_500 }
+expv.200_500.bothfoils <- bothpilot.f2 %>%
+  filter(screen_index == 3 | screen_index == 4 & timeRel.bin >=200 & timeRel.bin <500   ) %>%
+  group_by(frequency ,subjID,  targetLocation, trial, block3) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil+0.5)/(samples-sum_foil+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()%>%
+  data.frame()
+
+expv.200_500.bothfoils = setContrasts(d=expv.200_500.bothfoils, condition=expv.200_500.bothfoils$frequency, baselevel="control")
+expv.200_500.bothfoils = setContrasts(d=expv.200_500.bothfoils, condition=expv.200_500.bothfoils$targetLocation, baselevel="c")
+expv.200_500.bothfoils = selectCenter(expv.200_500.bothfoils, list("block3"))
+
+lmer.200_500.bothfoils = lmer(datalgd ~ 1
+                    +(control_VS_h + control_VS_l)*block3.ct 
+                    + (c_VS_l + c_VS_r)
+                    +block3.ct
+                    +(control_VS_h+block3.ct||subjID), # note reduced slope
+                    #+(control_VS_l|subjID), # can't have a slope for control vs Low- probably because less data here 
+                                        control = lmerControl(optimizer="bobyqa"),
+                    data=expv.200_500.bothfoils,REML=FALSE)
+
+summary(lmer.200_500.bothfoils)$coeff
+
+
+```
+
+
+```{r run for region 500_1450 }
+expv.500_1450.bothfoils <- bothpilot.f2 %>%
+  filter(screen_index == 3 | screen_index == 4 & timeRel.bin >=500 & timeRel.bin <1450   ) %>%
+  group_by(frequency ,subjID,  targetLocation, trial, block3) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil+0.5)/(samples-sum_foil+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()%>%
+  data.frame()
+
+expv.500_1450.bothfoils = setContrasts(d=expv.500_1450.bothfoils, condition=expv.500_1450.bothfoils$frequency, baselevel="control")
+expv.500_1450.bothfoils = setContrasts(d=expv.500_1450.bothfoils, condition=expv.500_1450.bothfoils$targetLocation, baselevel="c")
+expv.500_1450.bothfoils = selectCenter(expv.500_1450.bothfoils, list("block3"))
+
+lmer.500_1450.bothfoils = lmer(datalgd ~ 1
+                    +(control_VS_h + control_VS_l)*block3.ct 
+                    + (c_VS_l + c_VS_r)
+                    +block3.ct
+                    +(control_VS_h+block3.ct||subjID), # note reduced slope
+                    #+(control_VS_l|subjID), # can't have a slope for control vs Low- probably because less data here 
+                                        control = lmerControl(optimizer="bobyqa"),
+                    data=expv.500_1450.bothfoils,REML=FALSE)
+
+summary(lmer.500_1450.bothfoils)$coeff
+
+
+```
+
+## DV = preference for target over mismathc type 1 compared with foil over foil 1
+
+```{r}
+
+#set up column with 1 if they look at mistmach1 or control foil1
+f= bothpilot.f2$frequency == "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$ControlFoil1Lk[f]
+f= bothpilot.f2$frequency != "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$mismatch1LabelLk[f]
+
+bothpilot.f2$FoilLocation = NA
+bothpilot.f2$FoilLocation[bothpilot.f2$frequency == "control"] =bothpilot.f2$Foil1Location[bothpilot.f2$frequency == "control"] 
+bothpilot.f2$FoilLocation[bothpilot.f2$frequency != "control"] =as.character(bothpilot.f2$mismatch1Location)[bothpilot.f2$frequency != "control"] 
+bothpilot.f2$FoilLocation= as.factor(bothpilot.f2$FoilLocation)
+
+
+
+expv.200_500.onefoil <- bothpilot.f2 %>%
+  filter(screen_index == 3 | screen_index == 4 & timeRel.bin >=200 & timeRel.bin <500   ) %>%
+  group_by(frequency ,subjID,  labelPresented, trial,  targetLocation, FoilLocation, block3) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil+0.5)/(samples-sum_foil+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()%>%
+  data.frame()
+
+
+expv.200_500.onefoil$targetFoilLocation = as.factor(paste(expv.200_500.onefoil$targetLocation,expv.200_500.onefoil$FoilLocation,sep="" ))
+# can be a random effect
+
+expv.200_500.onefoil = setContrasts(d=expv.200_500.onefoil, condition=expv.200_500.onefoil$frequency, baselevel="control")
+expv.200_500.onefoil = setContrasts(d=expv.200_500.onefoil, condition=expv.200_500.onefoil$targetLocation, baselevel="c")
+expv.200_500.onefoil = setContrasts(d=expv.200_500.onefoil, condition=expv.200_500.onefoil$FoilLocation, baselevel="c")
+
+expv.200_500.onefoil = selectCenter(expv.200_500.onefoil, list("block3"))
+
+
+# note - can't make it work with contrasts with bim in
+lmer.200_500.onefoil = lmer(datalgd ~ 1
+                     +(control_VS_h+control_VS_l)*block3.ct 
+                    +(c_VS_l+ control_VS_l)
+                    +(control_VS_h||subjID)
+                    #+(control_VS_l|subjID), # can't have a slope for control vs Low- probably because less data here 
+                    +(1|targetFoilLocation), 
+                    control = lmerControl(optimizer="bobyqa"),
+                    data=expv.200_500.onefoil,REML=FALSE)
+summary(lmer.200_500.onefoil)$coeff
+
+
+```
+
+
+
+```{r}
+
+#set up column with 1 if they look at mistmach1 or control foil1
+f= bothpilot.f2$frequency == "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$ControlFoil1Lk[f]
+f= bothpilot.f2$frequency != "control"
+bothpilot.f2$FoilLk[f] = bothpilot.f2$mismatch1LabelLk[f]
+
+bothpilot.f2$FoilLocation = NA
+bothpilot.f2$FoilLocation[bothpilot.f2$frequency == "control"] =bothpilot.f2$Foil1Location[bothpilot.f2$frequency == "control"] 
+bothpilot.f2$FoilLocation[bothpilot.f2$frequency != "control"] =as.character(bothpilot.f2$mismatch1Location)[bothpilot.f2$frequency != "control"] 
+bothpilot.f2$FoilLocation= as.factor(bothpilot.f2$FoilLocation)
+
+
+
+expv.500_1450.onefoil <- bothpilot.f2 %>%
+  filter(screen_index == 3 | screen_index == 4 & timeRel.bin >=500 & timeRel.bin <1450   ) %>%
+  group_by(frequency ,subjID,  labelPresented, trial,  targetLocation, FoilLocation, block3) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil+0.5)/(samples-sum_foil+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()%>%
+  data.frame()
+
+
+expv.500_1450.onefoil$targetFoilLocation = as.factor(paste(expv.500_1450.onefoil$targetLocation,expv.500_1450.onefoil$FoilLocation,sep="" ))
+# can be a random effect
+
+expv.500_1450.onefoil = setContrasts(d=expv.500_1450.onefoil, condition=expv.500_1450.onefoil$frequency, baselevel="control")
+expv.500_1450.onefoil = setContrasts(d=expv.500_1450.onefoil, condition=expv.500_1450.onefoil$targetLocation, baselevel="c")
+expv.500_1450.onefoil = setContrasts(d=expv.500_1450.onefoil, condition=expv.500_1450.onefoil$FoilLocation, baselevel="c")
+
+expv.500_1450.onefoil = selectCenter(expv.500_1450.onefoil, list("block3"))
+
+
+# note - can't make it work with contrasts with bim in
+lmer.500_1450.onefoil = lmer(datalgd ~ 1
+                     +(control_VS_h+control_VS_l)*block3.ct 
+                    +(c_VS_l+ control_VS_l)
+                    +(control_VS_h||subjID)
+                    #+(control_VS_l|subjID), # can't have a slope for control vs Low- probably because less data here 
+                    +(1|targetFoilLocation), 
+                    control = lmerControl(optimizer="bobyqa"),
+                    data=expv.500_1450.onefoil,REML=FALSE)
+summary(lmer.500_1450.onefoil)$coeff
+
+
+```
+
+
+
+
+
+
+# particion into learners and non learners
+
+```{r}
+setwd("C:/Users/liz/OneDrive - Nexus365/Eva_Liz_Leverhulme/leverhulmeNDL/eyetracker - fribbles/preProcessed_data/pilot1")
+pilot1.labPic = read.csv("labPic.csv")
+pilot1.labPic$pilotgroup= "pilot1"
+pilot1.contingency = read.csv("contingency.csv")
+pilot1.contingency$pilotgroup = "pilot1"
+
+setwd("C:/Users/liz/OneDrive - Nexus365/Eva_Liz_Leverhulme/leverhulmeNDL/eyetracker - fribbles/preProcessed_data/pilot2")
+pilot2.labPic = read.csv("labPic.csv")
+pilot2.labPic$pilotgroup= "pilot2"
+pilot2.contingency = read.csv("contingency.csv")
+pilot2.contingency$pilotgroup = "pilot2"
+
+
+bothpilot.labPic = rbind(pilot1.labPic,pilot2.labPic )
+bothpilot.contingency = rbind(pilot1.contingency,pilot2.contingency )
+
+table(bothpilot.labPic$frequency, bothpilot.labPic$type_of_resp)
+
+```
+
+
+Categorize them according to how they do with low frequency items, specifically how much they go for match over mistmatch-type1 which catpures learning versus overgenerlization 
+
+```{r}
+bothpilot.labPic$type_of_resp= as.factor(bothpilot.labPic$type_of_resp)
+
+# out of the low frequency trials where they either pick match OR mistmatch-type1, what proporition are match (which will all have accuracy 1) 
+labPic.sub = aggregate(data = subset(bothpilot.labPic, frequency ==  "low" & (type_of_resp == "match" |type_of_resp == "mismatch-type1") ), acc ~  subjID  , FUN = mean)
+colnames(labPic.sub)[2]="labPicScore"
+labPic.sub
+
+## get the ratings for mathc and mistmatch trial types and subtract one from the other
+contingency.sub = aggregate(data = subset(bothpilot.contingency, frequency ==  "l" & (trialType == "match" |trialType == "mismatch-type1") ), resp ~ subjID+trialType, FUN = mean)
+contingency.sub.wide = spread(contingency.sub, trialType, resp)
+contingency.sub.wide$contScore = contingency.sub.wide$match - contingency.sub.wide$`mismatch-type1`
+
+dim(labPic.sub)
+dim(contingency.sub.wide)
+
+subScores = merge(labPic.sub, contingency.sub.wide)
+
+subScores$IdScore=  (as.numeric(scale(subScores$labPicScore)) + as.numeric(scale(subScores$contScore)) )/2
+
+subScores$subjLearnerType="ambig"
+subScores$subjLearnerType[subScores$labPicScore>.5 & subScores$contScore>0]="learner"
+subScores$subjLearnerType[subScores$labPicScore<=.5 & subScores$contScore<=0]="overgen"
+
+#subScores2 = data.frame(subScores$subjID,subScores$subjLearnerType )
+#colnames(subScores2) = c("subjID","subjLearnerType" )
+
+#note one participant missing
+
+bothpilot.f2.withID = merge(bothpilot.f2, subScores)
+dim(bothpilot.f2.withID)
+dim(subset(bothpilot.f2, subjID != "3502047" ))
+
+# note participant"3502047" has been removed 
+
+
+
+```
+
+## plots
+
+Plot 1- plotting proportion of looks to each for learners
+
+```{r proporitions-each-type-byblock-LEARNERS}
+
+bothpilot.f2.withID.learners = subset(bothpilot.f2.withID, subjLearnerType == "learner")
+
+
+table(bothpilot.f2.withID.learners.long$subjID)
+
+bothpilot.f2.withID.learners.long = gather(bothpilot.f2.withID.learners, objectLookedAt, proportionLooks, targetLabelLk:mismatch2LabelLk, ControlFoil1Lk,ControlFoil2Lk )
+bothpilot.f2.withID.learners.long$Location=NA
+
+f=bothpilot.f2.withID.learners.long$objectLookedAt=="targetLabelLk"
+bothpilot.f2.withID.learners.long$Location[f]=bothpilot.f2.withID.learners.long$targetLocation[f]
+
+f=bothpilot.f2.withID.learners.long$objectLookedAt=="mismatch1LabelLk"
+bothpilot.f2.withID.learners.long$Location[f]=bothpilot.f2.withID.learners.long$mismatch1Location[f]
+f=bothpilot.f2.withID.learners.long$objectLookedAt=="mismatch2LabelLk"
+bothpilot.f2.withID.learners.long$Location[f]=bothpilot.f2.withID.learners.long$mismatch2Location[f]
+
+f=bothpilot.f2.withID.learners.long$objectLookedAt=="ControlFoil1Lk"
+bothpilot.f2.withID.learners.long$Location[f]=bothpilot.f2.withID.learners.long$Foil1Location[f]
+f=bothpilot.f2.withID.learners.long$objectLookedAt=="ControlFoil2Lk"
+bothpilot.f2.withID.learners.long$Location[f]=bothpilot.f2.withID.learners.long$Foil2Location[f]
+
+
+agg1= aggregate(data = subset(bothpilot.f2.withID.learners.long, screen_index==3|screen_index==4), 
+                             proportionLooks~ objectLookedAt+timeRel.bin + frequency + block3 + subjID +Location, FUN= mean) 
+agg2= aggregate(data = agg1, proportionLooks~ objectLookedAt +timeRel.bin + frequency+ block3  + subjID, FUN= mean) 
+agg3= aggregate(data = agg2, proportionLooks~ objectLookedAt+timeRel.bin + frequency + block3, FUN= mean) 
+
+#write.csv(agg3, "threeLines.csv")
+
+p2= ggplot(agg3, aes(x=timeRel.bin, y=proportionLooks)) + geom_line(aes(color= objectLookedAt))
+p2= p2 + geom_vline(xintercept= 300)
+p2= p2 + ylim(0,.6)
+p2 = p2 + xlim(0,1450)
+p2= p2+facet_wrap(~frequency+block3)
+p2
+#log_odd<-function(p) {log(p/(1-p))}
+
+
+
+```
+
+
+
+```{r proporitions-each-type-byblock-NONLEARNERS}
+
+bothpilot.f2.withID.overgens = subset(bothpilot.f2.withID, subjLearnerType == "overgen")
+
+
+bothpilot.f2.withID.overgens.long = gather(bothpilot.f2.withID.overgens, objectLookedAt, proportionLooks, targetLabelLk:mismatch2LabelLk, ControlFoil1Lk,ControlFoil2Lk )
+bothpilot.f2.withID.overgens.long$Location=NA
+
+f=bothpilot.f2.withID.overgens.long$objectLookedAt=="targetLabelLk"
+bothpilot.f2.withID.overgens.long$Location[f]=bothpilot.f2.withID.overgens.long$targetLocation[f]
+
+f=bothpilot.f2.withID.overgens.long$objectLookedAt=="mismatch1LabelLk"
+bothpilot.f2.withID.overgens.long$Location[f]=bothpilot.f2.withID.overgens.long$mismatch1Location[f]
+f=bothpilot.f2.withID.overgens.long$objectLookedAt=="mismatch2LabelLk"
+bothpilot.f2.withID.overgens.long$Location[f]=bothpilot.f2.withID.overgens.long$mismatch2Location[f]
+
+f=bothpilot.f2.withID.overgens.long$objectLookedAt=="ControlFoil1Lk"
+bothpilot.f2.withID.overgens.long$Location[f]=bothpilot.f2.withID.overgens.long$Foil1Location[f]
+f=bothpilot.f2.withID.overgens.long$objectLookedAt=="ControlFoil2Lk"
+bothpilot.f2.withID.overgens.long$Location[f]=bothpilot.f2.withID.overgens.long$Foil2Location[f]
+
+
+agg1= aggregate(data = subset(bothpilot.f2.withID.overgens.long, screen_index==3|screen_index==4), 
+                             proportionLooks~ objectLookedAt+timeRel.bin + frequency + block3 + subjID +Location, FUN= mean) 
+agg2= aggregate(data = agg1, proportionLooks~ objectLookedAt +timeRel.bin + frequency+ block3  + subjID, FUN= mean) 
+agg3= aggregate(data = agg2, proportionLooks~ objectLookedAt+timeRel.bin + frequency + block3, FUN= mean) 
+
+#write.csv(agg3, "threeLines.csv")
+
+p2= ggplot(agg3, aes(x=timeRel.bin, y=proportionLooks)) + geom_line(aes(color= objectLookedAt))
+p2= p2 + geom_vline(xintercept= 300)
+p2= p2 + ylim(0,.6)
+p2 = p2 + xlim(0,1450)
+p2= p2+facet_wrap(~frequency+block3)
+p2
+#log_odd<-function(p) {log(p/(1-p))}
+
+
+
+```
+
+
+checking against eva values
+
+
+```{r}
+colnames(labPic.sub)[2]="labPicScore"
+
+counts=
+bothpilot.labPic %>%
+  filter(frequency == "low")%>%
+ # filter(type_of_resp == "mismatch-type1"|type_of_resp =="match")%>% 
+  group_by(subjID, frequency, type_of_resp) %>%
+  tally()
+  
+counts.wide = spread(counts, type_of_resp, n) 
+counts.wide
+```
+
+
+
+```{r special-score-mistmatch1-foil-with-block-with-learner}
+
+#set up column with 1 if they look at mistmach1 or control foil1
+f= bothpilot.f2.withID$frequency == "control"
+bothpilot.f2.withID$FoilLk[f] = bothpilot.f2.withID$ControlFoil1Lk[f]
+f= bothpilot.f2.withID$frequency != "control"
+bothpilot.f2.withID$FoilLk[f] = bothpilot.f2.withID$mismatch1LabelLk[f]
+
+bothpilot.f2.withID$FoilLocation = NA
+bothpilot.f2.withID$FoilLocation[bothpilot.f2.withID$frequency == "control"] =bothpilot.f2.withID$Foil1Location[bothpilot.f2.withID$frequency == "control"] 
+bothpilot.f2.withID$FoilLocation[bothpilot.f2.withID$frequency != "control"] =as.character(bothpilot.f2.withID$mismatch1Location)[bothpilot.f2.withID$frequency != "control"] 
+bothpilot.f2.withID$FoilLocation= as.factor(bothpilot.f2.withID$FoilLocation)
+
+expv <- bothpilot.f2.withID %>%
+  filter(screen_index == 3 | screen_index == 4 ) %>%
+  filter(subjLearnerType!="ambig") %>%
+
+  group_by(timeRel.bin ,frequency ,subjID,  targetLocation, FoilLocation, block3, subjLearnerType) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil+0.5)/(samples-sum_foil+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()
+
+
+expv.agg = aggregate(data = expv,     datalgd ~ timeRel.bin + frequency + block3 +subjLearnerType+ subjID + targetLocation + FoilLocation, FUN = mean)
+expv.agg2= aggregate(data = expv.agg, datalgd ~ timeRel.bin + frequency + block3 +subjLearnerType + subjID + targetLocation, FUN = mean)
+expv.agg3= aggregate(data = expv.agg2, datalgd ~ timeRel.bin + frequency+ block3  +subjLearnerType + subjID, FUN = mean)
+expv.agg4= aggregate(data = expv.agg3, datalgd ~ timeRel.bin + frequency+ block3  +subjLearnerType , FUN = mean)
+
+#write.csv(expv.agg3, "onelinemismatch1.csv")
+
+p1= ggplot(expv.agg4, aes(x=timeRel.bin ,y=datalgd))
+p1= p1+ geom_point(aes(color=frequency))
+p1=p1+ geom_line(linetype="dashed", aes(color=frequency))
+p1=p1+ geom_line(aes(color=frequency))
+p1= p1 + geom_vline(xintercept= 300)
+#p1= p1 + ylim(0.2,.6)
+p1 = p1 + xlim(0,1450)
+p1= p1+facet_wrap(~subjLearnerType+block3)
+
+p1
+
+
+```
+
+
+
+```{r special-score-mistmatch1-over mismatchtype2-low}
+
+# mistmatch1 versus mismatch2
+#set up column with 1 if they look at mistmach1 or control foil1
+
+bothpilot.f2.withID$mismatch1LabelLk
+expv <- bothpilot.f2.withID %>%
+  filter(screen_index == 3 | screen_index == 4 ) %>%
+  filter(subjLearnerType!="ambig") %>%
+  filter(frequency=="l") %>%
+
+  group_by(timeRel.bin ,frequency ,subjID,  mismatch2Location, mismatch1Location, block3, subjLearnerType) %>%
+  summarize(sum_mismatch1 = sum(mismatch1LabelLk), sum_mismatch2=sum(mismatch2LabelLk), samples = length(mismatch1LabelLk) )%>% 
+  mutate(Elog_t = log((sum_mismatch1+0.5)/(samples-sum_mismatch1+0.5)), Elog_f = log((sum_mismatch2+0.5)/(samples-sum_mismatch2+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()
+
+
+expv.agg = aggregate(data = expv,     datalgd ~ timeRel.bin  + block3 +subjLearnerType+ subjID + mismatch1Location + mismatch2Location, FUN = mean)
+expv.agg2= aggregate(data = expv.agg, datalgd ~ timeRel.bin + block3 +subjLearnerType + subjID +  mismatch1Location, FUN = mean)
+expv.agg3= aggregate(data = expv.agg2, datalgd ~ timeRel.bin+ block3  +subjLearnerType + subjID, FUN = mean)
+expv.agg4= aggregate(data = expv.agg3, datalgd ~ timeRel.bin+ block3  +subjLearnerType , FUN = mean)
+
+expv.agg4$block3=as.factor(expv.agg4$block3)
+p1= ggplot(expv.agg4, aes(x=timeRel.bin ,y=datalgd))
+#p1= p1+ geom_point(aes(color=subjLearnerType))
+#p1=p1+ geom_line(linetype="dashed", aes(color=subjLearnerType))
+p1=p1+ geom_line(aes(color=subjLearnerType))
+p1= p1 + geom_vline(xintercept= 300)
+#p1= p1 + ylim(0.2,.6)
+p1 = p1 + xlim(0,1450)
+p1= p1+facet_wrap(~block3)
+
+p1
+
+
+```
+
+
+## Stats 
+
+
+```{r special-score-mistmatch1-over mismatchtype2-low}
+
+# mistmatch1 versus mismatch2
+#set up column with 1 if they look at mistmach1 or control foil1
+
+
+expv <- bothpilot.f2.withID %>%
+  filter(screen_index == 3 | screen_index == 4 ) %>%
+  #filter(block3 == 2 | block3 == 3 ) %>%
+  #filter(subjLearnerType!="ambig") %>%
+  filter(frequency=="l") %>%
+
+  group_by(subjID,  mismatch2Location, mismatch1Location, block3, IdScore, subjLearnerType) %>%
+  summarize(sum_mismatch1 = sum(mismatch1LabelLk), sum_mismatch2=sum(mismatch2LabelLk), samples = length(mismatch1LabelLk) )%>% 
+  mutate(Elog_t = log((sum_mismatch1+0.5)/(samples-sum_mismatch1+0.5)), Elog_f = log((sum_mismatch2+0.5)/(samples-sum_mismatch2+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()
+
+expv.agg = aggregate(data=expv, datalgd~ subjID+subjLearnerType+IdScore+block3, FUN = mean)
+
+tapply(expv.agg$datalgd, list(expv.agg$subjLearnerType, expv.agg$block3),mean)      
+
+
+### just in 200-500- note doesn't show anything very different
+
+expv <- bothpilot.f2.withID %>%
+  filter(screen_index == 3 | screen_index == 4 ) %>%
+  filter(timeRel.bin>=200 & timeRel.bin<500 ) %>%
+  #filter(subjLearnerType!="ambig") %>%
+  filter(frequency=="l") %>%
+
+  group_by(subjID,  mismatch2Location, mismatch1Location, block3, IdScore, subjLearnerType) %>%
+  summarize(sum_mismatch1 = sum(mismatch1LabelLk), sum_mismatch2=sum(mismatch2LabelLk), samples = length(mismatch1LabelLk) )%>% 
+  mutate(Elog_t = log((sum_mismatch1+0.5)/(samples-sum_mismatch1+0.5)), Elog_f = log((sum_mismatch2+0.5)/(samples-sum_mismatch2+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()
+
+expv.agg = aggregate(data=expv, datalgd~ subjID+subjLearnerType+IdScore+block3, FUN = mean)
+
+tapply(expv.agg$datalgd, list(expv.agg$subjLearnerType, expv.agg$block3),mean)      
+
+
+```

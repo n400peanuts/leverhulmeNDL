@@ -1,0 +1,671 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#rm(list=ls())
+library(plyr) # used for "round_any" fuctnion
+library(dplyr) 
+library(tidyverse)
+library(lme4)
+
+```
+
+# Read in and set up key eyetracking data
+
+Note that all plots and analyses are currently on screens 3 and 4 so have excluded others
+```{r}
+setwd("C:/Users/liz/OneDrive - Nexus365/Eva_Liz_Leverhulme/leverhulmeNDL/eyetracker - fribbles/preProcessed_data")
+list.files()
+eyeDataKey = subset(read.csv( "bothpilot.f2.csv" ),  screen_index==3|screen_index==4)
+#eyeDataKey = subset(read.csv( "bothpilot.f1.csv" ),  screen_index==3|screen_index==4)## use if don't want to remove shortend file
+
+
+```
+
+# Plots with all participants combined
+
+## Overall performance, proportions
+
+Plot proportion of time the spend looking at target and different types of foil for control, low and high medium trials 
+
+```{r proporitions-each-type, fig.width = 8, fig.height = 8}
+
+eyeDataKey.long = gather(eyeDataKey, objectLookedAt, proportionLooks, targetLabelLk:mismatch2LabelLk, ControlFoil1Lk,ControlFoil2Lk )
+
+## add in a column that gives the location of what they are looking at. Although this won't be plotted, I will aggregate by this first
+## so that all lines on the plot have an equal weighting for looks to central/left/right 
+
+eyeDataKey.long$Location=NA
+
+f=eyeDataKey.long$objectLookedAt=="targetLabelLk"
+eyeDataKey.long$Location[f]=eyeDataKey.long$targetLocation[f]
+f=eyeDataKey.long$objectLookedAt=="mismatch1LabelLk"
+eyeDataKey.long$Location[f]=eyeDataKey.long$mismatch1Location[f]
+f=eyeDataKey.long$objectLookedAt=="mismatch2LabelLk"
+eyeDataKey.long$Location[f]=eyeDataKey.long$mismatch2Location[f]
+f=eyeDataKey.long$objectLookedAt=="ControlFoil1Lk"
+eyeDataKey.long$Location[f]=eyeDataKey.long$Foil1Location[f]
+f=eyeDataKey.long$objectLookedAt=="ControlFoil2Lk"
+eyeDataKey.long$Location[f]=eyeDataKey.long$Foil2Location[f]
+
+# now do aggregation - note first get separately aggregated for each subject for each location, then average over location than participant
+# this makes sure the means have equal weighting from each 
+
+agg1= aggregate(data = eyeDataKey.long, 
+                           proportionLooks~ objectLookedAt+timeRel.bin + frequency + subjID +Location , FUN= mean) 
+agg2= aggregate(data = agg1, proportionLooks~ objectLookedAt +timeRel.bin + frequency + subjID, FUN= mean) 
+agg3= aggregate(data = agg2, proportionLooks~ objectLookedAt+timeRel.bin + frequency, FUN= mean) 
+
+agg3$objectLookedAt2[agg3$objectLookedAt == "targetLabelLk"] = "Target"
+agg3$objectLookedAt2[agg3$objectLookedAt == "mismatch1LabelLk"] ="Overgeneralization (Experimental)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "mismatch2LabelLk"] = "Other Foil (Experimental)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "ControlFoil1Lk"] = "Foil1 (Control)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "ControlFoil2Lk"] = "Foil2 (Control)"
+
+agg3$objectLookedAt2 = as.factor(agg3$objectLookedAt2)
+#levels(agg3$objectLookedAt2)
+agg3$objectLookedAt2 = factor(agg3$objectLookedAt2,levels(agg3$objectLookedAt2)[c(6,5,4,3,1,2)])
+#levels(agg3$objectLookedAt2)
+
+frequency.labs = c("control","high","low")
+names(frequency.labs) =  unique(agg3$frequency)
+
+p2= ggplot(agg3, aes(x=timeRel.bin, y=proportionLooks)) + geom_line(aes(color= objectLookedAt2))
+p2= p2 + geom_vline(xintercept= 300)
+p2= p2 + ylim(0,.6)
+p2 = p2 + xlim(0,1450)
+p2= p2+facet_wrap(~frequency, labeller = labeller(frequency = frequency.labs))
+p2 = p2 + labs(title= "Plot 1: Proportions looks to each ROI", color = "Region of Interest")
+p2 = p2 + ylab("Proportion of looks")
+p2 = p2 + xlab("Time from fribble offset")
+p2 
+
+```
+
+
+
+Now split this according to experiment stage)
+
+```{r proportions-each-type-block, fig.width = 8, fig.height = 8}
+
+
+agg1= aggregate(data = eyeDataKey.long,  
+                             proportionLooks~ objectLookedAt+timeRel.bin + frequency + blockBy3 + subjID +Location, FUN= mean) 
+agg2= aggregate(data = agg1, proportionLooks~ objectLookedAt +timeRel.bin + frequency+ blockBy3  + subjID, FUN= mean) 
+agg3= aggregate(data = agg2, proportionLooks~ objectLookedAt+timeRel.bin + frequency + blockBy3, FUN= mean) 
+
+
+agg3$objectLookedAt2[agg3$objectLookedAt == "targetLabelLk"] = "Target"
+agg3$objectLookedAt2[agg3$objectLookedAt == "mismatch1LabelLk"] ="Overgeneralization (Experimental)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "mismatch2LabelLk"] = "Other Foil (Experimental)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "ControlFoil1Lk"] = "Foil1 (Control)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "ControlFoil2Lk"] = "Foil2 (Control)"
+
+agg3$objectLookedAt2 = as.factor(agg3$objectLookedAt2)
+#levels(agg3$objectLookedAt2)
+agg3$objectLookedAt2 = factor(agg3$objectLookedAt2,levels(agg3$objectLookedAt2)[c(6,5,4,3,1,2)])
+#levels(agg3$objectLookedAt2)
+
+frequency.labs = c("control","high","low")
+names(frequency.labs) =  unique(agg3$frequency)
+
+blockBy3.labs = c("stage1","stage2","stage3")
+names(blockBy3.labs) =  unique(agg3$blockBy3)
+
+p2= ggplot(agg3, aes(x=timeRel.bin, y=proportionLooks)) + geom_line(aes(color= objectLookedAt2))
+p2= p2 + geom_vline(xintercept= 300)
+p2= p2 + ylim(0,.6)
+p2 = p2 + xlim(0,1450)
+p2= p2+facet_wrap(~frequency+blockBy3, labeller = labeller(frequency = frequency.labs,blockBy3 = blockBy3.labs))
+#p2= p2+facet_wrap(~~frequency+blockBy3)
+p2 = p2 + labs(title= "Plot 2: Proportion of looks to each ROI, split by  experiment stage", color = "Region Fixated")
+p2 = p2 + ylab("Proportion of looks")
+p2 = p2 + xlab("Time from fribble offset")
+p2 
+
+
+
+
+
+
+```
+
+
+## Overall performance, gaze measures
+
+Here we plot differences in gaze probability for different regions over the other.
+(paper and their codes is in shared folder "papersAnalysingEyetracking" (computed as in Chen et al 2021)).
+
+
+Start by looking comparing gaze bias for target over (combined) foils across the conditions.  
+I will call this "target bias".
+
+```{r special-scores-across-foils}
+# Note this plotting uses the original "wide" data frame
+
+# create a column which across both foil and experimental has 1 if they look at the foil, otherwise zeros 
+#set up column with a 1 if they look at either of the two foils coded the same for experimental and control trials
+
+f= eyeDataKey$frequency == "control"
+eyeDataKey$FoilLk[f] = eyeDataKey$ControlBothFoilLk[f]
+f= eyeDataKey$frequency != "control"
+eyeDataKey$FoilLk[f] = eyeDataKey$mismatch1LabelLk[f]+eyeDataKey$mismatch2LabelLk[f]
+
+
+expv <- eyeDataKey %>%
+  group_by(timeRel.bin ,frequency ,subjID,  targetLocation, blockBy3) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil*0.5+0.5)/(samples-sum_foil*0.5+0.5)))%>% # NOTE THE ADJUST MENT of *0.5 for foils because there are two of them
+  mutate(datalgd = Elog_t - Elog_f)%>% ## note the division by two is added in to account for there being twice as likely to be looks to the (2) foil regions
+  ungroup()
+
+expv.agg = aggregate(data = expv,     datalgd ~ timeRel.bin + frequency + blockBy3 + subjID + targetLocation, FUN = mean)
+expv.agg2= aggregate(data = expv.agg, datalgd ~ timeRel.bin + frequency + blockBy3 + subjID, FUN = mean)
+expv.agg3= aggregate(data = expv.agg2, datalgd ~ timeRel.bin + frequency + blockBy3 , FUN = mean)
+
+frequency.labs = c("control","high","low")
+names(frequency.labs) =  unique(agg3$frequency)
+
+blockBy3.labs = c("stage1","stage2","stage3")
+names(blockBy3.labs) =  unique(agg3$blockBy3)
+
+
+p1= ggplot(expv.agg3, aes(x=timeRel.bin ,y=datalgd))
+p1= p1+ geom_point(aes(color=frequency) )
+p1=p1+ geom_line(linetype="dashed", aes(color=frequency))
+p1=p1+ geom_line(aes(color=frequency))
+p1= p1 + geom_vline(xintercept= 300)
+p1= p1 + geom_hline(yintercept= 0)
+
+#p1= p1 + ylim(0.2,.6)
+p1 = p1 + xlim(0,1450)
+p1= p1 + facet_wrap(~blockBy3, labeller = labeller(blockBy3 = blockBy3.labs))
+p1 = p1 + labs(title= "Plot 3: Bias to look at target over foils (0 means no bias)")
+p1 = p1 + ylab("target (over foil) bias ")
+p1 = p1 + xlab("Time from fribble offset")
+
+p1 = p1 + scale_color_discrete("Trial Type", 
+                      breaks=c("control","h", "l"), 
+                      labels=c("control","high", "low"))
+
+p1
+
+
+```
+
+
+```{r special-score-mistmatch1-foil}
+
+expv <- subset(eyeDataKey, frequency == "l") %>%
+  group_by(timeRel.bin , subjID,  mismatch1Location, mismatch2Location, blockBy3) %>%
+  summarize(sum_mm1 = sum(mismatch1LabelLk), sum_mm2=sum(mismatch2LabelLk), samples = length(mismatch1LabelLk) )%>% 
+  mutate(Elog_mm1 = log((sum_mm1+0.5)/(samples-sum_mm1+0.5)), Elog_mm2 = log((sum_mm2+0.5)/(samples-sum_mm2+0.5)))%>%
+  mutate(datalgd = Elog_mm1 - Elog_mm2)%>%
+  ungroup()
+
+expv.agg = aggregate(data = expv,     datalgd ~ timeRel.bin   +blockBy3+ subjID + mismatch1Location + mismatch2Location, FUN = mean)
+expv.agg2= aggregate(data = expv.agg, datalgd ~ timeRel.bin   +blockBy3+ subjID + mismatch1Location, FUN = mean)
+expv.agg3= aggregate(data = expv.agg2, datalgd ~ timeRel.bin  +blockBy3+ subjID, FUN = mean)
+expv.agg4= aggregate(data = expv.agg3, datalgd ~ timeRel.bin  +blockBy3  , FUN = mean)
+
+expv.agg4$blockBy3 = as.factor(expv.agg4$blockBy3)
+blockBy3.labs = c("stage1","stage2","stage3")
+names(blockBy3.labs) =  unique(expv.agg4$blockBy3)
+
+
+p1= ggplot(expv.agg4, aes(x=timeRel.bin ,y=datalgd))
+p1= p1+ geom_point()
+p1=p1+ geom_line(linetype="dashed")
+p1= p1 + geom_vline(xintercept= 300)
+#p1= p1 + ylim(0.2,.6)
+p1 = p1 + xlim(0,1450)
+p1 =p1 + facet_wrap(~blockBy3, labeller = labeller(blockBy3 = blockBy3.labs))
+p1 = p1 + labs(title= "Plot 4: Low trials only, bias to look at overgen other other foils (0 means no bias)")
+p1 = p1 + ylab("overgeneralization bias (0 indicates no bias)")
+p1 = p1 + xlab("Time from fribble offset")
+p1= p1 + geom_hline(yintercept= 0)
+p1
+
+
+```
+
+
+## Interpretation of overall plots
+
+In plot 1 (proportion of looks to each region across whole experiment), we can see clear evidence that they start looking at the correct fribble more than the foils faster than the control and well before the label is heard. For the low, they initial look more at both the target AND the overgeneralization foil and looks to that foil don't drop off until just before 500 ms after the label has appeared.
+
+In plot 2, this is split down by experiment stage. We can see that for high the the faster looks to target start at stage1 and this gets faster (steeper line) across the stages. For the low, the overgeneralization is not evident in stage 1, is clear in  stage 2 and looks to have diminished by stage 3   
+
+In plot 3 we look at the bias to look at the target -rather than either of the foils.Can clearly see that this is present in the high even in stage 1 (though the bias isn't present until a little later) and it increases (the line gets steeper) from stage 2. For the low, we can see that there is a dip which could indicate overgeneralization, however the pictures is't hugely clear as we also see a dip in the control in stage 2. However note that the measure here is noisy as we are including looks to *both* of the controls, rather than just the overgeneralization one.
+
+In plot 3, we directly look for evidence of overgeneralization in the low frequency items, by looking at whether they look more at the foilt hat indicates overgeneralization, rather than the other foil. There is evidence of overgeneralization in stage 2, less in stage 3. 
+
+
+# Plots with learners and overgeneralizers separated 
+
+## read in the data from the offline tests
+```{r}
+setwd("C:/Users/liz/OneDrive - Nexus365/Eva_Liz_Leverhulme/leverhulmeNDL/eyetracker - fribbles/preProcessed_data/pilot1")
+pilot1.labPic = read.csv("labPic.csv")
+pilot1.labPic$pilotgroup= "pilot1"
+pilot1.contingency = read.csv("contingency.csv")
+pilot1.contingency$pilotgroup = "pilot1"
+
+setwd("C:/Users/liz/OneDrive - Nexus365/Eva_Liz_Leverhulme/leverhulmeNDL/eyetracker - fribbles/preProcessed_data/pilot2")
+pilot2.labPic = read.csv("labPic.csv")
+pilot2.labPic$pilotgroup= "pilot2"
+pilot2.contingency = read.csv("contingency.csv")
+pilot2.contingency$pilotgroup = "pilot2"
+
+labPicData = rbind(pilot1.labPic,pilot2.labPic )
+contingencyData = rbind(pilot1.contingency,pilot2.contingency )
+
+
+```
+
+Get scores for each participants for how well they do with low frequency items. Specifically, how much more they accept match over overgeneralization in laPic test/ how much higher they rate them in contingency (i.e. capturing overgeneralization).
+
+```{r}
+
+## Am going to create a little table with offline participant data and categorization in 
+labPicData$type_of_resp= as.factor(labPicData$type_of_resp)
+
+# out of the low frequency trials where they either pick match OR mistmatch-type1, what proportion are match (which will all have accuracy 1) ?
+labPic.sub = aggregate(data = subset(labPicData, frequency ==  "low" & (type_of_resp == "match" |type_of_resp == "mismatch-type1") ), acc ~  subjID  , FUN = mean)
+colnames(labPic.sub)[2]="labPicScore"
+labPic.sub
+
+## get the ratings for match  and mistmatch trial types and subtract one from the other
+contingency.sub = aggregate(data = subset(contingencyData, frequency ==  "l" & (trialType == "match" |trialType == "mismatch-type1") ), resp ~ subjID+trialType, FUN = mean)
+contingency.sub.wide = spread(contingency.sub, trialType, resp)
+contingency.sub.wide$contScore = contingency.sub.wide$match - contingency.sub.wide$`mismatch-type1`
+
+
+# now create the  table with these scores in and add a column with "idscore" which is the average zscore for both
+
+subScores = merge(labPic.sub, contingency.sub.wide)
+subScores$IdScore=  (as.numeric(scale(subScores$labPicScore)) + as.numeric(scale(subScores$contScore)) )/2
+# in this table, add a column categorizing participants as "learners" if they do better with overgenerization 
+subScores$subjLearnerType="ambig"
+subScores$subjLearnerType[subScores$labPicScore>.5 & subScores$contScore>0]="learnerLowF"
+subScores$subjLearnerType[subScores$labPicScore<=.5 & subScores$contScore<=0]="overgen"
+
+
+# Now I merge the information from this table into the eyetracking data frame, which I give a new name
+# Note that one participant has been removed from this 
+# note one participant is missing (s/he didn't have data on one of the tests)
+
+eyeDataKey.ID = merge(eyeDataKey, subScores)
+dim(eyeDataKey.ID)
+dim(subset(eyeDataKey, subjID != "3502047" ))
+
+# note participant"3502047" has been removed 
+
+
+
+```
+
+## Split learners, proportions
+
+
+```{r proporitions-each-type-splitlearners, fig.width = 8, fig.height = 8}
+
+eyeDataKey.ID.noAmbig = subset(eyeDataKey.ID,subjLearnerType!="ambig" )
+
+eyeDataKey.ID.noAmbig.long = gather(eyeDataKey.ID.noAmbig, objectLookedAt, proportionLooks, targetLabelLk:mismatch2LabelLk, ControlFoil1Lk,ControlFoil2Lk )
+
+## add in a column that gives the location of what they are looking at. Although this won't be plotted, I will aggregate by this first
+## so that all lines on the plot have an equal weighting for looks to central/left/right 
+
+eyeDataKey.ID.noAmbig.long$Location=NA
+
+f=eyeDataKey.ID.noAmbig.long$objectLookedAt=="targetLabelLk"
+eyeDataKey.ID.noAmbig.long$Location[f]=eyeDataKey.ID.noAmbig.long$targetLocation[f]
+f=eyeDataKey.ID.noAmbig.long$objectLookedAt=="mismatch1LabelLk"
+eyeDataKey.ID.noAmbig.long$Location[f]=eyeDataKey.ID.noAmbig.long$mismatch1Location[f]
+f=eyeDataKey.ID.noAmbig.long$objectLookedAt=="mismatch2LabelLk"
+eyeDataKey.ID.noAmbig.long$Location[f]=eyeDataKey.ID.noAmbig.long$mismatch2Location[f]
+f=eyeDataKey.ID.noAmbig.long$objectLookedAt=="ControlFoil1Lk"
+eyeDataKey.ID.noAmbig.long$Location[f]=eyeDataKey.ID.noAmbig.long$Foil1Location[f]
+f=eyeDataKey.ID.noAmbig.long$objectLookedAt=="ControlFoil2Lk"
+eyeDataKey.ID.noAmbig.long$Location[f]=eyeDataKey.ID.noAmbig.long$Foil2Location[f]
+
+# now do aggregation - note first get separately aggregated for each subject for each location, then average over location than participant
+# this makes sure the means have equal weighting from each 
+
+agg1= aggregate(data = eyeDataKey.ID.noAmbig.long, 
+                           proportionLooks~ objectLookedAt+timeRel.bin + frequency + subjLearnerType+ subjID +Location , FUN= mean) 
+agg2= aggregate(data = agg1, proportionLooks~ objectLookedAt +timeRel.bin + frequency +subjLearnerType+ subjID, FUN= mean) 
+agg3= aggregate(data = agg2, proportionLooks~ objectLookedAt+timeRel.bin + frequency+subjLearnerType, FUN= mean) 
+
+agg3$objectLookedAt2[agg3$objectLookedAt == "targetLabelLk"] = "Target"
+agg3$objectLookedAt2[agg3$objectLookedAt == "mismatch1LabelLk"] ="Overgeneralization (Experimental)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "mismatch2LabelLk"] = "Other Foil (Experimental)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "ControlFoil1Lk"] = "Foil1 (Control)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "ControlFoil2Lk"] = "Foil2 (Control)"
+
+agg3$objectLookedAt2 = as.factor(agg3$objectLookedAt2)
+#levels(agg3$objectLookedAt2)
+agg3$objectLookedAt2 = factor(agg3$objectLookedAt2,levels(agg3$objectLookedAt2)[c(6,5,4,3,1,2)])
+#levels(agg3$objectLookedAt2)
+
+frequency.labs = c("control","high","low")
+names(frequency.labs) =  unique(agg3$frequency)
+
+subjLearnerType.labs = c("Low F learner","Low F Overgeneralizer")
+names(subjLearnerType.labs) =  unique(agg3$subjLearnerType)
+
+
+p2= ggplot(agg3, aes(x=timeRel.bin, y=proportionLooks)) + geom_line(aes(color= objectLookedAt2))
+p2= p2 + geom_vline(xintercept= 300)
+p2= p2 + ylim(0,.6)
+p2 = p2 + xlim(0,1450)
+
+p2= p2+facet_wrap(~  subjLearnerType+frequency,  labeller = labeller(subjLearnerType = subjLearnerType.labs, frequency = frequency.labs) )
+p2 = p2 + labs(title= "Plot 5: Proportion of looks to each ROI, split by participant type", color = "Region of Interest")
+p2 = p2 + ylab("Proportion of looks")
+p2 = p2 + xlab("Time from fribble offset")
+p2 
+
+```
+
+Now look at different learners by experiments stage 
+
+```{r proporitions-each-type-splitlearners-bystage, fig.width = 12, fig.height = 12}
+
+# now do aggregation - note first get separately aggregated for each subject for each location, then average over location than participant
+# this makes sure the means have equal weighting from each 
+
+
+agg1= aggregate(data = eyeDataKey.ID.noAmbig.long, 
+                           proportionLooks~ objectLookedAt+timeRel.bin + frequency + blockBy3+ subjLearnerType+ subjID +Location , FUN= mean) 
+agg2= aggregate(data = agg1, proportionLooks~ objectLookedAt +timeRel.bin + frequency +blockBy3+subjLearnerType+ subjID, FUN= mean) 
+agg3= aggregate(data = agg2, proportionLooks~ objectLookedAt+timeRel.bin + frequency+blockBy3+subjLearnerType, FUN= mean) 
+
+agg3$objectLookedAt2[agg3$objectLookedAt == "targetLabelLk"] = "Target"
+agg3$objectLookedAt2[agg3$objectLookedAt == "mismatch1LabelLk"] ="Overgeneralization (Experimental)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "mismatch2LabelLk"] = "Other Foil (Experimental)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "ControlFoil1Lk"] = "Foil1 (Control)"
+agg3$objectLookedAt2[agg3$objectLookedAt == "ControlFoil2Lk"] = "Foil2 (Control)"
+
+agg3$objectLookedAt2 = as.factor(agg3$objectLookedAt2)
+#levels(agg3$objectLookedAt2)
+agg3$objectLookedAt2 = factor(agg3$objectLookedAt2,levels(agg3$objectLookedAt2)[c(6,5,4,3,1,2)])
+#levels(agg3$objectLookedAt2)
+
+
+frequency.labs = c("control","high","low")
+names(frequency.labs) =  unique(agg3$frequency)
+
+subjLearnerType.labs = c("Low F learner","Low F Overgeneralizer")
+names(subjLearnerType.labs) =  unique(agg3$subjLearnerType)
+
+
+p2= ggplot(agg3, aes(x=timeRel.bin, y=proportionLooks)) + geom_line(aes(color= objectLookedAt2))
+p2= p2 + geom_vline(xintercept= 300)
+p2= p2 + ylim(0,.6)
+p2 = p2 + xlim(0,1450)
+
+#p2= p2+facet_grid(rows= vars(subjLearnerType),cols = vars(blockBy3),  labeller = labeller(subjLearnerType = subjLearnerType.labs, frequency = frequency.labs))
+
+p2= p2+facet_wrap(~subjLearnerType+ blockBy3+ frequency,  ncol= 3, labeller = labeller(subjLearnerType = subjLearnerType.labs, frequency = frequency.labs))
+                   
+p2 = p2 + labs(title= "Plot 6: Proportion of looks to each ROI, split by  experiment stage, split by participant type", color = "Region of Interest")
+p2 = p2 + ylab("Proportion of looks")
+p2 = p2 + xlab("Time from fribble offset")
+p2 
+
+```
+
+
+
+## Split learners, gaze measures
+
+```{r special-scores-across-foils-split-participants, fig.width = 8, fig.height = 8}}
+# Note this plotting uses the original "wide" data frame
+
+# create a column which across both foil and experimental has 1 if they look at the foil, otherwise zeros 
+#set up column with a 1 if they look at either of the two foils coded the same for experimental and control trials
+
+f= eyeDataKey.ID.noAmbig$frequency == "control"
+eyeDataKey.ID.noAmbig$FoilLk[f] = eyeDataKey.ID.noAmbig$ControlBothFoilLk[f]
+f= eyeDataKey.ID.noAmbig$frequency != "control"
+eyeDataKey.ID.noAmbig$FoilLk[f] = eyeDataKey.ID.noAmbig$mismatch1LabelLk[f]+eyeDataKey.ID.noAmbig$mismatch2LabelLk[f]
+
+
+expv <- eyeDataKey.ID.noAmbig %>%
+  group_by(timeRel.bin ,frequency ,subjID,  targetLocation, blockBy3,subjLearnerType) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil*0.5+0.5)/(samples-sum_foil*0.5+0.5)))%>% # NOTE THE ADJUST MENT of *0.5 for foils because there are two of them
+  mutate(datalgd = Elog_t - Elog_f)%>% ## note the division by two is added in to account for there being twice as likely to be looks to the (2) foil regions
+  ungroup()
+
+expv.agg = aggregate(data = expv,     datalgd ~ timeRel.bin + frequency + blockBy3 + subjLearnerType+ subjID + targetLocation, FUN = mean)
+expv.agg2= aggregate(data = expv.agg, datalgd ~ timeRel.bin + frequency + blockBy3 + subjLearnerType+ subjID, FUN = mean)
+expv.agg3= aggregate(data = expv.agg2, datalgd ~ timeRel.bin + frequency + blockBy3+ subjLearnerType , FUN = mean)
+
+blockBy3.labs = c("stage1","stage2","stage3")
+names(blockBy3.labs) =  unique(agg3$blockBy3)
+
+subjLearnerType.labs = c("Low F learner","Low F Overgeneralizer")
+names(subjLearnerType.labs) =  unique(agg3$subjLearnerType)
+
+
+p1= ggplot(expv.agg3, aes(x=timeRel.bin ,y=datalgd))
+p1= p1+ geom_point(aes(color=frequency) )
+p1=p1+ geom_line(linetype="dashed", aes(color=frequency))
+p1=p1+ geom_line(aes(color=frequency))
+p1= p1 + geom_vline(xintercept= 300)
+#p1= p1 + ylim(0.2,.6)
+p1 = p1 + xlim(0,1450)
+p1= p1 + facet_wrap(~  subjLearnerType + blockBy3, labeller = labeller(blockBy3 = blockBy3.labs, subjLearnerType=subjLearnerType.labs))
+p1 = p1 + labs(title= "Plot 7: Bias to look at target over foils (0 means no bias), split by participant type")
+p1 = p1 + ylab("target (over foil) bias ")
+p1 = p1 + xlab("Time from fribble offset")
+
+p1 = p1 + scale_color_discrete("Trial Type", 
+                      breaks=c("control","h", "l"), 
+                      labels=c("control","high", "low"))
+
+p1
+
+
+```
+
+
+
+```{r special-score-mistmatch1-foil-split-participants}
+
+expv <- subset(eyeDataKey.ID.noAmbig, frequency == "l") %>%
+  group_by(timeRel.bin , subjID,  mismatch1Location, mismatch2Location, blockBy3, subjLearnerType) %>%
+  summarize(sum_mm1 = sum(mismatch1LabelLk), sum_mm2=sum(mismatch2LabelLk), samples = length(mismatch1LabelLk) )%>% 
+  mutate(Elog_mm1 = log((sum_mm1+0.5)/(samples-sum_mm1+0.5)), Elog_mm2 = log((sum_mm2+0.5)/(samples-sum_mm2+0.5)))%>%
+  mutate(datalgd = Elog_mm1 - Elog_mm2)%>%
+  ungroup()
+
+expv.agg = aggregate(data = expv,     datalgd ~ timeRel.bin   +blockBy3+subjLearnerType+ subjID + mismatch1Location + mismatch2Location, FUN = mean)
+expv.agg2= aggregate(data = expv.agg, datalgd ~ timeRel.bin   +blockBy3+subjLearnerType+ subjID + mismatch1Location, FUN = mean)
+expv.agg3= aggregate(data = expv.agg2, datalgd ~ timeRel.bin  +blockBy3+subjLearnerType+ subjID, FUN = mean)
+expv.agg4= aggregate(data = expv.agg3, datalgd ~ timeRel.bin  +blockBy3 +subjLearnerType , FUN = mean)
+
+expv.agg4$blockBy3 = as.factor(expv.agg4$blockBy3)
+blockBy3.labs = c("stage1","stage2","stage3")
+names(blockBy3.labs) =  unique(expv.agg4$blockBy3)
+
+subjLearnerType.labs = c("Low F learner","Low F Overgeneralizer")
+names(subjLearnerType.labs) =  unique(agg3$subjLearnerType)
+
+p1= ggplot(expv.agg4, aes(x=timeRel.bin ,y=datalgd))
+p1= p1+ geom_point()
+p1=p1+ geom_line(linetype="dashed")
+p1= p1 + geom_vline(xintercept= 300)
+p1= p1 + geom_hline(yintercept= 0)
+
+
+#p1= p1 + ylim(0.2,.6)
+p1 = p1 + xlim(0,1450)
+p1= p1 + facet_wrap(~  subjLearnerType + blockBy3, labeller = labeller(blockBy3 = blockBy3.labs, subjLearnerType=subjLearnerType.labs))
+p1 = p1 + labs(title= "Plot 8: Low trials only, bias to look at overgen other other foils (0 means no bias), split by participant type")
+p1 = p1 + ylab("overgeneralization bias (0 indicates no bias)")
+p1 = p1 + xlab("Time from fribble offset")
+p1
+
+
+```
+
+
+
+## Interpretation of split leaner plots
+
+Plot 5 shows proportion of looks to each region in each condition (ignoring experiment stage). The Low-F overgen participants noisier than the learners and for both high and low they look more looks to overgeneralization. As expected, core difference is that Low-F look more to the overgen than the target for a while even after the label appears, while the Low F learners don't. however Low F learners do show some evidence of looking more at the overgeneralization foil than the other foil.
+
+Plot 6 repeats this broken down by block. The overgeneralizers don't start looking at high until later in the experiment. For low, critically the low F learners seem to show some evidence of overgeneralization in stage 2 but not by stage 3 and indeed by stage 3 are looking at the target in low before they do for foil; the low F overgeneralizers are still showing overgeneralization in stage 3.
+
+Plot 7 shows the bias to look at the target over either of the foils. This way of plotting makes it clear that even the high aren't as well learned by overgeneralizers. It is hard to see the patterns of overgeneralization with this measure however.
+
+In plot 8 we focus on low frequency  the amount they are looking at the overgeneralization foil, rather than the target. Can see evidence for this at stage two for the low F leaners and at stage 2 and 3 for the low F Overgeneralizaers
+
+
+
+
+
+# Statistical analyses: 
+
+## DV = preference for target over sum of the other two foils
+
+```{r set up column }
+#set up column with a 1 if they look at either of the two foils
+f= eyeDataKey.ID$frequency == "control"
+eyeDataKey.ID$FoilLk[f] = eyeDataKey.ID$ControlFoil1Lk[f]+eyeDataKey.ID$ControlFoil2Lk[f]
+f= eyeDataKey.ID$frequency != "control"
+eyeDataKey.ID$FoilLk[f] = eyeDataKey.ID$mismatch1LabelLk[f]+eyeDataKey.ID$mismatch2LabelLk[f]
+```
+
+Look at region from 200 after fribble disappeared till 200 after label appears
+
+I will use the default factor contrast coding for frequency and experiment stage. This means that the intercept is performance in the control condition at stage 2, and other effects are difference from this. For the control factor of target location use instead a centered coding so that we are looking at average performance across all of these factors
+
+```{r run for region 200_500 }
+expv.200_500.bothfoils <- eyeDataKey %>%
+  filter(timeRel.bin >=200 & timeRel.bin <500   ) %>%
+  group_by(frequency ,subjID,  targetLocation, trial, blockBy3) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil+0.5)/(samples-sum_foil+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()%>%
+  data.frame()
+
+#Note I will use the default factor contrast coding for frequency and experiment stage. This means that the intercept is performance in the control condition at stage 2, and other effects are difference from this. For the control factor of target location use instead a centered coding so that we are looking at average performance across all of these factors
+
+
+expv.200_500.bothfoils$frequency = relevel(as.factor(expv.200_500.bothfoils$frequency), ref = "control")
+expv.200_500.bothfoils$blockBy3 = relevel(as.factor(expv.200_500.bothfoils$blockBy3), ref = "2")
+
+expv.200_500.bothfoils = setContrasts(d=expv.200_500.bothfoils, condition=expv.200_500.bothfoils$targetLocation, baselevel="c")
+
+lmer.200_500.bothfoils = lmer(datalgd ~ 1
+                    + frequency * blockBy3
+                    + (c_VS_l + c_VS_r)
+                    
+                    + (1|subjID),# won't converge with any slopes
+                    control = lmerControl(optimizer="bobyqa"),
+                    data=expv.200_500.bothfoils,REML=FALSE)
+
+summary(lmer.200_500.bothfoils)$coeff
+summary(lmer.200_500.bothfoils)$coeff
+
+
+```
+
+Look at region from 200 after fribble disappeared till end of trial
+
+
+```{r run for region 500_1450 }
+expv.500_1450.bothfoils <- eyeDataKey %>%
+  filter(timeRel.bin >=500 & timeRel.bin <1450   ) %>%
+  group_by(frequency ,subjID,  targetLocation, trial, blockBy3) %>%
+  summarize(sum_target = sum(targetLabelLk), sum_foil=sum(FoilLk), samples = length(targetLabelLk) )%>% 
+  mutate(Elog_t = log((sum_target+0.5)/(samples-sum_target+0.5)), Elog_f = log((sum_foil+0.5)/(samples-sum_foil+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()%>%
+  data.frame()
+
+expv.500_1450.bothfoils$frequency = relevel(as.factor(expv.500_1450.bothfoils$frequency), ref = "control")
+expv.500_1450.bothfoils$blockBy3 = relevel(as.factor(expv.500_1450.bothfoils$blockBy3), ref = "2")
+
+expv.500_1450.bothfoils = setContrasts(d=expv.500_1450.bothfoils, condition=expv.500_1450.bothfoils$targetLocation, baselevel="c")
+
+lmer.500_1450.bothfoils = lmer(datalgd ~ 1
+                    + frequency * blockBy3
+                    + (c_VS_l + c_VS_r)
+                    
+                    + (1|subjID),# won't converge with any slopes
+                    control = lmerControl(optimizer="bobyqa"),
+                    data=expv.500_1450.bothfoils,REML=FALSE)
+
+summary(lmer.500_1450.bothfoils)$coeff
+
+
+```
+
+Note- when have more participants can also put in learner type and interactions with it.
+
+## DV = preference for overgeneralization compared with other foil (low only)
+
+note for this one I didn't pick a particular region - just seeing if overall more looks to over
+```{r special-score-mistmatch1-over mismatchtype2-low}
+
+# mistmatch1 versus mismatch2
+#set up column with 1 if they look at mistmach1 or control foil1
+
+
+expv.overgen <- eyeDataKey %>%
+  filter(frequency=="l") %>%
+  group_by(subjID,  mismatch2Location, mismatch1Location, blockBy3) %>%
+  summarize(sum_mismatch1 = sum(mismatch1LabelLk), sum_mismatch2=sum(mismatch2LabelLk), samples = length(mismatch1LabelLk) )%>% 
+  mutate(Elog_t = log((sum_mismatch1+0.5)/(samples-sum_mismatch1+0.5)), Elog_f = log((sum_mismatch2+0.5)/(samples-sum_mismatch2+0.5)))%>%
+  mutate(datalgd = Elog_t - Elog_f)%>%
+  ungroup()%>%
+  data.frame()
+
+expv.overgen$mismatch2LocationX = as.factor(paste(expv.overgen$mismatch2Location,"MM2", sep="")) ## have to add this in so that the factor levels have different names from those for mistmach1Location)
+                                            
+expv.overgen$blockBy3 = relevel(as.factor(expv.overgen$blockBy3), ref ="2")
+expv.overgen = setContrasts(d=expv.overgen, condition=expv.overgen$mismatch1Location, baselevel="c")
+expv.overgen = setContrasts(d=expv.overgen, condition=expv.overgen$mismatch2LocationX, baselevel="cMM2")
+
+
+
+lmer.overgen = lmer(datalgd ~ 1
+                    + blockBy3 
+                    +  (c_VS_l + c_VS_r)
+                  +  (cMM2_VS_lMM2 + cMM2_VS_rMM2)
+
+                    +(1|subjID), # should have a slope for block but won't converge
+                                        control = lmerControl(optimizer="bobyqa"),
+                    data=expv.overgen,REML=FALSE)
+
+summary(lmer.overgen)$coeff  
+# note, interecpt shows overgen at stage 2
+
+```
+## Intepretation of stats
+
+Caveats: very little data. Note also that much much less data for low than high. Haven't included most slopes; also haven't included 
+participant group, which we can see is critical from the figures.
+
+Note that in all the analyses throughout there are effects of the control factors (c_vs_l and r_vs_l reflecting the bias to look centrally).
+
+For proportions analyses, at 200-500 ms there is one oddity - there is a negative intercept which means that for the control condition (which is the reference level) they are actually looking LESS at the target than the foils at least in stage 2 of the experiment (also the reference level). There is evidence for more bias to look at target in high than control (sing frequencyh), but not in low than control (NS frequencyl). There is marginal evidence that the for high the benefit is greater at stage 1 than stage 2 (frequencyh:blockBy31). 
+
+From 500-1450 (where the label is on the screen) can see more looks to the target than foil in control (positive intercept, which is expected since its on the screen). However critically there is sig evidence that this effect is  greater in both the high and low condition (sig frequencyh  and frequencyl)  For high, we see marginal evidence that this has increased from stag1 to stage 2 (frequencyh:blockBy31), but we don't yet have evidence for this for the low (though ti is in predicted direction). 
+
+Looking at the overgeneralization measure (for low Freq trials only), which is across the whole region- the intercept tells us whether they look more at the the overgeneralization item at stage2- there is currently not evidence of this. Numerically the effect is lower in block 3 and block1 but currently not sig (blockBy31  and blockBy33 both NS) 
+
+haven't put in participant group yet as so little data, but this will be critical.
+
+
+
+
